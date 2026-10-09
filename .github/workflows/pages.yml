@@ -1,0 +1,59 @@
+name: go.gala.fyi meta pages
+
+# Serves the go-import meta tag that maps go.gala.fyi/stdlib/... to this
+# repository, with one page per package so every import path resolves.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Generate pages
+        run: |
+          set -euo pipefail
+          repo="https://github.com/${GITHUB_REPOSITORY}"
+          page() {
+            mkdir -p "site/$1"
+            cat > "site/$1/index.html" <<HTML
+          <!doctype html>
+          <html><head><meta charset="utf-8">
+          <meta name="go-import" content="go.gala.fyi/stdlib git ${repo}">
+          <meta name="go-source" content="go.gala.fyi/stdlib ${repo} ${repo}/tree/main{/dir} ${repo}/blob/main{/dir}/{file}#L{line}">
+          <meta http-equiv="refresh" content="0; url=${repo}">
+          </head><body>go.gala.fyi/$1 &mdash; <a href="${repo}">${repo}</a></body></html>
+          HTML
+          }
+          page stdlib
+          find . -path ./.git -prune -o -name '*.go' -print | xargs -r -n1 dirname | sort -u | while read -r d; do
+            [ "$d" = . ] || page "stdlib/${d#./}"
+          done
+          cp site/stdlib/index.html site/index.html
+          find site -type f | sort
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4
