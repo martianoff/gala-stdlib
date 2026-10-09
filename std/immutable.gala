@@ -1,0 +1,25 @@
+package std
+
+// Immutable[T] is a core GALA type that provides immutability wrappers.
+type Immutable[T any] struct {
+    var value T
+}
+
+// Get returns the underlying value.
+func (i Immutable[T]) Get() T = i.value
+
+// Ptr returns a pointer to the underlying value.
+// This allows taking the address of immutable values.
+func (i *Immutable[T]) Ptr() *T = &i.value
+
+// GetAny returns the underlying value as any (for interface-based unwrapping).
+func (i Immutable[T]) GetAny() any = i.value
+
+// NewImmutable creates a new Immutable wrapper.
+func NewImmutable[T any](v T) Immutable[T] = Immutable[T](value = v)
+
+// AddrOfCopy returns a pointer to a fresh copy of v. The transpiler emits it
+// when a pointer-receiver method is called on a value Go cannot address — a
+// val's Get(), a call result, a composite literal — so the method runs on the
+// copy and the original value is left unchanged.
+func AddrOfCopy[T any](var v T) *T = &v

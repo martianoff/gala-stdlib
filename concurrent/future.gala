@@ -1,0 +1,764 @@
+package concurrent
+
+import (
+    . "martianoff/gala/std"
+    "martianoff/gala/go_interop"
+    . "martianoff/gala/collection_immutable"
+    . "martianoff/gala/time_utils"
+)
+
+// FutureState holds the mutable internal state of a Future.
+// This is an implementation detail — users interact with Future[T] directly.
+type FutureState[T any] struct {
+    var result   Try[T]
+    var done     go_interop.Signal
+    var once     *go_interop.Once
+    var mu       *go_interop.RWMutex
+    var complete bool
+    var ec       go_interop.ExecutionContext
+    // cancel carries the Future's cancellation token, shared across every stage
+    // derived from it. It is always present (newPromiseWith resolves it to a
+    // concrete token); root constructors create a fresh one, combinators inherit
+    // the parent's. Cancelling it short-circuits pending downstream stages.
+    var cancel   go_interop.CancelToken
+}
+
+// Future represents an asynchronous computation that will eventually produce
+// a value of type T or fail with an error. It provides a functional approach
+// to concurrent programming, similar to Scala's Future monad.
+//
+// Future is a value type (handle pattern) — it wraps a pointer to shared
+// internal state, so it can be passed by value without loss of identity.
+//
+// A Future is immutable once created - its eventual result cannot be changed.
+// To create completable futures, use Promise[T].
+//
+// Each Future has an associated ExecutionContext that determines where callbacks
+// and derived futures execute. By default, futures use GlobalEC(). To run on a
+// custom ExecutionContext, use FutureOn; FutureOf, FutureFailed, and NewPromise
+// accept an optional ec argument that defaults to GlobalEC().
+//
+// Future is modeled as a single-case sealed type so that the type name itself
+// is the asynchronous constructor:
+//
+//   val f = Future[int](() => expensiveComputation())
+//
+// runs the body on GlobalEC(); a panic in the body becomes a Failure. The
+// internal state is built through the private `fut` case constructor.
+sealed type Future[T any] {
+    case fut(state *FutureState[T])
+}
+
+// Promise is a writable, single-assignment container that completes a Future.
+// A Promise can be completed exactly once, either with a success value or a failure.
+//
+// Like Future, Promise is a value type (handle pattern): it wraps a Future whose
+// shared state lives behind a pointer, so it can be passed by value.
+struct Promise[T any](future Future[T])
+
+// NewPromise creates a new Promise and its associated Future. The Future runs on
+// the given ExecutionContext; a nil ec (the default) means GlobalEC().
+//
+// The default is a bare nil rather than GlobalEC() so the injected default at
+// each call site carries no package qualifier — callers need not import the
+// ExecutionContext's defining package.
+//
+// Every Promise carries a cancellation token: NewPromise creates a fresh one, so
+// each root Future gets its own. The public signature keeps only the `ec` default
+// (a bare nil that injects no package qualifier at call sites); the token plumbing
+// lives in the package-private newPromiseWith so callers outside this package
+// never have go_interop leaked into their generated code.
+func NewPromise[T any](ec go_interop.ExecutionContext = nil) Promise[T] {
+    return newPromiseWith[T](ec, None[go_interop.CancelToken]())
+}
+
+// newPromiseWith builds a Promise on the given ExecutionContext (nil → GlobalEC())
+// with an explicit cancellation token. The Option param is the one place the
+// fresh-vs-inherit distinction is real: Some(parent) reuses the parent's token so
+// a derived stage shares its scope, while None opens a FRESH scope with a new
+// token. Token-scope rule: linear combinators inherit (pass Some(f.state.cancel)
+// via `derive`); aggregation / scope constructors (Race, Sequence,
+// FirstCompletedOf, WithTimeout) intentionally open a fresh scope (pass None,
+// which is what NewPromise does).
+func newPromiseWith[T any](ec go_interop.ExecutionContext, cancel Option[go_interop.CancelToken]) Promise[T] {
+    val resolvedEc = if (ec == nil) go_interop.GlobalEC() else ec
+    val resolvedCancel = if (cancel.IsDefined()) cancel.Get() else go_interop.NewCancelToken()
+    val f = fut[T](
+        state = &FutureState[T](
+            done = go_interop.NewSignal(),
+            once = go_interop.NewOnce(),
+            mu = go_interop.NewRWMutex(),
+            complete = false,
+            ec = resolvedEc,
+            cancel = resolvedCancel
+        )
+    )
+    return Promise[T](future = f)
+}
+
+// Future returns the Future associated with this Promise.
+func (p Promise[T]) Future() Future[T] = p.future
+
+// Success completes the Promise with a successful value.
+// Returns true if the Promise was completed, false if already completed.
+func (p Promise[T]) Success(value T) bool {
+    return p.Complete(Success[T](value))
+}
+
+// Failure completes the Promise with an error.
+// Returns true if the Promise was completed, false if already completed.
+func (p Promise[T]) Failure(err error) bool {
+    return p.Complete(Failure[T](err))
+}
+
+// Complete completes the Promise with a Try result.
+// Returns true if the Promise was completed, false if already completed.
+func (p Promise[T]) Complete(result Try[T]) bool {
+    return p.future.state.once.Do(() => {
+        p.future.state.mu.Lock()
+        p.future.state.result = result
+        p.future.state.complete = true
+        p.future.state.mu.Unlock()
+        go_interop.CloseSignal(p.future.state.done)
+    })
+}
+
+// IsCompleted returns true if the Promise has been completed.
+func (p Promise[T]) IsCompleted() bool {
+    p.future.state.mu.RLock()
+    val c = p.future.state.complete
+    p.future.state.mu.RUnlock()
+    return c
+}
+
+// FutureOf creates an already successfully completed Future with the given value.
+// It runs on the given ExecutionContext; a nil ec (the default) means GlobalEC().
+func FutureOf[T any](value T, ec go_interop.ExecutionContext = nil) Future[T] {
+    val p = NewPromise[T](ec)
+    p.Success(value)
+    return p.Future()
+}
+
+// FutureFailed creates an already failed Future with the given error.
+// It runs on the given ExecutionContext; a nil ec (the default) means GlobalEC().
+func FutureFailed[T any](err error, ec go_interop.ExecutionContext = nil) Future[T] {
+    val p = NewPromise[T](ec)
+    p.Failure(err)
+    return p.Future()
+}
+
+// runAsync executes body on the given ExecutionContext, completing the returned
+// Future with the result. A panic in body becomes a Failure with the panic's
+// error (Try.Get panics with the original error, so a Try-returning body that
+// fails via .Get() preserves its error identity).
+func runAsync[T any](body func() T, ec go_interop.ExecutionContext) Future[T] {
+    val p = NewPromise[T](ec)
+    val onSuccess = () => { p.Success(body()) }
+    val onPanic = (r any) => {
+        p.Failure(go_interop.PanicToError(r))
+    }
+    ec.ExecuteWithRecover(onSuccess, onPanic)
+    return p.Future()
+}
+
+// Apply runs body asynchronously on GlobalEC() and is the companion constructor
+// for the Future type, so a Future is created by calling the type itself:
+//
+//   val f = Future[int](() => expensiveComputation())
+//
+// The receiver is an unused dispatch placeholder. If body panics, the Future is
+// completed with a Failure.
+//
+// body is a concurrency boundary: `Sendable[func() T]` is transparently just
+// `func() T`, but marks the parameter so the transpiler enforces capture-safety
+// (GALA-E0037) — the async body may only capture immutable, shareable values.
+func (f Future[T]) Apply(body Sendable[func() T]) Future[T] = runAsync[T](body, go_interop.GlobalEC())
+
+// FutureOn runs body asynchronously on the given ExecutionContext. Use it when a
+// root computation needs a specific ExecutionContext; derived futures inherit it.
+// If body panics, the Future is completed with a Failure. body is a concurrency
+// boundary (`Sendable[func() T]`), so its captures are checked for shareability.
+func FutureOn[T any](body Sendable[func() T], ec go_interop.ExecutionContext) Future[T] = runAsync[T](body, ec)
+
+// FutureError is a custom error type for Future-related errors.
+struct FutureError(Message string)
+
+func (e FutureError) Error() string = e.Message
+
+// TimeoutError is returned when a Future fails to complete before its timeout expires.
+struct TimeoutError(Timeout Duration)
+
+func (e TimeoutError) Error() string = s"future timed out after ${e.Timeout}"
+
+// CancellationError is returned by a derived Future whose pending stage was
+// short-circuited because the shared cancellation token was triggered (via
+// Future.Cancel, WithTimeout firing, or losing a Race). It never aborts an
+// already-running body — Go has no goroutine interruption — it only prevents a
+// not-yet-started downstream stage from running.
+struct CancellationError(Message string)
+
+func (e CancellationError) Error() string = e.Message
+
+// checkCancelled fails p with a CancellationError and returns true when tok is
+// already cancelled, signalling the caller to skip the now-pointless stage. It
+// returns false (and does nothing) when the token is still live.
+func checkCancelled[U any](p Promise[U], tok go_interop.CancelToken) bool {
+    if go_interop.IsCancelled(tok) {
+        p.Failure(CancellationError(Message = "future cancelled"))
+        return true
+    }
+    return false
+}
+
+// IsCompleted returns true if the Future has been completed (success or failure).
+func (f Future[T]) IsCompleted() bool {
+    f.state.mu.RLock()
+    val c = f.state.complete
+    f.state.mu.RUnlock()
+    return c
+}
+
+// Value returns the current result as an Option[Try[T]].
+// Returns None if the Future is not yet completed.
+func (f Future[T]) Value() Option[Try[T]] {
+    f.state.mu.RLock()
+    val c = f.state.complete
+    val r = f.state.result
+    f.state.mu.RUnlock()
+    return When(c, r)
+}
+
+// Await blocks until the Future is completed and returns the result.
+func (f Future[T]) Await() Try[T] {
+    go_interop.WaitSignal(f.state.done)
+    f.state.mu.RLock()
+    val r = f.state.result
+    f.state.mu.RUnlock()
+    return r
+}
+
+// AwaitFor blocks until the Future is completed or the timeout expires.
+// Returns None if the timeout expires before the Future completes.
+func (f Future[T]) AwaitFor(timeout Duration) Option[Try[T]] {
+    val received = go_interop.WaitSignalTimeout(f.state.done, timeout.ToGoDuration())
+    if received {
+        f.state.mu.RLock()
+        val r = f.state.result
+        f.state.mu.RUnlock()
+        return Some(r)
+    }
+    return None[Try[T]]()
+}
+
+// Cancel triggers this Future's cancellation token, which is shared by every
+// stage derived from it. Any pending downstream combinator (Map, FlatMap, etc.)
+// that has not yet started short-circuits with a CancellationError; an
+// already-running body is not interrupted (Go has no goroutine interruption).
+// Cancel does not itself complete this Future, and cancelling an already
+// completed Future has no effect on its stored result.
+func (f Future[T]) Cancel() {
+    if f.state != nil {
+        go_interop.Cancel(f.state.cancel)
+    }
+}
+
+// WithTimeout returns a new Future that completes with this Future's result
+// if it arrives before the timeout, or fails with TimeoutError if the timeout
+// expires first. The returned Future inherits this Future's ExecutionContext.
+//
+// When the timeout fires, WithTimeout also cancels this Future's shared
+// cancellation token, so pending downstream stages short-circuit instead of
+// running after the deadline. The bounded Future is failed first so the timeout
+// result wins the single-assignment race.
+func (f Future[T]) WithTimeout(timeout Duration) Future[T] {
+    val p = NewPromise[T](f.state.ec)
+    f.OnComplete((r Try[T]) => {
+        p.Complete(r)
+    })
+    f.state.ec.Execute(() => {
+        val received = go_interop.WaitSignalTimeout(f.state.done, timeout.ToGoDuration())
+        if !received {
+            // Fail the bounded Future first so the timeout result wins the
+            // single-assignment race; only then cancel the token so a
+            // cooperating body stops (its later completion becomes a no-op).
+            p.Failure(TimeoutError(Timeout = timeout))
+            f.Cancel()
+        }
+    })
+    return p.Future()
+}
+
+// Get blocks until the Future is completed and returns the value.
+// Panics if the Future completed with a failure.
+func (f Future[T]) Get() T = f.Await().Get()
+
+// GetOrElse blocks until the Future is completed and returns the value,
+// or the default value if the Future completed with a failure.
+func (f Future[T]) GetOrElse(defaultValue T) T = f.Await().GetOrElse(defaultValue)
+
+// ExecutionContext returns the ExecutionContext associated with this Future.
+func (f Future[T]) ExecutionContext() go_interop.ExecutionContext = f.state.ec
+
+// OnComplete registers a callback to be executed when the Future completes.
+// The callback is executed asynchronously using this Future's ExecutionContext.
+func (f Future[T]) OnComplete(callback func(Try[T])) {
+    f.state.ec.Execute(() => {
+        go_interop.WaitSignal(f.state.done)
+        f.state.mu.RLock()
+        val r = f.state.result
+        f.state.mu.RUnlock()
+        callback(r)
+    })
+}
+
+// OnSuccess registers a callback to be executed if the Future completes successfully.
+// The callback is executed asynchronously.
+func (f Future[T]) OnSuccess(callback func(T)) {
+    f.OnComplete((r Try[T]) => {
+        r match {
+            case Success(v) => callback(v)
+            case Failure(_) => {}
+        }
+    })
+}
+
+// OnFailure registers a callback to be executed if the Future completes with a failure.
+// The callback is executed asynchronously.
+func (f Future[T]) OnFailure(callback func(error)) {
+    f.OnComplete((r Try[T]) => {
+        r match {
+            case Success(_) => {}
+            case Failure(e) => callback(e)
+        }
+    })
+}
+
+// derive builds a new Future stage that inherits this Future's ExecutionContext
+// and cancellation token. Once this Future completes it runs handle(p, r) on the
+// EC, but only after the shared-token boundary check: if the token is already
+// cancelled the derived stage short-circuits with a CancellationError and handle
+// never runs. Every linear combinator below is expressed through it, so the
+// promise-creation + OnComplete + cancellation-guard scaffold lives in one place.
+func (f Future[T]) derive[U any](handle func(Promise[U], Try[T])) Future[U] {
+    val p = newPromiseWith[U](f.state.ec, Some(f.state.cancel))
+    f.OnComplete((r Try[T]) => {
+        if !checkCancelled(p, f.state.cancel) {
+            handle(p, r)
+        }
+    })
+    return p.Future()
+}
+
+// Map transforms the successful value of this Future using the given function.
+// If this Future fails, the resulting Future will also fail with the same error.
+// The resulting Future inherits this Future's ExecutionContext and cancellation
+// token; if the token is cancelled before this stage runs, it short-circuits.
+func (f Future[T]) Map[U any](fn func(T) U) Future[U] =
+    f.derive[U]((p, r) => { p.Complete(r.Map[U](fn)) })
+
+// FlatMap transforms the successful value of this Future using a function
+// that returns another Future. This allows chaining asynchronous operations.
+// The resulting Future inherits this Future's ExecutionContext.
+func (f Future[T]) FlatMap[U any](fn func(T) Future[U]) Future[U] =
+    f.derive[U]((p, r) => {
+        r match {
+            case Success(v) => fn(v).OnComplete((innerResult Try[U]) => {
+                p.Complete(innerResult)
+            })
+            case Failure(e) => p.Failure(e)
+        }
+    })
+
+// Filter returns a new Future that contains the value only if it satisfies
+// the predicate. If the predicate returns false, the Future fails with
+// NoSuchElementError.
+// The resulting Future inherits this Future's ExecutionContext.
+func (f Future[T]) Filter(predicate func(T) bool) Future[T] =
+    f.derive[T]((p, r) => { p.Complete(r.Filter(predicate)) })
+
+// Recover handles failures by applying a recovery function.
+// If this Future fails, the recovery function is applied to the error
+// to produce a successful value.
+// The resulting Future inherits this Future's ExecutionContext.
+func (f Future[T]) Recover(pf func(error) T) Future[T] =
+    f.derive[T]((p, r) => { p.Complete(r.Recover(pf)) })
+
+// RecoverWith handles failures by applying a recovery function
+// that returns another Future.
+// The resulting Future inherits this Future's ExecutionContext.
+func (f Future[T]) RecoverWith(pf func(error) Future[T]) Future[T] =
+    f.derive[T]((p, r) => {
+        r match {
+            case Success(v) => p.Success(v)
+            case Failure(e) => pf(e).OnComplete((recovered Try[T]) => {
+                p.Complete(recovered)
+            })
+        }
+    })
+
+// Transform applies success or failure function based on the result.
+// The resulting Future inherits this Future's ExecutionContext.
+func (f Future[T]) Transform[U any](s func(T) Try[U], fn func(error) Try[U]) Future[U] =
+    f.derive[U]((p, r) => {
+        r match {
+            case Success(v) => p.Complete(s(v))
+            case Failure(e) => p.Complete(fn(e))
+        }
+    })
+
+// TransformWith applies success or failure function that returns a Future.
+// The resulting Future inherits this Future's ExecutionContext.
+func (f Future[T]) TransformWith[U any](s func(T) Future[U], fn func(error) Future[U]) Future[U] =
+    f.derive[U]((p, r) => {
+        r match {
+            case Success(v) => s(v).OnComplete((res Try[U]) => {
+                p.Complete(res)
+            })
+            case Failure(e) => fn(e).OnComplete((res Try[U]) => {
+                p.Complete(res)
+            })
+        }
+    })
+
+// Zip combines two Futures into a Future of a tuple.
+// The resulting Future inherits this Future's ExecutionContext. Zip, ZipWith,
+// Zip2..Zip10 and Fallback are defined in terms of FlatMap/Map/RecoverWith, so
+// they inherit this Future's cancellation token and boundary check transitively.
+func (f Future[T]) Zip[U any](other Future[U]) Future[Tuple[T, U]] {
+    return f.FlatMap[Tuple[T, U]]((t T) => {
+        return other.Map[Tuple[T, U]]((u U) => (t, u))
+    })
+}
+
+// ZipWith combines two Futures using a combining function.
+// The resulting Future inherits this Future's ExecutionContext.
+func (f Future[T]) ZipWith[U any, V any](other Future[U], fn func(T, U) V) Future[V] {
+    return f.FlatMap[V]((t T) => {
+        return other.Map[V]((u U) => fn(t, u))
+    })
+}
+
+// Zip2..Zip10 combine N Futures under the naming the `also` notation uses. Every
+// Future is already running, so the results are awaited concurrently — wall-clock
+// cost is the slowest, not the sum. They are fail-fast: the first failure
+// short-circuits. See docs/BIND_NOTATION.MD.
+
+func (f Future[T]) Zip2[U any](other Future[U]) Future[Tuple[T, U]] = f.Zip(other)
+
+func (f Future[T]) Zip3[U any, V any](fu Future[U], fv Future[V]) Future[Tuple3[T, U, V]] =
+    f.FlatMap[Tuple3[T, U, V]]((t T) =>
+        fu.FlatMap[Tuple3[T, U, V]]((u U) =>
+        fv.Map[Tuple3[T, U, V]]((v V) => Tuple(t, u, v))))
+
+func (f Future[T]) Zip4[U any, V any, W any](fu Future[U], fv Future[V], fw Future[W]) Future[Tuple4[T, U, V, W]] =
+    f.FlatMap[Tuple4[T, U, V, W]]((t T) =>
+        fu.FlatMap[Tuple4[T, U, V, W]]((u U) =>
+        fv.FlatMap[Tuple4[T, U, V, W]]((v V) =>
+        fw.Map[Tuple4[T, U, V, W]]((w W) => Tuple(t, u, v, w)))))
+
+func (f Future[T]) Zip5[U any, V any, W any, X any](fu Future[U], fv Future[V], fw Future[W], fx Future[X]) Future[Tuple5[T, U, V, W, X]] =
+    f.FlatMap[Tuple5[T, U, V, W, X]]((t T) =>
+        fu.FlatMap[Tuple5[T, U, V, W, X]]((u U) =>
+        fv.FlatMap[Tuple5[T, U, V, W, X]]((v V) =>
+        fw.FlatMap[Tuple5[T, U, V, W, X]]((w W) =>
+        fx.Map[Tuple5[T, U, V, W, X]]((x X) => Tuple(t, u, v, w, x))))))
+
+func (f Future[T]) Zip6[U any, V any, W any, X any, Y any](fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y]) Future[Tuple6[T, U, V, W, X, Y]] =
+    f.FlatMap[Tuple6[T, U, V, W, X, Y]]((t T) =>
+        fu.FlatMap[Tuple6[T, U, V, W, X, Y]]((u U) =>
+        fv.FlatMap[Tuple6[T, U, V, W, X, Y]]((v V) =>
+        fw.FlatMap[Tuple6[T, U, V, W, X, Y]]((w W) =>
+        fx.FlatMap[Tuple6[T, U, V, W, X, Y]]((x X) =>
+        fy.Map[Tuple6[T, U, V, W, X, Y]]((y Y) => Tuple(t, u, v, w, x, y)))))))
+
+func (f Future[T]) Zip7[U any, V any, W any, X any, Y any, Z any](fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y], fz Future[Z]) Future[Tuple7[T, U, V, W, X, Y, Z]] =
+    f.FlatMap[Tuple7[T, U, V, W, X, Y, Z]]((t T) =>
+        fu.FlatMap[Tuple7[T, U, V, W, X, Y, Z]]((u U) =>
+        fv.FlatMap[Tuple7[T, U, V, W, X, Y, Z]]((v V) =>
+        fw.FlatMap[Tuple7[T, U, V, W, X, Y, Z]]((w W) =>
+        fx.FlatMap[Tuple7[T, U, V, W, X, Y, Z]]((x X) =>
+        fy.FlatMap[Tuple7[T, U, V, W, X, Y, Z]]((y Y) =>
+        fz.Map[Tuple7[T, U, V, W, X, Y, Z]]((z Z) => Tuple(t, u, v, w, x, y, z))))))))
+
+func (f Future[T]) Zip8[U any, V any, W any, X any, Y any, Z any, P any](fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y], fz Future[Z], fp Future[P]) Future[Tuple8[T, U, V, W, X, Y, Z, P]] =
+    f.FlatMap[Tuple8[T, U, V, W, X, Y, Z, P]]((t T) =>
+        fu.FlatMap[Tuple8[T, U, V, W, X, Y, Z, P]]((u U) =>
+        fv.FlatMap[Tuple8[T, U, V, W, X, Y, Z, P]]((v V) =>
+        fw.FlatMap[Tuple8[T, U, V, W, X, Y, Z, P]]((w W) =>
+        fx.FlatMap[Tuple8[T, U, V, W, X, Y, Z, P]]((x X) =>
+        fy.FlatMap[Tuple8[T, U, V, W, X, Y, Z, P]]((y Y) =>
+        fz.FlatMap[Tuple8[T, U, V, W, X, Y, Z, P]]((z Z) =>
+        fp.Map[Tuple8[T, U, V, W, X, Y, Z, P]]((p P) => Tuple(t, u, v, w, x, y, z, p)))))))))
+
+func (f Future[T]) Zip9[U any, V any, W any, X any, Y any, Z any, P any, Q any](fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y], fz Future[Z], fp Future[P], fq Future[Q]) Future[Tuple9[T, U, V, W, X, Y, Z, P, Q]] =
+    f.FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q]]((t T) =>
+        fu.FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q]]((u U) =>
+        fv.FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q]]((v V) =>
+        fw.FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q]]((w W) =>
+        fx.FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q]]((x X) =>
+        fy.FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q]]((y Y) =>
+        fz.FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q]]((z Z) =>
+        fp.FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q]]((p P) =>
+        fq.Map[Tuple9[T, U, V, W, X, Y, Z, P, Q]]((q Q) => Tuple(t, u, v, w, x, y, z, p, q))))))))))
+
+func (f Future[T]) Zip10[U any, V any, W any, X any, Y any, Z any, P any, Q any, R any](fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y], fz Future[Z], fp Future[P], fq Future[Q], fr Future[R]) Future[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]] =
+    f.FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((t T) =>
+        fu.FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((u U) =>
+        fv.FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((v V) =>
+        fw.FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((w W) =>
+        fx.FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((x X) =>
+        fy.FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((y Y) =>
+        fz.FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((z Z) =>
+        fp.FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((p P) =>
+        fq.FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((q Q) =>
+        fr.Map[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]]((r R) => Tuple(t, u, v, w, x, y, z, p, q, r)))))))))))
+
+// Fallback returns the first successful Future, or the last failure if both fail.
+// The resulting Future inherits this Future's ExecutionContext.
+func (f Future[T]) Fallback(that Future[T]) Future[T] {
+    return f.RecoverWith((e error) => that)
+}
+
+// AndThen registers a callback and returns a new Future that completes
+// with the same result after the callback executes.
+// The resulting Future inherits this Future's ExecutionContext.
+func (f Future[T]) AndThen(callback func(Try[T])) Future[T] =
+    f.derive[T]((p, r) => {
+        callback(r)
+        p.Complete(r)
+    })
+
+// ToTry converts the Future to a Try by blocking until completion.
+func (f Future[T]) ToTry() Try[T] = f.Await()
+
+// ToOption converts the successful value to an Option by blocking.
+// Returns None if the Future fails.
+func (f Future[T]) ToOption() Option[T] = f.Await().ToOption()
+
+// ToEither converts the Future result to an Either by blocking.
+func (f Future[T]) ToEither() Either[error, T] = f.Await().ToEither()
+
+// Sequence converts an Array of Futures into a Future of an Array.
+// If any Future fails, the resulting Future fails with that error.
+func Sequence[T any](futures Array[Future[T]]) Future[Array[T]] {
+    if futures.IsEmpty() {
+        return FutureOf[Array[T]](EmptyArray[T]())
+    }
+
+    val p = NewPromise[Array[T]]()
+    val size = futures.Size()
+    val mu = go_interop.NewMutex()
+    var remaining = size
+    var failed = false
+
+    // We need to collect results in order, so use a map to store results by index
+    var resultMap = EmptyHashMap[int, T]()
+
+    // Iterate with index using ZipWithIndex
+    futures.ZipWithIndex().ForEach((pair Tuple[Future[T], int]) => {
+        val fut = pair.V1
+        val idx = pair.V2
+        fut.OnComplete((r Try[T]) => {
+            mu.Lock()
+
+            if !failed {
+                r match {
+                    case Success(v) => {
+                        resultMap = resultMap.Put(idx, v)
+                        remaining = remaining - 1
+                        if remaining == 0 {
+                            // Build the result array in order
+                            var result = EmptyArray[T]()
+                            for i := 0; i < size; i++ {
+                                result = result.Append(resultMap.GetOrElse(i, v))
+                            }
+                            p.Success(result)
+                        }
+                    }
+                    case Failure(e) => {
+                        failed = true
+                        p.Failure(e)
+                    }
+                }
+            }
+
+            mu.Unlock()
+        })
+    })
+
+    return p.Future()
+}
+
+// FirstCompletedOf returns a Future that completes with the result of
+// the first Future to complete from the given collection.
+func FirstCompletedOf[T any](futures Array[Future[T]]) Future[T] {
+    val p = NewPromise[T]()
+
+    futures.ForEach((fut Future[T]) => {
+        fut.OnComplete((r Try[T]) => {
+            p.Complete(r)
+        })
+    })
+
+    return p.Future()
+}
+
+// Race returns a Future that completes with the result of the first Future to
+// finish, then cancels the losers via their cancellation tokens. It is the
+// structured-concurrency form of FirstCompletedOf: the winner's result is kept
+// and every other Future's shared token is cancelled, so their pending
+// downstream stages short-circuit instead of running on.
+//
+// Cancellation is coarse and cooperative: a loser's already-running body is not
+// interrupted (Go has no goroutine interruption), but any stage derived from it
+// that has not yet started fails with a CancellationError. The Race result
+// itself carries a fresh token and is unaffected.
+func Race[T any](futures Array[Future[T]]) Future[T] {
+    val p = NewPromise[T]()
+
+    futures.ForEach((fut Future[T]) => {
+        fut.OnComplete((r Try[T]) => {
+            val won = p.Complete(r)
+            if won {
+                futures.ForEach((other Future[T]) => {
+                    other.Cancel()
+                })
+            }
+        })
+    })
+
+    return p.Future()
+}
+
+// Traverse applies a function that returns a Future to each element
+// and sequences the results.
+func Traverse[T any, U any](items Array[T], fn func(T) Future[U]) Future[Array[U]] {
+    val futures = items.Map[Future[U]]((item T) => fn(item))
+    return Sequence[U](futures)
+}
+
+// Fold reduces a collection of Futures into a single Future.
+func Fold[T any, U any](futures Array[Future[T]], zero U, op func(U, T) U) Future[U] {
+    return Sequence[T](futures).Map[U]((results Array[T]) => {
+        return results.FoldLeft[U](zero, op)
+    })
+}
+
+// ReduceLeft reduces a non-empty collection of Futures to a single Future.
+func ReduceLeft[T any](futures Array[Future[T]], op func(T, T) T) Future[T] {
+    if futures.IsEmpty() {
+        return FutureFailed[T](FutureError(Message = "Cannot reduce empty collection"))
+    }
+    if futures.Size() == 1 {
+        return futures.Get(0)
+    }
+
+    return Sequence[T](futures).Map[T]((results Array[T]) => {
+        return results.Tail().FoldLeft[T](results.Head(), op)
+    })
+}
+
+// === Pattern Matching Support ===
+
+// Completed is an extractor for pattern matching on completed Futures.
+// It awaits the Future and extracts the Try result.
+//
+// Usage:
+//   future match {
+//       case Completed(Success(v)) => fmt.Sprintf("Got: %v", v)
+//       case Completed(Failure(e)) => fmt.Sprintf("Error: %s", e.Error())
+//       case _ => "Unknown"
+//   }
+type Completed[T any] struct {}
+
+// Unapply awaits the Future and extracts its Try result for pattern matching.
+func (c Completed[T]) Unapply(f Future[T]) Option[Try[T]] {
+    if f.state == nil {
+        return None[Try[T]]()
+    }
+    return Some(f.Await())
+}
+
+// Succeeded is an extractor for pattern matching on successful Futures.
+// It awaits the Future and extracts the value if successful.
+//
+// Usage:
+//   future match {
+//       case Succeeded(v) => fmt.Sprintf("Got: %v", v)
+//       case Failed(e) => fmt.Sprintf("Error: %s", e.Error())
+//       case _ => "Unknown"
+//   }
+type Succeeded[T any] struct {}
+
+// Unapply awaits the Future and extracts its value if successful.
+func (s Succeeded[T]) Unapply(f Future[T]) Option[T] {
+    if f.state == nil {
+        return None[T]()
+    }
+    return f.Await() match {
+        case Success(v) => Some(v)
+        case Failure(_) => None[T]()
+    }
+}
+
+// Failed is an extractor for pattern matching on failed Futures.
+// It awaits the Future and extracts the error if failed.
+//
+// Usage:
+//   future match {
+//       case Succeeded(v) => fmt.Sprintf("Got: %v", v)
+//       case Failed(e) => fmt.Sprintf("Error: %s", e.Error())
+//       case _ => "Unknown"
+//   }
+type Failed[T any] struct {}
+
+// Unapply awaits the Future and extracts its error if failed.
+func (fa Failed[T]) Unapply(f Future[T]) Option[error] {
+    if f.state == nil {
+        return None[error]()
+    }
+    return f.Await() match {
+        case Success(_) => None[error]()
+        case Failure(e) => Some(e)
+    }
+}
+
+// === Sequence Pattern Matching Support ===
+
+// AllSucceeded is an extractor for matching when all Futures in a sequence succeed.
+// It sequences the Futures and extracts the Array of values if all succeed.
+//
+// Usage:
+//   futures match {
+//       case AllSucceeded(values) => fmt.Sprintf("All succeeded: %v", values)
+//       case AnyFailed(e) => fmt.Sprintf("One failed: %s", e.Error())
+//       case _ => "Unknown"
+//   }
+type AllSucceeded[T any] struct {}
+
+// Unapply sequences the Futures and extracts all values if all succeed.
+func (a AllSucceeded[T]) Unapply(futures Array[Future[T]]) Option[Array[T]] {
+    return Sequence[T](futures).Await() match {
+        case Success(v) => Some(v)
+        case Failure(_) => None[Array[T]]()
+    }
+}
+
+// AnyFailed is an extractor for matching when any Future in a sequence fails.
+// It returns the first error encountered.
+//
+// Usage:
+//   futures match {
+//       case AllSucceeded(values) => fmt.Sprintf("All succeeded: %v", values)
+//       case AnyFailed(e) => fmt.Sprintf("One failed: %s", e.Error())
+//       case _ => "Unknown"
+//   }
+type AnyFailed[T any] struct {}
+
+// Unapply returns the first error if any Future in the sequence fails.
+func (a AnyFailed[T]) Unapply(futures Array[Future[T]]) Option[error] {
+    return Sequence[T](futures).Await() match {
+        case Success(_) => None[error]()
+        case Failure(e) => Some(e)
+    }
+}

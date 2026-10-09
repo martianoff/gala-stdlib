@@ -1,0 +1,70 @@
+package fs
+
+import (
+    "io"
+    "os"
+    "path/filepath"
+    . "martianoff/gala/collection_immutable"
+    . "martianoff/gala/resource"
+    . "martianoff/gala/std"
+)
+
+// WalkEntry pairs a filesystem path with the FileInfo snapshot for the
+// node living at that path. Returned by Walk; the Path is the full
+// path as produced by filepath.WalkDir (i.e. relative paths are kept
+// relative, absolute paths stay absolute).
+struct WalkEntry(
+    Path string,
+    Info FileInfo,
+)
+
+// CopyFile copies a single regular file from src to dst, streaming
+// via io.Copy so the file is never held in memory in full. dst is
+// created (or truncated if it exists) with `mode`. Fails if src
+// cannot be opened or if any IO error occurs along the way.
+//
+// Named CopyFile rather than Copy to avoid colliding with std.Copy,
+// the generic deep-copy helper exported as a prelude symbol.
+//
+// Each handle is released by resource.Using (GALA has no `defer`): the
+// close is guaranteed on every exit path and, being nested, runs LIFO —
+// dst closes before src.
+func CopyFile(src string, dst string, mode int) Try[Void] =
+    Try(os.Open(src)).FlatMap((srcF) =>
+        Using(srcF, (in) =>
+            Try(os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(mode)))
+                .FlatMap((dstF) =>
+                    Using(dstF, (out) =>
+                        Try(io.Copy(out, in)).Map((_) => Void())))))
+
+// Rename moves src to dst by delegating to os.Rename. Atomic on the
+// same filesystem; will fail across filesystems. Callers that need
+// cross-filesystem moves should compose Copy + RemoveAll explicitly —
+// we deliberately do not paper over that case.
+func Rename(src string, dst string) Try[Void] =
+    FromError(os.Rename(src, dst))
+
+// Walk returns every entry under `root`, recursively. The walk order
+// is filepath.WalkDir's order (lexical within each directory). The
+// root entry itself is included as the first element. A read error
+// at any level is captured as Failure.
+func Walk(root string) Try[Array[WalkEntry]] {
+    // filepath.WalkDir drives an imperative visitor (its callback returns
+    // error per the Go contract); accumulate into `entries`, then compose the
+    // walk's own error via FromError.Map rather than re-raising with .Get().
+    var entries = EmptyArray[WalkEntry]()
+    return FromError(filepath.WalkDir(root, (path string, d os.DirEntry, err error) => {
+        if err != nil { return err }
+        val info, infoErr = d.Info()
+        if infoErr != nil { return infoErr }
+        entries = entries.Append(WalkEntry(Path = path, Info = fromGoFileInfo(info)))
+        return nil
+    })).Map((_) => entries)
+}
+
+// Glob returns paths matching the shell-style pattern using
+// filepath.Glob semantics (`*`, `?`, `[abc]`). An empty result is
+// Success(empty Array), not Failure — "no matches" is not an error.
+// Failure is reserved for malformed patterns (filepath.ErrBadPattern).
+func Glob(pattern string) Try[Array[string]] =
+    Try(filepath.Glob(pattern)).Map((matches) => ArrayFromSlice(matches))

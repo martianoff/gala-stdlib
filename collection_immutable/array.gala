@@ -1,0 +1,1116 @@
+package collection_immutable
+
+import (
+    . "martianoff/gala/std"
+    "martianoff/gala/go_interop"
+    "martianoff/gala/go_builtins"
+)
+
+// Array is an immutable indexed sequence with effectively constant time operations.
+// It uses a 32-way branching trie structure (similar to Scala's Vector).
+//
+// Performance characteristics (eC = effectively constant, log32(n)):
+// - Head:    O(eC)
+// - Last:    O(eC)
+// - Tail:    O(eC)
+// - Init:    O(eC)
+// - Prepend: O(eC)
+// - Append:  O(eC)
+// - Lookup:  O(eC)
+// - Update:  O(eC)
+// - Length:  O(1) - cached
+
+// branchingFactor is the number of children per node (32 = 2^5)
+val branchingBits = 5
+val branchingFactor = 32
+val branchingMask = 31
+
+// arrayNode represents a node in the trie structure (internal).
+// Leaf nodes have nil children and store values directly.
+// Internal nodes have children and nil values.
+type arrayNode[T any] struct {
+    var children []*arrayNode[T]
+    var values   []T
+    isLeaf   bool
+}
+
+// Array represents an immutable indexed sequence.
+// Uses a prefix buffer for amortized O(1) prepend (Scala-inspired).
+type Array[T any] struct {
+    root     *arrayNode[T]
+    length   int           // Total logical length (prefix + tree)
+    depth    int
+    prefix   []T           // Prepended elements in forward order (prefix[0] is logical index 0)
+}
+
+// EmptyArray returns an empty Array.
+func EmptyArray[T any]() Array[T] {
+    var nilRoot *arrayNode[T] = nil
+    var emptyPrefix []T
+    return Array[T](root = nilRoot, length = 0, depth = 0, prefix = emptyPrefix)
+}
+
+// ArrayOf creates an Array from variadic arguments.
+// Example: ArrayOf[int](1, 2, 3) creates Array(1, 2, 3)
+func ArrayOf[T any](elements ...T) Array[T] = ArrayFromSlice(elements)
+
+// ArrayTabulate creates an Array of size n where each element is computed by f(index).
+// Uses arrayBuilder internally for O(n) construction.
+// Example: ArrayTabulate(5, (i) => i * 2) creates Array(0, 2, 4, 6, 8)
+func ArrayTabulate[T any](n int, f func(int) T) Array[T] {
+    var builder = newArrayBuilder[T]()
+    for i := 0; i < n; i++ {
+        builder.Add(f(i))
+    }
+    return builder.Result()
+}
+
+// ArrayFill creates an Array of size n where every element is the same value.
+// Uses arrayBuilder internally for O(n) construction.
+// Example: ArrayFill(3, "x") creates Array("x", "x", "x")
+func ArrayFill[T any](n int, value T) Array[T] {
+    var builder = newArrayBuilder[T]()
+    for i := 0; i < n; i++ {
+        builder.Add(value)
+    }
+    return builder.Result()
+}
+
+// ArrayFromSlice creates an Array from a slice. The elements are copied once, so
+// later changes to the slice do not affect the Array.
+func ArrayFromSlice[T any](elements []T) Array[T] = arrayFromOwnedSlice(go_interop.SliceCopy(elements))
+
+// arrayFromOwnedSlice builds an Array on top of elements without copying them:
+// each leaf is a window of the slice with its capacity clipped, so appending to
+// a leaf can never write into its neighbour. Every operation that changes a leaf
+// copies it first. Only pass a slice nothing else holds or changes afterwards.
+func arrayFromOwnedSlice[T any](elements []T) Array[T] {
+    val n = elements.Size()
+    if n == 0 {
+        return EmptyArray[T]()
+    }
+    var leaves = go_interop.SliceWithCapacity[*arrayNode[T]](chunkCount(n))
+    for i := 0; i < n; i += branchingFactor {
+        val values = go_interop.SliceClip(go_interop.Slice(elements, i, chunkEnd(i, n)))
+        leaves = go_interop.SliceAppend(leaves, &arrayNode[T](values = values, isLeaf = true))
+    }
+    return arrayFromLeaves(leaves, n)
+}
+
+// arrayFromLeaves builds the tree above leaves, which hold the elements in index
+// order with every leaf full except possibly the last, and returns the Array.
+// depth counts the levels from the leaves up, so a lone leaf is depth 1.
+func arrayFromLeaves[T any](leaves []*arrayNode[T], length int) Array[T] {
+    var level = leaves
+    var depth = 1
+    for level.Size() > 1 {
+        level = groupNodes(level)
+        depth++
+    }
+    var emptyPrefix []T
+    return Array[T](root = level[0], length = length, depth = depth, prefix = emptyPrefix)
+}
+
+// chunkCount is the number of branchingFactor-sized chunks needed to hold n items.
+func chunkCount(n int) int = (n + branchingMask) / branchingFactor
+
+// chunkEnd is the exclusive end of the chunk that starts at i, given n items.
+func chunkEnd(i int, n int) int = if (i + branchingFactor < n) i + branchingFactor else n
+
+// groupNodes builds the next tree level up: one parent per branchingFactor nodes,
+// each holding a capacity-clipped window of level, like the leaves.
+func groupNodes[T any](level []*arrayNode[T]) []*arrayNode[T] {
+    var parents = go_interop.SliceWithCapacity[*arrayNode[T]](chunkCount(level.Size()))
+    for i := 0; i < level.Size(); i += branchingFactor {
+        val children = go_interop.SliceClip(go_interop.Slice(level, i, chunkEnd(i, level.Size())))
+        parents = go_interop.SliceAppend(parents, &arrayNode[T](children = children, isLeaf = false))
+    }
+    return parents
+}
+
+// arrayBuilder builds an Array incrementally without intermediate slice conversion.
+// Uses Scala-inspired display arrays for O(1) amortized append.
+type arrayBuilder[T any] struct {
+    var display0 []T                 // Current leaf being built (up to 32 elements)
+    var display1 []*arrayNode[T]     // Completed leaf nodes
+    var display2 [][]*arrayNode[T]   // Groups of 32 leaf nodes
+    var length   int                 // Total elements added
+}
+
+// newArrayBuilder creates a new arrayBuilder.
+func newArrayBuilder[T any]() *arrayBuilder[T] {
+    var d0 []T
+    var d1 []*arrayNode[T]
+    var d2 [][]*arrayNode[T]
+    return &arrayBuilder[T](display0 = d0, display1 = d1, display2 = d2, length = 0)
+}
+
+// Add appends an element to the builder. O(1) amortized.
+func (b *arrayBuilder[T]) Add(elem T) {
+    b.display0 = go_interop.SliceAppend(b.display0, elem)
+    b.length++
+
+    // If display0 is full, flush to display1
+    if b.display0.Size() >= branchingFactor {
+        b.flushDisplay0()
+    }
+}
+
+// flushDisplay0 creates a leaf node from display0 and adds to display1.
+func (b *arrayBuilder[T]) flushDisplay0() {
+    if b.display0.Size() == 0 {
+        return
+    }
+    var leaf = &arrayNode[T](values = b.display0, isLeaf = true)
+    b.display1 = go_interop.SliceAppend(b.display1, leaf)
+    var newD0 []T
+    b.display0 = newD0
+
+    // If display1 is full, flush to display2
+    if b.display1.Size() >= branchingFactor {
+        b.flushDisplay1()
+    }
+}
+
+// flushDisplay1 groups display1 nodes and adds to display2.
+func (b *arrayBuilder[T]) flushDisplay1() {
+    if b.display1.Size() == 0 {
+        return
+    }
+    b.display2 = go_interop.SliceAppend(b.display2, b.display1)
+    var newD1 []*arrayNode[T]
+    b.display1 = newD1
+}
+
+// Result builds and returns the final Array.
+func (b *arrayBuilder[T]) Result() Array[T] {
+    if b.length == 0 {
+        return EmptyArray[T]()
+    }
+
+    // Flush any remaining elements in display0
+    if b.display0.Size() > 0 {
+        var leaf = &arrayNode[T](values = b.display0, isLeaf = true)
+        b.display1 = go_interop.SliceAppend(b.display1, leaf)
+    }
+
+    // If we only have display1 (no display2), build directly
+    if b.display2.Size() == 0 {
+        if b.display1.Size() == 1 {
+            // Single leaf node
+            var emptyPrefix []T
+            return Array[T](root = b.display1[0], length = b.length, depth = 1, prefix = emptyPrefix)
+        }
+        // Multiple leaves, need internal node
+        var root = &arrayNode[T](children = b.display1, isLeaf = false)
+        var emptyPrefix []T
+        return Array[T](root = root, length = b.length, depth = 2, prefix = emptyPrefix)
+    }
+
+    // We have display2 - need to build deeper tree
+    // First, add remaining display1 to display2
+    if b.display1.Size() > 0 {
+        b.display2 = go_interop.SliceAppend(b.display2, b.display1)
+    }
+
+    // Build internal nodes from display2 groups
+    var level2Nodes []*arrayNode[T]
+    for i := 0; i < b.display2.Size(); i++ {
+        var node = &arrayNode[T](children = b.display2[i], isLeaf = false)
+        level2Nodes = go_interop.SliceAppend(level2Nodes, node)
+    }
+
+    // Continue building up the tree. Each level2 node has leaf children, so a
+    // tree whose root is one of them has depth 2.
+    var currentLevel = level2Nodes
+    var depth = 2
+
+    for currentLevel.Size() > 1 {
+        var nextLevel []*arrayNode[T]
+        for i := 0; i < currentLevel.Size(); i += branchingFactor {
+            var end = i + branchingFactor
+            if end > currentLevel.Size() {
+                end = currentLevel.Size()
+            }
+            var children []*arrayNode[T]
+            for j := i; j < end; j++ {
+                children = go_interop.SliceAppend(children, currentLevel[j])
+            }
+            var node = &arrayNode[T](children = children, isLeaf = false)
+            nextLevel = go_interop.SliceAppend(nextLevel, node)
+        }
+        currentLevel = nextLevel
+        depth++
+    }
+
+    var emptyPrefix []T
+    return Array[T](root = currentLevel[0], length = b.length, depth = depth, prefix = emptyPrefix)
+}
+
+// IsEmpty returns true if the array is empty.
+func (a Array[T]) IsEmpty() bool = a.length == 0
+
+// NonEmpty returns true if the array is not empty.
+func (a Array[T]) NonEmpty() bool = a.length > 0
+
+// Length returns the number of elements. O(1) - cached.
+func (a Array[T]) Length() int = a.length
+
+// Size is an alias for Length.
+func (a Array[T]) Size() int = a.length
+
+// Helper function to calculate required depth for a given size.
+func requiredDepth(size int) int {
+    if size <= branchingFactor {
+        return 1
+    }
+    var d = 1
+    for capacity := branchingFactor; capacity < size; d++ {
+        capacity = capacity * branchingFactor
+    }
+    return d
+}
+
+// Helper to copy a node.
+func copyNode[T any](node *arrayNode[T]) *arrayNode[T] {
+    if node == nil {
+        return nil
+    }
+    var newNode = &arrayNode[T](isLeaf = node.isLeaf)
+    if node.isLeaf {
+        newNode.values = copySlice[T](node.values)
+    } else {
+        newNode.children = copyNodeSlice[T](node.children)
+    }
+    return newNode
+}
+
+// Helper to copy a slice.
+func copySlice[T any](src []T) []T {
+    var dst []T
+    for i := 0; i < src.Size(); i++ {
+        dst = go_interop.SliceAppend(dst, src[i])
+    }
+    return dst
+}
+
+// Helper to copy a node slice.
+func copyNodeSlice[T any](src []*arrayNode[T]) []*arrayNode[T] {
+    var dst []*arrayNode[T]
+    for i := 0; i < src.Size(); i++ {
+        dst = go_interop.SliceAppend(dst, src[i])
+    }
+    return dst
+}
+
+// Helper to get value at index from tree.
+func getFromNode[T any](node *arrayNode[T], index int, depth int) T {
+    if node.isLeaf {
+        return node.values[index & branchingMask]
+    }
+    var childIndex = (index >> (branchingBits * (depth - 1))) & branchingMask
+    return getFromNode[T](node.children[childIndex], index, depth - 1)
+}
+
+// Get returns the element at the given index. O(log32 n) = effectively constant.
+// Panics if index is out of bounds.
+func (a Array[T]) Get(index int) T {
+    if (index < 0) || (index >= a.length) {
+        go_builtins.Panic(f"Array.Get: index $index out of bounds [0, ${a.length})")
+    }
+
+    // Check if index is in prefix (prefix is stored in forward order)
+    var prefixLen = a.prefix.Size()
+    if index < prefixLen {
+        // Prefix stores elements in forward order: prefix[0] is logical index 0
+        return a.prefix[index]
+    }
+
+    // Otherwise, get from tree (adjusting index for prefix)
+    var treeIndex = index - prefixLen
+    return getFromNode[T](a.root, treeIndex, a.depth)
+}
+
+// GetOption returns the element at index wrapped in Option.
+func (a Array[T]) GetOption(index int) Option[T] {
+    if (index < 0) || (index >= a.length) {
+        return None[T]()
+    }
+    return Some[T](a.Get(index))
+}
+
+// Head returns the first element. O(log32 n) = effectively constant.
+// Panics if the array is empty.
+func (a Array[T]) Head() T {
+    if a.length == 0 {
+        go_builtins.Panic("Array.Head on empty array")
+    }
+    return a.Get(0)
+}
+
+// HeadOption returns the first element wrapped in Option.
+func (a Array[T]) HeadOption() Option[T] {
+    if a.length == 0 {
+        return None[T]()
+    }
+    return Some[T](a.Get(0))
+}
+
+// Last returns the last element. O(log32 n) = effectively constant.
+// Panics if the array is empty.
+func (a Array[T]) Last() T {
+    if a.length == 0 {
+        go_builtins.Panic("Array.Last on empty array")
+    }
+    return a.Get(a.length - 1)
+}
+
+// LastOption returns the last element wrapped in Option.
+func (a Array[T]) LastOption() Option[T] {
+    if a.length == 0 {
+        return None[T]()
+    }
+    return Some[T](a.Get(a.length - 1))
+}
+
+// Helper to update a value in the tree, returning new tree.
+func updateInNode[T any](node *arrayNode[T], index int, value T, depth int) *arrayNode[T] {
+    var newNode = copyNode[T](node)
+    var isNodeLeaf = newNode.isLeaf
+    if isNodeLeaf {
+        newNode.values[index & branchingMask] = value
+        return newNode
+    }
+    var childIndex = (index >> (branchingBits * (depth - 1))) & branchingMask
+    newNode.children[childIndex] = updateInNode[T](node.children[childIndex], index, value, depth - 1)
+    return newNode
+}
+
+// Updated returns a new array with the element at index replaced. O(log32 n).
+func (a Array[T]) Updated(index int, value T) Array[T] {
+    if (index < 0) || (index >= a.length) {
+        go_builtins.Panic(f"Array.Updated: index $index out of bounds [0, ${a.length})")
+    }
+
+    var prefixLen = a.prefix.Size()
+    if index < prefixLen {
+        // Update is in prefix - create new prefix with updated value
+        var newPrefix []T
+        for i := 0; i < prefixLen; i++ {
+            if i == index {
+                newPrefix = go_interop.SliceAppend(newPrefix, value)
+            } else {
+                newPrefix = go_interop.SliceAppend(newPrefix, a.prefix[i])
+            }
+        }
+        return Array[T](root = a.root, length = a.length, depth = a.depth, prefix = newPrefix)
+    }
+
+    // Update is in tree
+    var treeIndex = index - prefixLen
+    var newRoot = updateInNode[T](a.root, treeIndex, value, a.depth)
+    return Array[T](root = newRoot, length = a.length, depth = a.depth, prefix = a.prefix)
+}
+
+// Helper to append to tree, potentially growing it.
+func appendToTree[T any](root *arrayNode[T], index int, value T, depth int) Tuple[*arrayNode[T], int] {
+    var newDepth = depth
+    var newRoot = root
+
+    // Check if we need to grow the tree
+    var maxCapacity = 1
+    for i := 0; i < depth; i++ {
+        maxCapacity = maxCapacity * branchingFactor
+    }
+
+    if index >= maxCapacity {
+        // Need to add a new level
+        var children []*arrayNode[T]
+        children = go_interop.SliceAppend(children, root)
+        newRoot = &arrayNode[T](children = children, isLeaf = false)
+        newDepth = depth + 1
+        return appendToTree[T](newRoot, index, value, newDepth)
+    }
+
+    return Tuple[*arrayNode[T], int](V1 = appendToNode[T](root, index, value, depth), V2 = depth)
+}
+
+// Helper to append to a node at specific depth.
+func appendToNode[T any](node *arrayNode[T], index int, value T, depth int) *arrayNode[T] {
+    if depth == 1 {
+        // Leaf level
+        if node == nil {
+            var values []T
+            values = go_interop.SliceAppend(values, value)
+            var newNode = &arrayNode[T](values = values, isLeaf = true)
+            return newNode
+        }
+        var newNode = copyNode[T](node)
+        newNode.values = go_interop.SliceAppend(newNode.values, value)
+        return newNode
+    }
+
+    // Internal node
+    var childIndex = (index >> (branchingBits * (depth - 1))) & branchingMask
+
+    if node == nil {
+        var children []*arrayNode[T]
+        for j := 0; j <= childIndex; j++ {
+            children = go_interop.SliceAppend(children, nil)
+        }
+        var newNode = &arrayNode[T](children = children, isLeaf = false)
+        newNode.children[childIndex] = appendToNode[T](nil, index, value, depth - 1)
+        return newNode
+    }
+
+    var newNode = copyNode[T](node)
+
+    // Expand children array if needed
+    for newNode.children.Size() <= childIndex {
+        newNode.children = go_interop.SliceAppend(newNode.children, nil)
+    }
+
+    // Get existing child if it exists, otherwise nil
+    var existingChild *arrayNode[T] = nil
+    if childIndex < node.children.Size() {
+        existingChild = node.children[childIndex]
+    }
+    newNode.children[childIndex] = appendToNode[T](existingChild, index, value, depth - 1)
+    return newNode
+}
+
+// Append adds an element to the end. O(log32 n) = effectively constant.
+func (a Array[T]) Append(value T) Array[T] {
+    // Calculate tree length (excluding prefix)
+    var treeLen = a.length - a.prefix.Size()
+
+    if treeLen == 0 {
+        var values []T
+        values = go_interop.SliceAppend(values, value)
+        var leaf = &arrayNode[T](values = values, isLeaf = true)
+        return Array[T](root = leaf, length = a.length + 1, depth = 1, prefix = a.prefix)
+    }
+
+    var result = appendToTree[T](a.root, treeLen, value, a.depth)
+    var newRoot = result.V1
+    var newDepth = result.V2
+    return Array[T](root = newRoot, length = a.length + 1, depth = newDepth, prefix = a.prefix)
+}
+
+// AppendAll appends all elements from another array.
+func (a Array[T]) AppendAll(other Array[T]) Array[T] {
+    var builder = newArrayBuilder[T]()
+    for i := 0; i < a.length; i++ {
+        builder.Add(a.Get(i))
+    }
+    for i := 0; i < other.length; i++ {
+        builder.Add(other.Get(i))
+    }
+    return builder.Result()
+}
+
+// Prepend adds an element to the front. O(1) amortized - uses prefix buffer.
+// The prefix buffer is consolidated into the tree when it reaches 32 elements.
+func (a Array[T]) Prepend(value T) Array[T] {
+    // Create new prefix with value at front (forward order: prefix[0] is logical index 0)
+    var newPrefix []T
+    newPrefix = go_interop.SliceAppend(newPrefix, value)
+    for i := 0; i < a.prefix.Size(); i++ {
+        newPrefix = go_interop.SliceAppend(newPrefix, a.prefix[i])
+    }
+
+    // If prefix is getting too large, consolidate into tree
+    if newPrefix.Size() >= branchingFactor {
+        return a.consolidateWithPrefix(newPrefix)
+    }
+
+    // Otherwise, just update prefix
+    return Array[T](root = a.root, length = a.length + 1, depth = a.depth, prefix = newPrefix)
+}
+
+// consolidateWithPrefix merges the prefix buffer into a new tree.
+// Uses arrayBuilder to avoid intermediate slice conversion.
+func (a Array[T]) consolidateWithPrefix(newPrefix []T) Array[T] {
+    var builder = newArrayBuilder[T]()
+
+    // Add prefix elements (already in forward order)
+    for i := 0; i < newPrefix.Size(); i++ {
+        builder.Add(newPrefix[i])
+    }
+
+    // Add tree elements
+    var treeLen = a.length - a.prefix.Size()
+    for i := 0; i < treeLen; i++ {
+        builder.Add(getFromNode[T](a.root, i, a.depth))
+    }
+
+    return builder.Result()
+}
+
+// PrependAll prepends all elements from another array.
+func (a Array[T]) PrependAll(other Array[T]) Array[T] = other.AppendAll(a)
+
+// Tail returns all elements except the first. O(n) for rebuilding.
+func (a Array[T]) Tail() Array[T] {
+    if a.length == 0 {
+        go_builtins.Panic("Array.Tail on empty array")
+    }
+    return a.Drop(1)
+}
+
+// TailOption returns the tail wrapped in Option.
+func (a Array[T]) TailOption() Option[Array[T]] {
+    if a.length == 0 {
+        return None[Array[T]]()
+    }
+    return Some[Array[T]](a.Tail())
+}
+
+// Init returns all elements except the last. O(n) for rebuilding.
+func (a Array[T]) Init() Array[T] {
+    if a.length == 0 {
+        go_builtins.Panic("Array.Init on empty array")
+    }
+    return a.Take(a.length - 1)
+}
+
+// Take returns the first n elements. Uses arrayBuilder.
+func (a Array[T]) Take(n int) Array[T] {
+    if n <= 0 {
+        return EmptyArray[T]()
+    }
+    if n >= a.length {
+        return a
+    }
+    var builder = newArrayBuilder[T]()
+    for i := 0; i < n; i++ {
+        builder.Add(a.Get(i))
+    }
+    return builder.Result()
+}
+
+// Drop returns all elements except the first n. Uses arrayBuilder.
+func (a Array[T]) Drop(n int) Array[T] {
+    if n <= 0 {
+        return a
+    }
+    if n >= a.length {
+        return EmptyArray[T]()
+    }
+    var builder = newArrayBuilder[T]()
+    for i := n; i < a.length; i++ {
+        builder.Add(a.Get(i))
+    }
+    return builder.Result()
+}
+
+// TakeWhile returns the longest prefix of elements that satisfy the predicate.
+// Uses arrayBuilder.
+func (a Array[T]) TakeWhile(p func(T) bool) Array[T] {
+    var builder = newArrayBuilder[T]()
+    for i := 0; i < a.length; i++ {
+        var elem = a.Get(i)
+        if !p(elem) {
+            return builder.Result()
+        }
+        builder.Add(elem)
+    }
+    return builder.Result()
+}
+
+// DropWhile drops the longest prefix of elements that satisfy the predicate.
+func (a Array[T]) DropWhile(p func(T) bool) Array[T] {
+    var start = 0
+    for start < a.length && p(a.Get(start)) {
+        start++
+    }
+    return a.Drop(start)
+}
+
+// Slice returns a subarray from start (inclusive) to end (exclusive).
+func (a Array[T]) Slice(var start int, var end int) Array[T] {
+    if start < 0 {
+        start = 0
+    }
+    if end > a.length {
+        end = a.length
+    }
+    if start >= end {
+        return EmptyArray[T]()
+    }
+    return a.Drop(start).Take(end - start)
+}
+
+// Contains checks if the array contains the given element. O(n).
+func (a Array[T]) Contains(elem T) bool {
+    for i := 0; i < a.length; i++ {
+        if Equal(a.Get(i), elem) {
+            return true
+        }
+    }
+    return false
+}
+
+// IndexOf returns the index of the first occurrence of elem, or -1 if not found.
+func (a Array[T]) IndexOf(elem T) int {
+    for i := 0; i < a.length; i++ {
+        if Equal(a.Get(i), elem) {
+            return i
+        }
+    }
+    return -1
+}
+
+// LastIndexOf returns the index of the last occurrence of elem, or -1 if not found.
+func (a Array[T]) LastIndexOf(elem T) int {
+    for i := a.length - 1; i >= 0; i-- {
+        if Equal(a.Get(i), elem) {
+            return i
+        }
+    }
+    return -1
+}
+
+// Reverse returns a new array with elements in reverse order. Uses arrayBuilder.
+func (a Array[T]) Reverse() Array[T] {
+    var builder = newArrayBuilder[T]()
+    for i := a.length - 1; i >= 0; i-- {
+        builder.Add(a.Get(i))
+    }
+    return builder.Result()
+}
+
+// Map applies a function to each element and returns a new array.
+// Uses arrayBuilder to avoid intermediate slice conversion.
+func (a Array[T]) Map[U any](f func(T) U) Array[U] {
+    var builder = newArrayBuilder[U]()
+    for i := 0; i < a.length; i++ {
+        builder.Add(f(a.Get(i)))
+    }
+    return builder.Result()
+}
+
+// FlatMap applies a function that returns an array to each element and flattens.
+// Uses arrayBuilder to avoid intermediate slice conversion.
+func (a Array[T]) FlatMap[U any](f func(T) Array[U]) Array[U] {
+    var builder = newArrayBuilder[U]()
+    for i := 0; i < a.length; i++ {
+        var inner = f(a.Get(i))
+        for j := 0; j < inner.Length(); j++ {
+            builder.Add(inner.Get(j))
+        }
+    }
+    return builder.Result()
+}
+
+// Collect applies a partial function to each element and collects the results.
+// Elements for which the function returns None are filtered out.
+// Uses arrayBuilder to avoid intermediate slice conversion.
+func (a Array[T]) Collect[U any](pf func(T) Option[U]) Array[U] {
+    var builder = newArrayBuilder[U]()
+    for i := 0; i < a.length; i++ {
+        val opt = pf(a.Get(i))
+        if opt.IsDefined() {
+            builder.Add(opt.Get())
+        }
+    }
+    return builder.Result()
+}
+
+// Concat returns a new array containing all elements of this array followed by
+// all elements of the other iterable. Uses arrayBuilder.
+func (a Array[T]) Concat(other Iterable[T]) Array[T] {
+    var builder = newArrayBuilder[T]()
+    for i := 0; i < a.length; i++ {
+        builder.Add(a.Get(i))
+    }
+    other.ForEach((elem T) => {
+        builder.Add(elem)
+    })
+    return builder.Result()
+}
+
+// Filter returns a new array with only elements that satisfy the predicate.
+// Uses arrayBuilder to avoid intermediate slice conversion.
+func (a Array[T]) Filter(p func(T) bool) Array[T] {
+    var builder = newArrayBuilder[T]()
+    for i := 0; i < a.length; i++ {
+        var elem = a.Get(i)
+        if p(elem) {
+            builder.Add(elem)
+        }
+    }
+    return builder.Result()
+}
+
+// FilterNot returns a new array with elements that do not satisfy the predicate.
+func (a Array[T]) FilterNot(p func(T) bool) Array[T] = a.Filter((elem T) => !p(elem))
+
+// Partition splits the array into two arrays based on a predicate.
+func (a Array[T]) Partition(p func(T) bool) Tuple[Array[T], Array[T]] {
+    val left = a.Filter(p)
+    val right = a.FilterNot(p)
+    return (left, right)
+}
+
+// FoldLeft applies a binary operator from left to right.
+func (a Array[T]) FoldLeft[U any](initial U, f func(U, T) U) U {
+    var acc = initial
+    for i := 0; i < a.length; i++ {
+        acc = f(acc, a.Get(i))
+    }
+    return acc
+}
+
+// FoldRight applies a binary operator from right to left.
+func (a Array[T]) FoldRight[U any](initial U, f func(T, U) U) U {
+    var acc = initial
+    for i := a.length - 1; i >= 0; i-- {
+        acc = f(a.Get(i), acc)
+    }
+    return acc
+}
+
+// Reduce applies a binary operator from left to right, starting with the first element.
+// Panics if the array is empty.
+func (a Array[T]) Reduce(f func(T, T) T) T {
+    if a.length == 0 {
+        go_builtins.Panic("Array.Reduce on empty array")
+    }
+    var tail = a.Tail()
+    var head = a.Head()
+    return Array_FoldLeft[T](tail, head, f)
+}
+
+// ReduceOption is like Reduce but returns None for empty array.
+func (a Array[T]) ReduceOption(f func(T, T) T) Option[T] {
+    if a.length == 0 {
+        return None[T]()
+    }
+    return Some[T](a.Reduce(f))
+}
+
+// ForEach applies a function to each element for side effects.
+func (a Array[T]) ForEach(f func(T)) {
+    for i := 0; i < a.length; i++ {
+        f(a.Get(i))
+    }
+}
+
+// Exists returns true if any element satisfies the predicate.
+func (a Array[T]) Exists(p func(T) bool) bool {
+    for i := 0; i < a.length; i++ {
+        if p(a.Get(i)) {
+            return true
+        }
+    }
+    return false
+}
+
+// ForAll returns true if all elements satisfy the predicate.
+func (a Array[T]) ForAll(p func(T) bool) bool {
+    for i := 0; i < a.length; i++ {
+        if !p(a.Get(i)) {
+            return false
+        }
+    }
+    return true
+}
+
+// Find returns the first element that satisfies the predicate.
+func (a Array[T]) Find(p func(T) bool) Option[T] {
+    for i := 0; i < a.length; i++ {
+        var elem = a.Get(i)
+        if p(elem) {
+            return Some[T](elem)
+        }
+    }
+    return None[T]()
+}
+
+// FindLast returns the last element that satisfies the predicate.
+func (a Array[T]) FindLast(p func(T) bool) Option[T] {
+    for i := a.length - 1; i >= 0; i-- {
+        var elem = a.Get(i)
+        if p(elem) {
+            return Some[T](elem)
+        }
+    }
+    return None[T]()
+}
+
+// Count returns the number of elements satisfying the predicate.
+func (a Array[T]) Count(p func(T) bool) int {
+    return a.FoldLeft[int](0, (acc int, elem T) => {
+        if p(elem) {
+            return acc + 1
+        }
+        return acc
+    })
+}
+
+// Zip combines two arrays into an array of tuples. Result length is the minimum.
+func (a Array[T]) Zip[U any](other Array[U]) Array[Tuple[T, U]] {
+    var minLen = a.length
+    if other.length < minLen {
+        minLen = other.length
+    }
+    var builder = newArrayBuilder[Tuple[T, U]]()
+    for i := 0; i < minLen; i++ {
+        builder.Add((a.Get(i), other.Get(i)))
+    }
+    return builder.Result()
+}
+
+// ZipWithIndex pairs each element with its index.
+func (a Array[T]) ZipWithIndex() Array[Tuple[T, int]] {
+    var builder = newArrayBuilder[Tuple[T, int]]()
+    for i := 0; i < a.length; i++ {
+        builder.Add((a.Get(i), i))
+    }
+    return builder.Result()
+}
+
+// Distinct returns a new array with duplicate elements removed.
+func (a Array[T]) Distinct() Array[T] {
+    var builder = newArrayBuilder[T]()
+    var seen = EmptyArray[T]()
+    for i := 0; i < a.length; i++ {
+        var elem = a.Get(i)
+        if !seen.Contains(elem) {
+            builder.Add(elem)
+            seen = seen.Append(elem)
+        }
+    }
+    return builder.Result()
+}
+
+// SplitAt splits the array at the given index.
+func (a Array[T]) SplitAt(n int) Tuple[Array[T], Array[T]] = (a.Take(n), a.Drop(n))
+
+// Span splits the array into a prefix/suffix pair according to a predicate.
+// The first element contains the longest prefix of elements that satisfy p.
+func (a Array[T]) Span(p func(T) bool) Tuple[Array[T], Array[T]] {
+    var idx = 0
+    for idx < a.length && p(a.Get(idx)) {
+        idx++
+    }
+    return a.SplitAt(idx)
+}
+
+// PartitionMap applies a function to each element and partitions results into Left and Right.
+func (a Array[T]) PartitionMap[A any, B any](f func(T) Either[A, B]) Tuple[Array[A], Array[B]] {
+    var leftBuilder = newArrayBuilder[A]()
+    var rightBuilder = newArrayBuilder[B]()
+    for i := 0; i < a.length; i++ {
+        f(a.Get(i)) match {
+            case Left(l) => leftBuilder.Add(l)
+            case Right(r) => rightBuilder.Add(r)
+        }
+    }
+    return (leftBuilder.Result(), rightBuilder.Result())
+}
+
+// GroupBy partitions this array into a map of arrays according to a discriminator function.
+func (a Array[T]) GroupBy[K comparable](f func(T) K) map[K]Array[T] {
+    var result = go_interop.MapEmpty[K, Array[T]]()
+    for i := 0; i < a.length; i++ {
+        val elem = a.Get(i)
+        val key = f(elem)
+        val existing = result[key]
+        result[key] = existing.Append(elem)
+    }
+    return result
+}
+
+// GroupMap partitions elements and maps values according to discriminator and value functions.
+func (a Array[T]) GroupMap[K comparable, V any](key func(T) K, value func(T) V) map[K]Array[V] {
+    var result = go_interop.MapEmpty[K, Array[V]]()
+    for i := 0; i < a.length; i++ {
+        val elem = a.Get(i)
+        val k = key(elem)
+        val v = value(elem)
+        val existing = result[k]
+        result[k] = existing.Append(v)
+    }
+    return result
+}
+
+// GroupMapReduce partitions elements, maps values, and reduces them with a combining function.
+func (a Array[T]) GroupMapReduce[K comparable, V any](key func(T) K, value func(T) V, reduce func(V, V) V) map[K]V {
+    var result = go_interop.MapEmpty[K, V]()
+    var seen = go_interop.MapEmpty[K, bool]()
+    for i := 0; i < a.length; i++ {
+        val elem = a.Get(i)
+        val k = key(elem)
+        val v = value(elem)
+        if seen[k] {
+            result[k] = reduce(result[k], v)
+        } else {
+            result[k] = v
+            seen[k] = true
+        }
+    }
+    return result
+}
+
+// Grouped splits the array into groups of size n.
+func (a Array[T]) Grouped(n int) Array[Array[T]] {
+    if n <= 0 {
+        go_builtins.Panic("Array.Grouped: group size must be positive")
+    }
+    var builder = newArrayBuilder[Array[T]]()
+    for i := 0; i < a.length; i += n {
+        var end = i + n
+        if end > a.length {
+            end = a.length
+        }
+        builder.Add(a.Slice(i, end))
+    }
+    return builder.Result()
+}
+
+// Sliding returns a sliding window over the array.
+func (a Array[T]) Sliding(size int) Array[Array[T]] {
+    if size <= 0 {
+        go_builtins.Panic("Array.Sliding: window size must be positive")
+    }
+    if a.length < size {
+        return EmptyArray[Array[T]]()
+    }
+    var builder = newArrayBuilder[Array[T]]()
+    var limit = a.length - size
+    for i := 0; i <= limit; i++ {
+        builder.Add(a.Slice(i, i + size))
+    }
+    return builder.Result()
+}
+
+// ToGoSlice converts the array to a Go slice. The slice is a fresh copy the caller owns.
+func (a Array[T]) ToGoSlice() []T {
+    val withPrefix = go_interop.SliceAppendAll(go_interop.SliceWithCapacity[T](a.length), a.prefix)
+    return appendLeaves(withPrefix, a.root)
+}
+
+// appendLeaves appends every element under node to dst in index order, a whole
+// leaf at a time rather than descending from the root once per element.
+func appendLeaves[T any](dst []T, node *arrayNode[T]) []T {
+    if node == nil {
+        return dst
+    }
+    if node.isLeaf {
+        return go_interop.SliceAppendAll(dst, node.values)
+    }
+    var out = dst
+    for i := 0; i < node.children.Size(); i++ {
+        out = appendLeaves(out, node.children[i])
+    }
+    return out
+}
+
+// ToList converts the array to a List.
+func (a Array[T]) ToList() List[T] {
+    var result = emptyList[T]()
+    for i := a.length - 1; i >= 0; i-- {
+        result = consList[T](a.Get(i), result)
+    }
+    return result
+}
+
+// String returns a string representation of the array.
+func (a Array[T]) String() string {
+    if a.length == 0 {
+        return "Array()"
+    }
+    var result = "Array("
+    for i := 0; i < a.length; i++ {
+        if i > 0 {
+            result = result + ", "
+        }
+        result = result + s"${a.Get(i)}"
+    }
+    return result + ")"
+}
+
+// MkString joins elements into a string with separator.
+func (a Array[T]) MkString(sep string) string {
+    if a.length == 0 {
+        return ""
+    }
+    var result = ""
+    for i := 0; i < a.length; i++ {
+        if i > 0 {
+            result = result + sep
+        }
+        result = result + s"${a.Get(i)}"
+    }
+    return result
+}
+
+// === Sorting ===
+
+// lessToCompare orders x and y by less as a three-way comparison. If less reports
+// true both ways (a non-strict comparator such as <=), x and y count as equal, so
+// the sort keeps them in their original order.
+func lessToCompare[T any](less func(T, T) bool, x T, y T) int =
+    if (less(x, y)) (if (less(y, x)) 0 else -1) else if (less(y, x)) 1 else 0
+
+// Sorted returns a new array with elements sorted in natural order.
+// Elements must be primitive types or implement std.Ordered[T].
+// The sort is stable: equal elements keep their original relative order.
+func (a Array[T]) Sorted() Array[T] {
+    if a.length <= 1 {
+        return a
+    }
+    val elements = a.ToGoSlice()
+    go_interop.SliceSortStable(elements, (i, j) => CompareValues(elements[i], elements[j]))
+    return arrayFromOwnedSlice(elements)
+}
+
+// SortWith returns a new array sorted using the given comparison function.
+// The function should return true if x should come before y; it should be a strict
+// ordering (use <, not <=).
+// The sort is stable: elements that compare equal keep their original relative order.
+func (a Array[T]) SortWith(less func(T, T) bool) Array[T] {
+    if a.length <= 1 {
+        return a
+    }
+    val elements = a.ToGoSlice()
+    go_interop.SliceSortStable(elements, (i, j) => lessToCompare(less, elements[i], elements[j]))
+    return arrayFromOwnedSlice(elements)
+}
+
+// SortBy returns a new array sorted by a key extracted from each element.
+// Keys must be primitive types or implement std.Ordered.
+// The sort is stable: elements with equal keys keep their original relative order.
+// f runs once per element: keys are computed up front, not on every comparison.
+func (a Array[T]) SortBy[K comparable](f func(T) K) Array[T] {
+    if a.length <= 1 {
+        return a
+    }
+    val elements = a.ToGoSlice()
+    val keys = go_interop.SliceWithSize[K](a.length)
+    for i := 0; i < a.length; i++ {
+        keys[i] = f(elements[i])
+    }
+    go_interop.SliceSortStable(elements, (i, j) => CompareValues(keys[i], keys[j]))
+    return arrayFromOwnedSlice(elements)
+}
+
+// SeqDrop implements the Seq interface for sequence pattern matching.
+// Returns the array with the first n elements removed.
+func (a Array[T]) SeqDrop(n int) any = a.Drop(n)
+
+// ArrayEmpty extractor for pattern matching
+type ArrayEmpty struct {}
+func (ae ArrayEmpty) Unapply(a any) Option[bool] = a match {
+    case arr: Array[_] if arr.length == 0 => Some[bool](true)
+    case _ => None[bool]()
+}
+
+// ArrayNonEmpty extractor for pattern matching
+type ArrayNonEmpty struct {}
+func (ane ArrayNonEmpty) Unapply(a any) Option[any] = a match {
+    case arr: Array[_] if arr.length > 0 => Some[any](arr)
+    case _ => None[any]()
+}

@@ -1,0 +1,149 @@
+package test
+
+import (
+    "os"
+    "time"
+)
+
+// T is the test context, similar to Go's *testing.T.
+// It tracks test state and provides assertion and logging methods.
+type T struct {
+    name     string
+    failed   bool
+    skipped  bool
+}
+
+// newT creates a new test context with the given name.
+func newT(name string) T {
+    return T(name = name, failed = false, skipped = false)
+}
+
+// Name returns the name of the test.
+func (t T) Name() string = t.name
+
+// Failed returns whether the test has failed.
+func (t T) Failed() bool = t.failed
+
+// Skipped returns whether the test was skipped.
+func (t T) Skipped() bool = t.skipped
+
+// Fail marks the test as failed.
+func (t T) Fail() T {
+    return T(name = t.name, failed = true, skipped = t.skipped)
+}
+
+// Skip marks the test as skipped.
+func (t T) Skip() T {
+    return T(name = t.name, failed = t.failed, skipped = true)
+}
+
+// Log prints a message to the test output.
+func (t T) Log(msg string) {
+    Println(s"    ${msg}")
+}
+
+// Error logs an error message and marks the test as failed.
+func (t T) Error(msg string) T {
+    Println(s"    ERROR: ${msg}")
+    return T(name = t.name, failed = true, skipped = t.skipped)
+}
+
+// Fatal logs an error message, marks the test as failed, and stops execution.
+func (t T) Fatal(msg string) {
+    Println(s"    FATAL: ${msg}")
+    go_builtins.Panic(s"Test ${t.name} fatal error: ${msg}")
+}
+
+// Run runs a subtest with the given name and function.
+// This enables table-driven testing patterns.
+// Panics in subtests are recovered and reported as failures.
+func (t T) Run(name string, f func(T) T) T {
+    val subT = newT(t.name + "/" + name)
+    Println(s"=== RUN   ${subT.name}")
+
+    val start = time.Now()
+    val result = runTest(subT, f)
+    val elapsed = time.Since(start)
+
+    if result.failed {
+        Println(f"--- FAIL: ${subT.name} (${elapsed.Seconds()}%.3fs)")
+        return T(name = t.name, failed = true, skipped = t.skipped)
+    } else if result.skipped {
+        Println(f"--- SKIP: ${subT.name} (${elapsed.Seconds()}%.3fs)")
+        return t
+    } else {
+        Println(f"--- PASS: ${subT.name} (${elapsed.Seconds()}%.3fs)")
+        return t
+    }
+}
+
+// runTest runs a test function with panic recovery.
+// If the function panics, the panic is caught and reported as a test failure.
+func runTest(t T, f func(T) T) T {
+    val result = Try[T](() => f(t))
+    return result match {
+        case Success(v) => v
+        case Failure(e) => t.Error(s"PANIC: $e")
+    }
+}
+
+// ============================================================================
+// Test Runner
+// ============================================================================
+
+// TestFunc represents a test function that takes a T.
+type TestFunc struct {
+    Name string
+    F    func(T) T
+}
+
+// Run executes the test function and returns the result.
+func (tf TestFunc) Run() T {
+    val t = newT(tf.Name)
+    Println(s"=== RUN   ${t.name}")
+
+    val start = time.Now()
+    val result = runTest(t, tf.F)
+    val elapsed = time.Since(start)
+
+    // Print result
+    if result.failed {
+        Println(f"--- FAIL: ${t.name} (${elapsed.Seconds()}%.3fs)")
+    } else if result.skipped {
+        Println(f"--- SKIP: ${t.name} (${elapsed.Seconds()}%.3fs)")
+    } else {
+        Println(f"--- PASS: ${t.name} (${elapsed.Seconds()}%.3fs)")
+    }
+    return result
+}
+
+// RunTests runs all provided test functions and exits with appropriate code.
+// This is the main entry point for running tests.
+func RunTests(tests ...TestFunc) {
+    var passed = 0
+    var failed = 0
+    var skipped = 0
+
+    Println("=== STARTING TESTS ===")
+    for i := 0; i < tests.Size(); i++ {
+        val test = tests[i]
+        val result = test.Run()
+        if result.failed {
+            failed++
+        } else if result.skipped {
+            skipped++
+        } else {
+            passed++
+        }
+    }
+
+    Println()
+    Println("=== RESULTS ===")
+    Println(s"Passed: ${passed}, Failed: ${failed}, Skipped: ${skipped}")
+
+    if failed > 0 {
+        Println("FAIL")
+        os.Exit(1)
+    }
+    Println("PASS")
+}
