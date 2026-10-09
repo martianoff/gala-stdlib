@@ -1,0 +1,118 @@
+package std
+
+// FieldEncoder is the format-neutral interface used by the transpiler-generated
+// StructMeta[T].EncodeFields method to serialize a struct's fields.
+//
+// Format-specific encoders (JsonEncoderImpl, YamlEncoderImpl, etc.) implement
+// this interface. The transpiler emits fully-typed per-field dispatch against
+// it — no `any`, no reflection, no runtime type assertions on user data.
+//
+// The generated code writes int8..int32 through WriteInt64, every unsigned
+// kind through WriteUint64, and float32 through WriteFloat32 (so a format can
+// print it in its shortest float32 form). An encoder panics on a value its
+// format cannot represent — JSON's NaN and infinities, for instance — which
+// the codec's Encode turns into a Failure.
+type FieldEncoder interface {
+    WriteKey(name string)
+    WriteString(v string)
+    WriteInt(v int)
+    WriteInt64(v int64)
+    WriteUint64(v uint64)
+    WriteFloat64(v float64)
+    WriteFloat32(v float32)
+    WriteBool(v bool)
+    WriteRune(v rune)
+    WriteNull()
+    WriteStartArray()
+    WriteEndArray()
+    WriteStartObject()
+    WriteEndObject()
+}
+
+// FieldDecoder is the format-neutral interface used by the transpiler-generated
+// StructMeta[T].DecodeFields method to reconstruct a struct from a stream.
+//
+// Format-specific decoders (JsonDecoderImpl, YamlDecoderImpl, etc.) implement
+// this interface.  Method return types are the raw primitive values (not
+// Try[T]), so the transpiler emits straight-line typed field reads.  Errors
+// surface through the decoder's own state (panic is the default; sticky
+// error flags are an implementation choice) — reading from a failed
+// decoder must be safe.
+type FieldDecoder interface {
+    ReadKey() string
+    ReadString() string
+    ReadInt() int
+    ReadInt64() int64
+    // ReadIntN reads a signed integer that must fit in bitSize bits (8, 16,
+    // 32 or 64); an out-of-range value is a decode error, never a wrap.
+    ReadIntN(bitSize int) int64
+    // ReadUintN reads an unsigned integer that must fit in bitSize bits (8,
+    // 16, 32 or 64; 0 is the platform uint size); negative or out-of-range
+    // values are decode errors.
+    ReadUintN(bitSize int) uint64
+    ReadFloat64() float64
+    // ReadFloat32 reads a float that must be representable as a finite
+    // float32; a literal that overflows it is a decode error.
+    ReadFloat32() float32
+    ReadBool() bool
+    ReadRune() rune
+    IsNull() bool
+    ReadNull()
+    StartArray()
+    EndArray()
+    HasMoreElements() bool
+    StartObject()
+    EndObject()
+    HasMoreFields() bool
+    Skip()
+}
+
+// StructMeta[T] is the generic interface every transpiler-emitted
+// _StructMeta_T type satisfies.
+//
+// The transpiler auto-injects a _StructMeta_T{} value whenever a
+// generic Apply method (e.g. on a library `Codec[T]`) declares its
+// first parameter as StructMeta[T].  This keeps the user call site
+// ergonomic (`Codec[Person](SnakeCase())`) while the underlying
+// dispatch is fully typed — no `any`, no runtime type assertions on
+// user data.
+// The `naming` parameter on EncodeFields/DecodeFields is the GALA-field-name
+// (PascalCase) to serialized-key converter used for nested struct dispatch.
+// The generated EncodeFields/DecodeFields uses the precomputed nameFn/omitFn/
+// lookup for *its own* fields (which already account for Rename/Omit/Naming
+// at the top level), and constructs fresh per-type nameFn/omitFn/lookup for
+// any nested struct fields by composing `naming` with the inner struct's
+// FieldName.  This propagates the naming convention into nested decodes
+// without giving the std interface a dependency on json/yaml's `Naming`
+// sealed type.
+//
+// FieldIsEmpty reports whether field i of t holds its empty value — the test
+// behind a codec's OmitEmpty. Empty is: "" for a string kind, 0 for a numeric
+// kind (rune included), false for bool, None for an Option, and no elements
+// for an Array, List or HashMap. A nested struct is never empty (as in Go's
+// encoding/json). An index out of range is not empty.
+type StructMeta[T any] interface {
+    NumFields() int
+    FieldName(i int) string
+    EncodeFields(w FieldEncoder, t T, nameFn func(int) string, omitFn func(int) bool, naming func(string) string)
+    DecodeFields(r FieldDecoder, lookup func(string) int, naming func(string) string) T
+    FieldIsEmpty(t T, i int) bool
+}
+
+// ValueMeta[T] is the generic interface every transpiler-emitted
+// _ValueMeta_X type satisfies. Where StructMeta[T] describes the fields of a
+// struct, ValueMeta[T] describes a whole value of any shape a codec field can
+// have: a scalar kind (or an alias / Go named type over one), a struct, or an
+// Option, Array, List or HashMap[string, _] of those, nested to any depth. It
+// is what lets a codec read and write a document whose root is not an object
+// — `[1,2,3]`, `[{"id":1}]`, `42`, `"abc"`.
+//
+// It is auto-injected exactly like StructMeta[T]: a generic Apply method that
+// declares ValueMeta[T] as its first parameter receives a generated
+// _ValueMeta_X{} value. The encoding is the one a field of type T gets, so a
+// value and a field never disagree. `naming` converts GALA field names to
+// serialized keys for any struct reached inside the value.
+type ValueMeta[T any] interface {
+    EncodeValue(w FieldEncoder, v T, naming func(string) string)
+    DecodeValue(r FieldDecoder, naming func(string) string) T
+}

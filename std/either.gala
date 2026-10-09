@@ -1,0 +1,106 @@
+package std
+
+import . "martianoff/gala/go_builtins"
+
+// Either represents a value of one of two possible types (a disjoint union).
+// An instance of Either is an instance of either Left or Right.
+sealed type Either[A any, B any] {
+    case Left(LeftValue A)
+    case Right(RightValue B)
+}
+
+// IsLeft returns true if this is a Left, false otherwise.
+func (e Either[A, B]) IsLeft() bool = e.isLeft()
+
+// IsRight returns true if this is a Right, false otherwise.
+func (e Either[A, B]) IsRight() bool = e.isRight()
+
+// isLeft returns true if this is a Left, false otherwise.
+func isLeft(e any) bool = e match {
+    case ei: Either[_, _] => ei.isLeft()
+    case _ => false
+}
+
+// isRight returns true if this is a Right, false otherwise.
+func isRight(e any) bool = e match {
+    case ei: Either[_, _] => ei.isRight()
+    case _ => false
+}
+
+// getLeftValue returns the left value if this is a Left, otherwise it returns nil.
+func getLeftValue(e any) any = e match {
+    case ei: Either[_, _] if ei.isLeft() => ei.LeftValue
+    case _ => nil
+}
+
+// getRightValue returns the right value if this is a Right, otherwise it returns nil.
+func getRightValue(e any) any = e match {
+    case ei: Either[_, _] if ei.isRight() => ei.RightValue
+    case _ => nil
+}
+
+// GetLeft returns the left value if this is a Left, otherwise it panics.
+func (e Either[A, B]) GetLeft() A {
+    if e.isRight() {
+        Panic("Either.GetLeft on Right")
+    }
+    return e.LeftValue
+}
+
+// GetRight returns the right value if this is a Right, otherwise it panics.
+func (e Either[A, B]) GetRight() B {
+    if e.isLeft() {
+        Panic("Either.GetRight on Left")
+    }
+    return e.RightValue
+}
+
+// Swap returns the left as right and vice versa.
+func (e Either[A, B]) Swap() Either[B, A] {
+    if e.isLeft() {
+        return Right[B, A](e.LeftValue)
+    }
+    return Left[B, A](e.RightValue)
+}
+
+// OnRight executes a callback with the right value if this is a Right,
+// returns the original Either unchanged (for chaining).
+func (e Either[A, B]) OnRight(f func(B)) Either[A, B] {
+    if e.isRight() {
+        f(e.RightValue)
+    }
+    return e
+}
+
+// OnLeft executes a callback with the left value if this is a Left,
+// returns the original Either unchanged (for chaining).
+func (e Either[A, B]) OnLeft(f func(A)) Either[A, B] {
+    if e.isLeft() {
+        f(e.LeftValue)
+    }
+    return e
+}
+
+// Fold applies f1 to the left value or f2 to the right value.
+func (e Either[A, B]) Fold[C any](f1 func(A) C, f2 func(B) C) C {
+    if e.isLeft() {
+        return f1(e.LeftValue)
+    }
+    return f2(e.RightValue)
+}
+
+// Map applies a function to the right value if this is a Right.
+func (e Either[A, B]) Map[C any](f func(B) C) Either[A, C] {
+    if e.isLeft() {
+        return Left[A, C](e.LeftValue)
+    }
+    return Right[A, C](f(e.RightValue))
+}
+
+// FlatMap applies a function to the right value if this is a Right.
+func (e Either[A, B]) FlatMap[C any](f func(B) Either[A, C]) Either[A, C] {
+    if e.isLeft() {
+        return Left[A, C](e.LeftValue)
+    }
+    return f(e.RightValue)
+}

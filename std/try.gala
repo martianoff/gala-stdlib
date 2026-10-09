@@ -1,0 +1,327 @@
+package std
+
+import . "martianoff/gala/go_builtins"
+
+// Try represents a computation that may either result in a value of type T (Success)
+// or a failure with an error (Failure). It provides a functional approach to error
+// handling, similar to Scala's Try monad.
+//
+// Every instance of Try is either:
+// - Success[T]: contains a successful value of type T
+// - Failure[T]: contains an error
+sealed type Try[T any] {
+    case Success(Value T)
+    case Failure(Err error)
+}
+
+// IsSuccess returns true if this is a Success, false otherwise.
+func (t Try[T]) IsSuccess() bool = t.isSuccess()
+
+// IsFailure returns true if this is a Failure, false otherwise.
+func (t Try[T]) IsFailure() bool = t.isFailure()
+
+// Apply executes f and catches any panic, converting it to a Failure.
+// This is the safe way to create a Try from a potentially panicking operation.
+// Usage: Try[int](() => riskyDivide(10, 0))
+func (t Try[T]) Apply(f func() T) Try[T] = tryRecover[T](f)
+
+// Get returns the value if this is a Success, otherwise panics.
+// On Failure it panics with the original error value (not a string), so a
+// surrounding recover (e.g. a Future's panic capture) can recover the typed
+// error unchanged rather than a wrapped message.
+func (t Try[T]) Get() T {
+    if t.isFailure() {
+        Panic(t.Err)
+    }
+    return t.Value
+}
+
+// GetError returns the error if this is a Failure, otherwise panics.
+func (t Try[T]) GetError() error {
+    if t.isSuccess() {
+        Panic("Try.GetError on Success")
+    }
+    return t.Err
+}
+
+// GetOrElse returns the value if this is a Success, otherwise returns defaultValue.
+func (t Try[T]) GetOrElse(defaultValue T) T {
+    if t.isSuccess() {
+        return t.Value
+    }
+    return defaultValue
+}
+
+// OrElse returns this Try if it is a Success, otherwise returns alternative.
+func (t Try[T]) OrElse(alternative Try[T]) Try[T] {
+    if t.isSuccess() {
+        return t
+    }
+    return alternative
+}
+
+// OnSuccess executes a callback with the value if this is a Success,
+// returns the original Try unchanged (for chaining).
+func (t Try[T]) OnSuccess(f func(T)) Try[T] {
+    if t.isSuccess() {
+        f(t.Value)
+    }
+    return t
+}
+
+// OnFailure executes a callback with the error if this is a Failure,
+// returns the original Try unchanged (for chaining).
+func (t Try[T]) OnFailure(f func(error)) Try[T] {
+    if t.isFailure() {
+        f(t.Err)
+    }
+    return t
+}
+
+// ForEach applies the given procedure f to the value if this is a Success.
+func (t Try[T]) ForEach(f func(T)) {
+    if t.isSuccess() {
+        f(t.Value)
+    }
+}
+
+// Map applies the function f to the value if this is a Success.
+// Returns a new Try containing the result. If f panics, the result is a Failure.
+func (t Try[T]) Map[U any](f func(T) U) Try[U] {
+    if t.isFailure() {
+        return Failure[U](t.Err)
+    }
+    return Success[U](f(t.Value))
+}
+
+// FlatMap applies the function f to the value if this is a Success.
+// Returns the Try returned by f. If this is a Failure, returns the Failure.
+func (t Try[T]) FlatMap[U any](f func(T) Try[U]) Try[U] {
+    if t.isFailure() {
+        return Failure[U](t.Err)
+    }
+    return f(t.Value)
+}
+
+// Filter returns this Try if this is a Success and the predicate p returns true.
+// Returns a Failure with NoSuchElementError if predicate returns false.
+func (t Try[T]) Filter(p func(T) bool) Try[T] {
+    if t.isFailure() {
+        return t
+    }
+    if p(t.Value) {
+        return t
+    }
+    return Failure[T](NoSuchElementError(Message = "Predicate does not hold"))
+}
+
+// Recover applies the recovery function pf to the error if this is a Failure.
+// Returns a Success with the recovered value. If pf panics, the result is still a Failure.
+func (t Try[T]) Recover(pf func(error) T) Try[T] {
+    if t.isSuccess() {
+        return t
+    }
+    return Success[T](pf(t.Err))
+}
+
+// RecoverWith applies the recovery function pf to the error if this is a Failure.
+// Returns the Try returned by pf. If this is a Success, returns this Try.
+func (t Try[T]) RecoverWith(pf func(error) Try[T]) Try[T] {
+    if t.isSuccess() {
+        return t
+    }
+    return pf(t.Err)
+}
+
+// Transform applies s if this is a Success, f if this is a Failure.
+// Both functions return a new Try.
+func (t Try[T]) Transform[U any](s func(T) Try[U], f func(error) Try[U]) Try[U] {
+    if t.isSuccess() {
+        return s(t.Value)
+    }
+    return f(t.Err)
+}
+
+// Fold applies fa if this is a Failure, fs if this is a Success.
+func (t Try[T]) Fold[U any](fa func(error) U, fs func(T) U) U {
+    if t.isSuccess() {
+        return fs(t.Value)
+    }
+    return fa(t.Err)
+}
+
+// ToOption returns Some(value) if this is a Success, None if this is a Failure.
+func (t Try[T]) ToOption() Option[T] {
+    if t.isSuccess() {
+        return Some[T](t.Value)
+    }
+    return None[T]()
+}
+
+// ToEither returns Right(value) if this is a Success, Left(error) if this is a Failure.
+func (t Try[T]) ToEither() Either[error, T] {
+    if t.isSuccess() {
+        return Right[error, T](t.Value)
+    }
+    return Left[error, T](t.Err)
+}
+
+// FromOption creates a Try from an Option.
+// Returns Success if the Option is Some, Failure with NoSuchElementError if None.
+func FromOption[T any](o Option[T]) Try[T] = o match {
+    case Some(v) => Success[T](v)
+    case None() => Failure[T](NoSuchElementError(Message = "Option is None"))
+}
+
+// FromEitherError creates a Try from an Either[error, T].
+// Returns Success if Right, Failure if Left.
+func FromEitherError[T any](e Either[error, T]) Try[T] = e match {
+    case Right(v) => Success[T](v)
+    case Left(err) => Failure[T](err)
+}
+
+// TryApply executes f and catches any panic, converting it to a Failure.
+// Returns Success[T] with the result if f completes normally.
+// Returns Failure[T] with the panic value as error if f panics.
+func TryApply[T any](f func() T) Try[T] = tryRecover[T](f)
+
+// PanicStack returns the stack trace of the panic that err came from, taken
+// when Try (or TryApply) recovered it: Some(stack) for the error of a Failure
+// made from a panic — or an error wrapping one — and None for any other error,
+// such as the one in FromError(err). The frames point at .gala source lines.
+//
+// The stack is not part of the error's message or equality: Error() is the
+// panic's own message, and Failures of the same panic value are equal.
+//
+// Usage:
+//   Try(handle(req)).OnFailure((err) => {
+//       Println(s"request failed: $err")
+//       PanicStack(err).ForEach((stack) => Println(stack))
+//   })
+func PanicStack(err error) Option[string] = panicStackOf(err)
+
+// Void represents the absence of a meaningful value, similar to Scala's Void.
+// Used as the type parameter for Try[Void] when converting Go error returns.
+type Void struct {}
+
+// FromError converts a Go error return into a Try[Void].
+// Returns Success[Void] if err is nil, Failure[Void] otherwise.
+// `Try(goCall())` over a Go call returning only an error means the same.
+//
+// A Go call returning (T, error) needs no conversion: used as a value it
+// already is a Try[T].
+//
+// Usage:
+//   FromError(conn.Close())                        // Try[Void]
+//   FromError(sb.ListenAndServe(addr))              // Try[Void]
+//   FromError(sb.ListenAndServe(addr)).OnFailure((err) => Println(s"error: $err"))
+func FromError(err error) Try[Void] {
+    if err != nil {
+        return Failure[Void](err)
+    }
+    return Success[Void](Void())
+}
+
+
+// GoTry turns the two results of a Go call returning `(T, error)` into a
+// Try: Failure(err) when err is non-nil, Success(value) otherwise.
+//
+// A Go call used as a value is converted with it automatically, so
+// `os.ReadFile(path)` already is a `Try[[]byte]`; GoTry names that
+// conversion for code that holds the two results separately.
+func GoTry[T any](value T, err error) Try[T] {
+    if err != nil {
+        return Failure[T](err)
+    }
+    return Success[T](value)
+}
+
+// GoTry2 turns the results of a Go call returning 2 values and a
+// trailing error into a Try of a Tuple: Failure(err) when err is non-nil,
+// Success((a, b)) otherwise.
+func GoTry2[A any, B any](a A, b B, err error) Try[Tuple[A, B]] {
+    if err != nil {
+        return Failure[Tuple[A, B]](err)
+    }
+    return Success[Tuple[A, B]]((a, b))
+}
+
+// GoTry3 turns the results of a Go call returning 3 values and a
+// trailing error into a Try of a Tuple3: Failure(err) when err is non-nil,
+// Success((a, b, c)) otherwise.
+func GoTry3[A any, B any, C any](a A, b B, c C, err error) Try[Tuple3[A, B, C]] {
+    if err != nil {
+        return Failure[Tuple3[A, B, C]](err)
+    }
+    return Success[Tuple3[A, B, C]]((a, b, c))
+}
+
+// GoTry4 turns the results of a Go call returning 4 values and a
+// trailing error into a Try of a Tuple4: Failure(err) when err is non-nil,
+// Success((a, b, c, d)) otherwise.
+func GoTry4[A any, B any, C any, D any](a A, b B, c C, d D, err error) Try[Tuple4[A, B, C, D]] {
+    if err != nil {
+        return Failure[Tuple4[A, B, C, D]](err)
+    }
+    return Success[Tuple4[A, B, C, D]]((a, b, c, d))
+}
+
+// GoTry5 turns the results of a Go call returning 5 values and a
+// trailing error into a Try of a Tuple5: Failure(err) when err is non-nil,
+// Success((a, b, c, d, e)) otherwise.
+func GoTry5[A any, B any, C any, D any, E any](a A, b B, c C, d D, e E, err error) Try[Tuple5[A, B, C, D, E]] {
+    if err != nil {
+        return Failure[Tuple5[A, B, C, D, E]](err)
+    }
+    return Success[Tuple5[A, B, C, D, E]]((a, b, c, d, e))
+}
+
+// GoTry6 turns the results of a Go call returning 6 values and a
+// trailing error into a Try of a Tuple6: Failure(err) when err is non-nil,
+// Success((a, b, c, d, e, f)) otherwise.
+func GoTry6[A any, B any, C any, D any, E any, F any](a A, b B, c C, d D, e E, f F, err error) Try[Tuple6[A, B, C, D, E, F]] {
+    if err != nil {
+        return Failure[Tuple6[A, B, C, D, E, F]](err)
+    }
+    return Success[Tuple6[A, B, C, D, E, F]]((a, b, c, d, e, f))
+}
+
+// GoTry7 turns the results of a Go call returning 7 values and a
+// trailing error into a Try of a Tuple7: Failure(err) when err is non-nil,
+// Success((a, b, c, d, e, f, g)) otherwise.
+func GoTry7[A any, B any, C any, D any, E any, F any, G any](a A, b B, c C, d D, e E, f F, g G, err error) Try[Tuple7[A, B, C, D, E, F, G]] {
+    if err != nil {
+        return Failure[Tuple7[A, B, C, D, E, F, G]](err)
+    }
+    return Success[Tuple7[A, B, C, D, E, F, G]]((a, b, c, d, e, f, g))
+}
+
+// GoTry8 turns the results of a Go call returning 8 values and a
+// trailing error into a Try of a Tuple8: Failure(err) when err is non-nil,
+// Success((a, b, c, d, e, f, g, h)) otherwise.
+func GoTry8[A any, B any, C any, D any, E any, F any, G any, H any](a A, b B, c C, d D, e E, f F, g G, h H, err error) Try[Tuple8[A, B, C, D, E, F, G, H]] {
+    if err != nil {
+        return Failure[Tuple8[A, B, C, D, E, F, G, H]](err)
+    }
+    return Success[Tuple8[A, B, C, D, E, F, G, H]]((a, b, c, d, e, f, g, h))
+}
+
+// GoTry9 turns the results of a Go call returning 9 values and a
+// trailing error into a Try of a Tuple9: Failure(err) when err is non-nil,
+// Success((a, b, c, d, e, f, g, h, i)) otherwise.
+func GoTry9[A any, B any, C any, D any, E any, F any, G any, H any, I any](a A, b B, c C, d D, e E, f F, g G, h H, i I, err error) Try[Tuple9[A, B, C, D, E, F, G, H, I]] {
+    if err != nil {
+        return Failure[Tuple9[A, B, C, D, E, F, G, H, I]](err)
+    }
+    return Success[Tuple9[A, B, C, D, E, F, G, H, I]]((a, b, c, d, e, f, g, h, i))
+}
+
+// GoTry10 turns the results of a Go call returning 10 values and a
+// trailing error into a Try of a Tuple10: Failure(err) when err is non-nil,
+// Success((a, b, c, d, e, f, g, h, i, j)) otherwise.
+func GoTry10[A any, B any, C any, D any, E any, F any, G any, H any, I any, J any](a A, b B, c C, d D, e E, f F, g G, h H, i I, j J, err error) Try[Tuple10[A, B, C, D, E, F, G, H, I, J]] {
+    if err != nil {
+        return Failure[Tuple10[A, B, C, D, E, F, G, H, I, J]](err)
+    }
+    return Success[Tuple10[A, B, C, D, E, F, G, H, I, J]]((a, b, c, d, e, f, g, h, i, j))
+}

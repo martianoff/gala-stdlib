@@ -1,0 +1,117 @@
+package std
+
+import . "martianoff/gala/go_builtins"
+
+// isDefined returns true if the value is defined.
+// It handles Option types by checking defined field, bool types by their value,
+// nil as false, and all other types as true.
+func isDefined(opt any) bool = if (opt == nil) false else opt match {
+    case b: bool => b
+    case oi: Option[_] => oi.isSome()
+    case _ => true
+}
+
+// getSomeValue returns the option's value if it is an Option, otherwise returns the value itself.
+func getSomeValue(opt any) any = opt match {
+    case oi: Option[_] => oi.Value
+    case _ => opt
+}
+
+// Option represents an optional value: every instance of Option is either an instance
+// of Some containing a value, or None representing an empty value.
+sealed type Option[T any] {
+    case Some(Value T)
+    case None()
+}
+
+// IsDefined returns true if the option is an instance of Some, false otherwise.
+func (o Option[T]) IsDefined() bool = o.isSome()
+
+// IsEmpty returns true if the option is None, false otherwise.
+func (o Option[T]) IsEmpty() bool = o.isNone()
+
+// Get returns the option's value if the option is Some, otherwise it panics.
+func (o Option[T]) Get() T {
+    if o.isNone() {
+        Panic("Option.Get on None")
+    }
+    return o.Value
+}
+
+// GetOrElse returns the option's value if the option is Some, otherwise returns the result of evaluating defaultValue.
+// defaultValue: the default value to return if the option is empty.
+func (o Option[T]) GetOrElse(defaultValue T) T {
+    if o.isSome() {
+        return o.Value
+    }
+    return defaultValue
+}
+
+// OrElse returns this Option if it is Some, otherwise returns alternative.
+func (o Option[T]) OrElse(alternative Option[T]) Option[T] {
+    if o.isSome() {
+        return o
+    }
+    return alternative
+}
+
+// OnSome executes a callback with the value if this is Some,
+// returns the original Option unchanged (for chaining).
+func (o Option[T]) OnSome(f func(T)) Option[T] {
+    if o.isSome() {
+        f(o.Value)
+    }
+    return o
+}
+
+// OnNone executes a callback if this is None,
+// returns the original Option unchanged (for chaining).
+func (o Option[T]) OnNone(f func()) Option[T] {
+    if o.isNone() {
+        f()
+    }
+    return o
+}
+
+// ForEach applies the given procedure f to the option's value, if it is nonempty.
+// f: the procedure to apply.
+func (o Option[T]) ForEach(f func(T)) {
+    if o.isSome() {
+        f(o.Value)
+    }
+}
+
+// Map builds a new option by applying a function to all values of this option.
+// f: the function to apply.
+// Returns a new Option containing the result of applying f to this option's value if it is nonempty.
+func (o Option[T]) Map[U any](f func(T) U) Option[U] {
+    if o.isSome() {
+        return Some[U](f(o.Value))
+    }
+    return None[U]()
+}
+
+// FlatMap returns the result of applying f to this option's value if this option is nonempty.
+// Returns None if this option is empty.
+// f: the function to apply.
+func (o Option[T]) FlatMap[U any](f func(T) Option[U]) Option[U] {
+    if o.isSome() {
+        return f(o.Value)
+    }
+    return None[U]()
+}
+
+// Filter returns this option if it is nonempty and applying the predicate p to this option's value returns true.
+// p: the predicate used for testing.
+func (o Option[T]) Filter(p func(T) bool) Option[T] {
+    if o.isSome() && p(o.Value) {
+        return o
+    }
+    return None[T]()
+}
+
+// When returns Some(value) if condition is true, None otherwise.
+func When[T any](condition bool, value T) Option[T] = if (condition) Some(value) else None[T]()
+
+// Unless returns Some(value) if condition is false, None otherwise.
+func Unless[T any](condition bool, value T) Option[T] = if (!condition) Some(value) else None[T]()

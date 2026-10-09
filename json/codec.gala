@@ -1,0 +1,648 @@
+package json
+
+import (
+    "bytes"
+    "encoding/json"
+    "math"
+    "strconv"
+    "strings"
+    "unicode"
+    "unicode/utf16"
+    "unicode/utf8"
+    . "martianoff/gala/std"
+    "martianoff/gala/go_interop"
+    . "martianoff/gala/collection_immutable"
+)
+
+// --- JsonEncoderImpl: implements std.FieldEncoder for JSON output. ---
+
+// JsonEncoderImpl writes JSON bytes via the typed FieldEncoder interface.
+// Produced by NewJsonEncoder(); consumed by _StructMeta_T.EncodeFields.
+type JsonEncoderImpl struct {
+    var buf        bytes.Buffer
+    var needsComma bool
+    var keyPending bool
+}
+
+func NewJsonEncoder() *JsonEncoderImpl = &JsonEncoderImpl{}
+
+func (e *JsonEncoderImpl) WriteStartObject() {
+    e.writeCommaIfNeeded()
+    e.buf.WriteByte('{')
+    e.needsComma = false
+}
+
+func (e *JsonEncoderImpl) WriteEndObject() {
+    e.buf.WriteByte('}')
+    e.needsComma = true
+}
+
+func (e *JsonEncoderImpl) WriteStartArray() {
+    e.writeCommaIfNeeded()
+    e.buf.WriteByte('[')
+    e.needsComma = false
+}
+
+func (e *JsonEncoderImpl) WriteEndArray() {
+    e.buf.WriteByte(']')
+    e.needsComma = true
+}
+
+func (e *JsonEncoderImpl) WriteKey(name string) {
+    e.writeCommaIfNeeded()
+    e.writeEscapedJsonString(name)
+    e.buf.WriteByte(':')
+    e.needsComma = false
+}
+
+func (e *JsonEncoderImpl) WriteString(v string) {
+    e.writeCommaIfNeeded()
+    e.writeEscapedJsonString(v)
+    e.needsComma = true
+}
+
+func (e *JsonEncoderImpl) WriteInt(v int) {
+    e.writeCommaIfNeeded()
+    e.buf.WriteString(strconv.Itoa(v))
+    e.needsComma = true
+}
+
+func (e *JsonEncoderImpl) WriteInt64(v int64) {
+    e.writeCommaIfNeeded()
+    e.buf.WriteString(strconv.FormatInt(v, 10))
+    e.needsComma = true
+}
+
+func (e *JsonEncoderImpl) WriteUint64(v uint64) {
+    e.writeCommaIfNeeded()
+    e.buf.WriteString(strconv.FormatUint(v, 10))
+    e.needsComma = true
+}
+
+func (e *JsonEncoderImpl) WriteFloat64(v float64) {
+    e.writeFloat(v, 64)
+}
+
+func (e *JsonEncoderImpl) WriteFloat32(v float32) {
+    e.writeFloat(float64(v), 32)
+}
+
+// writeFloat renders v in the shortest decimal form that parses back to the
+// same value at bitSize. JSON has no spelling for NaN or the infinities, so
+// they fail the encode (the Encode Try becomes a Failure) instead of
+// producing a document no JSON parser accepts.
+func (e *JsonEncoderImpl) writeFloat(v float64, bitSize int) {
+    if math.IsNaN(v) || math.IsInf(v, 0) {
+        go_builtins.Panic(s"json: unsupported float value ${strconv.FormatFloat(v, 'g', -1, 64)}: JSON has no NaN or Infinity")
+    }
+    e.writeCommaIfNeeded()
+    e.buf.WriteString(formatJsonFloat(v, bitSize))
+    e.needsComma = true
+}
+
+// formatJsonFloat spells a finite float as encoding/json does: the shortest
+// digits that parse back to v at bitSize, in plain notation for
+// 1e-6 <= |v| < 1e21 and in exponent notation outside it, so 1e300 is not a
+// 301-digit literal. A one-digit negative exponent drops its leading zero
+// (1e-7, not 1e-07); a positive exponent here is always at least 21. yaml's
+// formatYamlFloat keeps the same rule in Go.
+func formatJsonFloat(v float64, bitSize int) string =
+    if (useExponent(math.Abs(v), bitSize)) strings.Replace(strconv.FormatFloat(v, 'e', -1, bitSize), "e-0", "e-", 1)
+    else strconv.FormatFloat(v, 'f', -1, bitSize)
+
+// useExponent reports whether abs lies outside the plain-notation range. The
+// range test runs at the value's own precision: float32(1e-6) is just below
+// the float64 1e-6, yet it is written plainly.
+func useExponent(abs float64, bitSize int) bool =
+    if (abs == 0) false
+    else if (bitSize == 32) float32(abs) < 1e-6 || float32(abs) >= 1e21
+    else abs < 1e-6 || abs >= 1e21
+
+func (e *JsonEncoderImpl) WriteBool(v bool) {
+    e.writeCommaIfNeeded()
+    e.buf.WriteString(if (v) "true" else "false")
+    e.needsComma = true
+}
+
+func (e *JsonEncoderImpl) WriteRune(v rune) {
+    e.writeCommaIfNeeded()
+    e.writeEscapedJsonString(RuneToString(v))
+    e.needsComma = true
+}
+
+func (e *JsonEncoderImpl) WriteNull() {
+    e.writeCommaIfNeeded()
+    e.buf.WriteString("null")
+    e.needsComma = true
+}
+
+func (e *JsonEncoderImpl) String() string = e.buf.String()
+
+func (e *JsonEncoderImpl) writeCommaIfNeeded() {
+    if e.needsComma {
+        e.buf.WriteByte(',')
+        e.needsComma = false
+    }
+}
+
+func (e *JsonEncoderImpl) writeEscapedJsonString(s string) {
+    e.buf.WriteByte('"')
+    // Byte-level scan, on the hot path of every encode: s[i] byte-indexes, so
+    // the bound must be the byte length (.ByteSize() -> len(s)), NOT the rune
+    // count (.Size() -> utf8.RuneCountInString) — the latter truncates
+    // multibyte input. Runs of bytes that need no escaping, valid multibyte
+    // UTF-8 included, are copied in one write from s[start:i].
+    var start = 0
+    var i = 0
+    for i < s.ByteSize() {
+        val c = s[i]
+        if c >= utf8.RuneSelf {
+            // An invalid UTF-8 byte is written as the U+FFFD escape, as
+            // encoding/json does, so the document is always valid UTF-8.
+            val r, size = decodeRuneAt(s, i)
+            if r == utf8.RuneError && size == 1 {
+                e.buf.WriteString(substring(s, start, i))
+                e.buf.WriteString("\\ufffd")
+                start = i + 1
+            }
+            i = i + size
+        } else if c < 32 || c == '"' || c == '\\' {
+            e.buf.WriteString(substring(s, start, i))
+            e.writeEscape(c)
+            i = i + 1
+            start = i
+        } else {
+            i = i + 1
+        }
+    }
+    e.buf.WriteString(substring(s, start, i))
+    e.buf.WriteByte('"')
+}
+
+// writeEscape writes the JSON escape for a quote, a backslash or a control
+// character.
+func (e *JsonEncoderImpl) writeEscape(c byte) {
+    c match {
+        case '"' => { e.buf.WriteString("\\\"") }
+        case '\\' => { e.buf.WriteString("\\\\") }
+        case '\n' => { e.buf.WriteString("\\n") }
+        case '\r' => { e.buf.WriteString("\\r") }
+        case '\t' => { e.buf.WriteString("\\t") }
+        case _ => { e.buf.WriteString(f"\\u${c}%04x") }
+    }
+}
+
+// PrettyIndent re-indents a compact JSON string.
+func PrettyIndent(compact string, indent string) Try[string] {
+    var out bytes.Buffer
+    val err = json.Indent(&out, toBytes(compact), "", indent)
+    if err != nil {
+        return Failure[string](err)
+    }
+    return Success[string](out.String())
+}
+
+// --- JsonDecoderImpl: implements std.FieldDecoder for JSON input. ---
+
+// JsonDecoderImpl is a pull-style JSON parser. Unlike the legacy Reader it
+// exposes plain primitive returns from its Read* methods — errors are
+// surfaced by panicking out to the surrounding Try block (callers wrap the
+// Decode invocation in Try(() => { ... })).
+type JsonDecoderImpl struct {
+    var data          []byte
+    var pos           int
+    var stack         []byte
+    var firstConsumed []bool
+    var pendingKey    string
+    var hasPendingKey bool
+}
+
+func NewJsonDecoder(s string) *JsonDecoderImpl = &JsonDecoderImpl{data: toBytes(s), pos: 0}
+
+func (d *JsonDecoderImpl) StartObject() {
+    // Container openers must consume the inter-element comma when the
+    // enclosing context is an array — otherwise Array[Foo] of structs
+    // panics on the leading ',' of element 2+. The primitive Read* paths
+    // already do this; objects/arrays were missing the same hook.
+    d.consumeElemComma()
+    d.openContainer('{', 'o')
+}
+
+// openContainer steps over the opening byte of an object or array that the
+// caller decodes, and records it as kind ('o' or 'a') on the stack.
+func (d *JsonDecoderImpl) openContainer(open byte, kind byte) {
+    d.skipWs()
+    d.checkDepth(d.stack.Size() + 1)
+    d.expectByte(open)
+    d.stack = go_interop.SliceAppend(d.stack, kind)
+    d.firstConsumed = go_interop.SliceAppend(d.firstConsumed, false)
+}
+
+// maxJsonDepth is the deepest container nesting the decoder reads or skips,
+// the limit encoding/json has too. Deeper input is a decode error rather
+// than a stack overflow, which would end the process instead of failing the
+// decode.
+val maxJsonDepth = 10000
+
+// checkDepth fails the decode when a container at pos would sit depth
+// containers deep in the document.
+func (d *JsonDecoderImpl) checkDepth(depth int) {
+    if depth > maxJsonDepth {
+        go_builtins.Panic(s"json at pos ${d.pos}: exceeded max depth $maxJsonDepth")
+    }
+}
+
+func (d *JsonDecoderImpl) EndObject() {
+    d.expectByte('}')
+    d.stack = TruncateBytes(d.stack, d.stack.Size() - 1)
+    d.firstConsumed = TruncateBools(d.firstConsumed, d.firstConsumed.Size() - 1)
+}
+
+func (d *JsonDecoderImpl) StartArray() {
+    // See StartObject — the enclosing array context's leading ',' must be
+    // consumed before we can recognise the '[' of a nested array element.
+    d.consumeElemComma()
+    d.openContainer('[', 'a')
+}
+
+func (d *JsonDecoderImpl) EndArray() {
+    d.expectByte(']')
+    d.stack = TruncateBytes(d.stack, d.stack.Size() - 1)
+    d.firstConsumed = TruncateBools(d.firstConsumed, d.firstConsumed.Size() - 1)
+}
+
+func (d *JsonDecoderImpl) HasMoreFields() bool {
+    d.skipWs()
+    if d.pos >= d.data.Size() { return false }
+    return d.data[d.pos] != '}'
+}
+
+func (d *JsonDecoderImpl) HasMoreElements() bool {
+    d.skipWs()
+    if d.pos >= d.data.Size() { return false }
+    return d.data[d.pos] != ']'
+}
+
+func (d *JsonDecoderImpl) ReadKey() string {
+    d.skipWs()
+    val depth = d.firstConsumed.Size() - 1
+    if depth >= 0 && d.firstConsumed[depth] {
+        if d.pos < d.data.Size() && d.data[d.pos] == ',' {
+            d.pos = d.pos + 1
+            d.skipWs()
+        }
+    }
+    if depth >= 0 { d.firstConsumed[depth] = true }
+
+    val key = d.readJsonString()
+    d.expectByte(':')
+    return key
+}
+
+func (d *JsonDecoderImpl) ReadString() string {
+    d.consumeElemComma()
+    d.skipWs()
+    return d.readJsonString()
+}
+
+func (d *JsonDecoderImpl) ReadInt() int = int(d.ReadIntN(0))
+
+func (d *JsonDecoderImpl) ReadInt64() int64 = d.ReadIntN(64)
+
+// ReadIntN reads a signed integer that must fit in bitSize bits (0 is the
+// platform int size). A value outside the range is a decode error, never a
+// silent wrap.
+func (d *JsonDecoderImpl) ReadIntN(bitSize int) int64 {
+    val s = d.numberToken()
+    val v, err = strconv.ParseInt(s, 10, bitSize)
+    if err != nil {
+        go_builtins.Panic(f"json at pos ${d.pos}: invalid ${intKindName("int", bitSize)} ${s}%q")
+    }
+    return v
+}
+
+// ReadUintN reads an unsigned integer that must fit in bitSize bits (0 is
+// the platform uint size). Negative and out-of-range values are errors.
+func (d *JsonDecoderImpl) ReadUintN(bitSize int) uint64 {
+    val s = d.numberToken()
+    val v, err = strconv.ParseUint(s, 10, bitSize)
+    if err != nil {
+        go_builtins.Panic(f"json at pos ${d.pos}: invalid ${intKindName("uint", bitSize)} ${s}%q")
+    }
+    return v
+}
+
+// ReadFloat32 reads a float that fits a finite float32; a literal that
+// overflows it is an error rather than a silent infinity.
+func (d *JsonDecoderImpl) ReadFloat32() float32 {
+    val s = d.numberToken()
+    val v, err = strconv.ParseFloat(s, 32)
+    if err != nil {
+        go_builtins.Panic(f"json at pos ${d.pos}: invalid float32 ${s}%q")
+    }
+    return float32(v)
+}
+
+func (d *JsonDecoderImpl) ReadFloat64() float64 {
+    val s = d.numberToken()
+    val v, err = strconv.ParseFloat(s, 64)
+    if err != nil {
+        go_builtins.Panic(f"json at pos ${d.pos}: invalid float ${s}%q")
+    }
+    return v
+}
+
+func (d *JsonDecoderImpl) ReadBool() bool {
+    d.consumeElemComma()
+    d.skipWs()
+    if d.pos + 4 <= d.data.Size() && BytesToString(d.data, d.pos, d.pos + 4) == "true" {
+        d.pos = d.pos + 4
+        return true
+    }
+    if d.pos + 5 <= d.data.Size() && BytesToString(d.data, d.pos, d.pos + 5) == "false" {
+        d.pos = d.pos + 5
+        return false
+    }
+    go_builtins.Panic(s"json at pos ${d.pos}: expected boolean")
+}
+
+func (d *JsonDecoderImpl) ReadRune() rune {
+    val s = d.ReadString()
+    val rs = go_interop.ToRunes(s)
+    if rs.Size() == 0 {
+        return rune(0)
+    }
+    return rs[0]
+}
+
+func (d *JsonDecoderImpl) IsNull() bool {
+    // Inside an array the next value sits behind the element separator, so
+    // step over it first: without this `[1,null]` reads `,null` as not-null
+    // and an Array[Option[T]] fails on its second element. Consuming the
+    // separator here is safe because the read that follows would consume it
+    // anyway, and consumeElemComma is a no-op once it has.
+    d.consumeElemComma()
+    d.skipWs()
+    return d.pos + 4 <= d.data.Size() && BytesToString(d.data, d.pos, d.pos + 4) == "null"
+}
+
+func (d *JsonDecoderImpl) ReadNull() {
+    d.consumeElemComma()
+    d.skipWs()
+    d.expectLiteral("null")
+}
+
+// Skip steps over the next value and checks all of it, as encoding/json
+// does: a malformed number, string or structure anywhere inside it is a
+// decode error.
+func (d *JsonDecoderImpl) Skip() {
+    d.consumeElemComma()
+    d.skipValue(d.stack.Size())
+}
+
+// End checks that only whitespace follows the decoded value: a document is
+// one value, so `42 43` or `[1]]` is malformed rather than a prefix to keep.
+func (d *JsonDecoderImpl) End() {
+    d.skipWs()
+    if d.pos < d.data.Size() {
+        go_builtins.Panic(s"json at pos ${d.pos}: unexpected content after the document")
+    }
+}
+
+// --- decoder internal helpers ---
+
+func (d *JsonDecoderImpl) skipWs() {
+    for d.pos < d.data.Size() {
+        val c = d.data[d.pos]
+        if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
+            d.pos = d.pos + 1
+        } else {
+            return
+        }
+    }
+}
+
+func (d *JsonDecoderImpl) consumeElemComma() {
+    val depth = d.firstConsumed.Size() - 1
+    if depth >= 0 && d.stack.Size() > 0 && d.stack[depth] == 'a' && d.firstConsumed[depth] {
+        d.skipWs()
+        if d.pos < d.data.Size() && d.data[d.pos] == ',' {
+            d.pos = d.pos + 1
+        }
+    }
+    if depth >= 0 && d.stack.Size() > 0 && d.stack[depth] == 'a' {
+        d.firstConsumed[depth] = true
+    }
+}
+
+// readJsonString reads the string literal at pos, as encoding/json does: a
+// raw control character (below 0x20) must be escaped, and an invalid UTF-8
+// byte reads as U+FFFD. Runs of bytes that need no decoding, valid multibyte
+// UTF-8 included, are copied in one write.
+func (d *JsonDecoderImpl) readJsonString() string {
+    d.skipWs()
+    if d.pos >= d.data.Size() || d.data[d.pos] != '"' {
+        go_builtins.Panic(s"json at pos ${d.pos}: expected '\"'")
+    }
+    d.pos = d.pos + 1
+
+    var sb strings.Builder
+    var start = d.pos
+    for d.pos < d.data.Size() {
+        val c = d.data[d.pos]
+        if c == '"' {
+            sb.Write(SliceBytes(d.data, start, d.pos))
+            d.pos = d.pos + 1
+            return sb.String()
+        } else if c == '\\' {
+            sb.Write(SliceBytes(d.data, start, d.pos))
+            d.pos = d.pos + 1
+            sb.WriteRune(d.readEscape())
+            start = d.pos
+        } else if c < 0x20 {
+            go_builtins.Panic(f"json at pos ${d.pos}: unescaped control character ${c}%#02x in string")
+        } else if c < utf8.RuneSelf {
+            d.pos = d.pos + 1
+        } else {
+            val r, size = decodeRuneAtBytes(d.data, d.pos)
+            if r == utf8.RuneError && size == 1 {
+                sb.Write(SliceBytes(d.data, start, d.pos))
+                sb.WriteRune(r)
+                start = d.pos + 1
+            }
+            d.pos = d.pos + size
+        }
+    }
+    go_builtins.Panic("json: unterminated string")
+}
+
+// readEscape reads the escape that follows a backslash and returns the
+// character it stands for.
+func (d *JsonDecoderImpl) readEscape() rune {
+    if d.pos >= d.data.Size() {
+        go_builtins.Panic("json: unexpected end of escape")
+    }
+    val esc = d.data[d.pos]
+    d.pos = d.pos + 1
+    esc match {
+        case '"' => '"'
+        case '\\' => '\\'
+        case '/' => '/'
+        case 'n' => '\n'
+        case 'r' => '\r'
+        case 't' => '\t'
+        case 'b' => '\b'
+        case 'f' => '\f'
+        case 'u' => d.readUnicodeEscape()
+        case _ => go_builtins.Panic("json: invalid escape sequence")
+    }
+}
+
+// readUnicodeEscape reads the four hex digits of a \u escape, and the second
+// escape of a surrogate pair.
+func (d *JsonDecoderImpl) readUnicodeEscape() rune = d.hex4At(d.pos) match {
+    case Some(r) => {
+        d.pos = d.pos + 4
+        d.completeSurrogate(r)
+    }
+    case None() => go_builtins.Panic("json: invalid unicode escape")
+}
+
+// hex4At reads the code unit named by the four hex digits of a \u escape
+// starting at pos; None when there are not four hex digits there.
+func (d *JsonDecoderImpl) hex4At(pos int) Option[rune] =
+    if (pos + 4 > d.data.Size()) None()
+    else strconv.ParseUint(BytesToString(d.data, pos, pos + 4), 16, 32).ToOption().Map((cp) => rune(cp))
+
+// completeSurrogate finishes a \u escape whose code unit is r. A high
+// surrogate followed by an escaped low surrogate is JSON's spelling of one
+// character above U+FFFF, so the second escape is consumed too; any other
+// surrogate is unpaired and reads as U+FFFD, as in encoding/json.
+func (d *JsonDecoderImpl) completeSurrogate(r rune) rune {
+    if !utf16.IsSurrogate(r) {
+        return r
+    }
+    val nextIsEscape = d.pos + 2 <= d.data.Size() && d.data[d.pos] == '\\' && d.data[d.pos + 1] == 'u'
+    val pair = (if (nextIsEscape) d.hex4At(d.pos + 2) else None())
+        .Map((low) => utf16.DecodeRune(r, low))
+        .Filter((p) => p != unicode.ReplacementChar)
+    pair match {
+        case Some(p) => {
+            d.pos = d.pos + 6
+            p
+        }
+        case None() => unicode.ReplacementChar
+    }
+}
+
+// intKindName names the Go integer kind a strconv bit size stands for; 0 is
+// the platform-sized int or uint.
+func intKindName(prefix string, bitSize int) string =
+    if (bitSize == 0) prefix else s"$prefix$bitSize"
+
+// numberToken steps over an array element separator and whitespace, then
+// returns the number literal that follows.
+func (d *JsonDecoderImpl) numberToken() string {
+    d.consumeElemComma()
+    d.skipWs()
+    BytesString(d.scanNumber())
+}
+
+// scanNumber steps over the number literal at pos and returns its bytes. It
+// must be a number as RFC 8259 and encoding/json spell one, so `+1`, `01`,
+// `.5`, `1.` and `0x10` are errors rather than numbers strconv happens to
+// accept, or a prefix of one.
+func (d *JsonDecoderImpl) scanNumber() []byte {
+    val start = d.pos
+    for d.pos < d.data.Size() && isNumberTokenByte(d.data[d.pos]) {
+        d.pos = d.pos + 1
+    }
+    val token = SliceBytes(d.data, start, d.pos)
+    if token.Size() == 0 {
+        go_builtins.Panic(s"json at pos $start: expected a number")
+    }
+    // The token holds only number-token bytes and starts with '-' or a
+    // digit, so encoding/json accepts it exactly when it is a JSON number
+    // (true, false and null start with a letter).
+    if !(token[0] == '-' || isDigit(token[0])) || !json.Valid(token) {
+        go_builtins.Panic(f"json at pos $start: invalid number ${token}%q")
+    }
+    token
+}
+
+// isNumberTokenByte reports whether c continues a number token. Letters and
+// '_' are included so that `0x10` or `1e5f` is reported as one bad number
+// rather than as a number followed by stray text.
+func isNumberTokenByte(c byte) bool =
+    isDigit(c) || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '-' || c == '+' || c == '.' || c == '_'
+
+func isDigit(c byte) bool = c >= '0' && c <= '9'
+
+// skipValue steps over the value at pos, which sits depth containers deep
+// in the document, and checks it fully.
+func (d *JsonDecoderImpl) skipValue(depth int) {
+    d.skipWs()
+    if d.pos >= d.data.Size() {
+        go_builtins.Panic(s"json at pos ${d.pos}: expected a value")
+    }
+    d.data[d.pos] match {
+        case '"' => { d.readJsonString() }
+        case '{' => { d.skipContainer('}', depth + 1) }
+        case '[' => { d.skipContainer(']', depth + 1) }
+        case 't' => { d.expectLiteral("true") }
+        case 'f' => { d.expectLiteral("false") }
+        case 'n' => { d.expectLiteral("null") }
+        case c if c == '-' || isDigit(c) => { d.scanNumber() }
+        case _ => { go_builtins.Panic(s"json at pos ${d.pos}: expected a value") }
+    }
+}
+
+// skipContainer steps over the object or array whose opening byte is at pos
+// and whose closing byte is close: members separated by ',', each a
+// `"key": value` field in an object and a value in an array.
+func (d *JsonDecoderImpl) skipContainer(close byte, depth int) {
+    d.checkDepth(depth)
+    d.pos = d.pos + 1
+    if d.skipByte(close) {
+        return
+    }
+    for {
+        if close == '}' {
+            d.readJsonString()
+            d.expectByte(':')
+        }
+        d.skipValue(depth)
+        if d.skipByte(close) {
+            return
+        }
+        d.expectByte(',')
+    }
+}
+
+// skipByte steps over c when it is the next byte after any whitespace, and
+// reports whether it did.
+func (d *JsonDecoderImpl) skipByte(c byte) bool {
+    d.skipWs()
+    val found = d.pos < d.data.Size() && d.data[d.pos] == c
+    if found {
+        d.pos = d.pos + 1
+    }
+    found
+}
+
+// expectByte steps over c, after any whitespace.
+func (d *JsonDecoderImpl) expectByte(c byte) {
+    if !d.skipByte(c) {
+        go_builtins.Panic(f"json at pos ${d.pos}: expected ${c}%q")
+    }
+}
+
+// expectLiteral steps over the literal word at pos.
+func (d *JsonDecoderImpl) expectLiteral(word string) {
+    val end = d.pos + word.ByteSize()
+    if end > d.data.Size() || BytesToString(d.data, d.pos, end) != word {
+        go_builtins.Panic(s"json at pos ${d.pos}: expected $word")
+    }
+    d.pos = end
+}
+
