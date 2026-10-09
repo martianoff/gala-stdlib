@@ -1,12 +1,15 @@
 name: go.gala.fyi meta pages
 
 # Serves the go-import meta tag that maps go.gala.fyi/stdlib/... to this
-# repository, with one page per package so every import path resolves.
+# repository, with one page per package.
 
+# Runs on main only: the github-pages environment accepts deployments from
+# main, and the pages are built from main's package list. A stable release
+# moves main; a prerelease or older-line tag needs no new pages, since Go
+# resolves every package through the module's /stdlib page.
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
