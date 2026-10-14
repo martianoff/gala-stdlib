@@ -4,7 +4,7 @@ package std
 
 import "fmt"
 
-//line std/try.gala:4
+//line std/try.gala:3
 
 // Try represents a computation that may either result in a value of type T (Success)
 // or a failure with an error (Failure). It provides a functional approach to error
@@ -13,6 +13,7 @@ import "fmt"
 // Every instance of Try is either:
 // - Success[T]: contains a successful value of type T
 // - Failure[T]: contains an error
+// Try has no default value: create it with a case constructor, NewTrySuccess, NewTryFailure. Its zero value Try[T]{} is none of its cases.
 type Try[T any] struct {
 	Value    Immutable[T]
 	Err      Immutable[error]
@@ -20,8 +21,8 @@ type Try[T any] struct {
 }
 
 const (
-	_Try_Success uint8 = iota
-	_Try_Failure
+	_Try_Success uint8 = 1
+	_Try_Failure uint8 = 2
 )
 
 type Success[T any] struct {
@@ -78,6 +79,16 @@ type TryInstance interface {
 
 func (_ Try[T]) IsTry() bool {
 	return true
+}
+
+// NewTrySuccess returns the Success case of Try.
+func NewTrySuccess[T any](value T) Try[T] {
+	return Success[T]{}.Apply(value)
+}
+
+// NewTryFailure returns the Failure case of Try.
+func NewTryFailure[T any](err error) Try[T] {
+	return Failure[T]{}.Apply(err)
 }
 
 //line std/try.gala:16
@@ -383,7 +394,7 @@ func FromEitherError[T any](e Either[error, T]) Try[T] {
 				if _tmp_9 {
 					return Failure[T]{}.Apply(err)
 				} else {
-					panic("unreachable")
+					panic("gala: a Either matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 				}
 			}
 		}

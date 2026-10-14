@@ -1473,7 +1473,7 @@ func Array_PartitionMap[A any, B any, T any](a Array[T], f func(T) Either[A, B])
 					if _tmp_5 {
 						rightBuilder.Add(r)
 					} else {
-						panic("unreachable")
+						panic("gala: a std.Either matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 					}
 				}
 			}

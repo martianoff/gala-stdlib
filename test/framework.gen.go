@@ -168,7 +168,7 @@ func runTest(t T, f func(T) T) T {
 				if _tmp_5 {
 					return t.Error(fmt.Sprintf("PANIC: %v", e))
 				} else {
-					panic("unreachable")
+					panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 				}
 			}
 		}

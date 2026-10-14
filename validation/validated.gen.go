@@ -8,7 +8,7 @@ import (
 	. "go.gala.fyi/stdlib/std"
 )
 
-//line validation/validated.gala:7
+//line validation/validated.gala:6
 
 // Validated[E, A] is an applicative companion to Either that ACCUMULATES errors
 // instead of short-circuiting on the first one. It is the type an `also` group
@@ -17,6 +17,7 @@ import (
 // of the errors, not just the first. See docs/BIND_NOTATION.MD.
 //
 // Errors are held as an Array[E] (a non-empty list by construction of Invalid).
+// Validated has no default value: create it with a case constructor, NewValidatedValid, NewValidatedInvalid. Its zero value Validated[E, A]{} is none of its cases.
 type Validated[E any, A any] struct {
 	Value    Immutable[A]
 	Errors   Immutable[Array[E]]
@@ -24,8 +25,8 @@ type Validated[E any, A any] struct {
 }
 
 const (
-	_Validated_Valid uint8 = iota
-	_Validated_Invalid
+	_Validated_Valid   uint8 = 1
+	_Validated_Invalid uint8 = 2
 )
 
 type Valid[E any, A any] struct {
@@ -84,6 +85,16 @@ func (_ Validated[E, A]) IsValidated() bool {
 	return true
 }
 
+// NewValidatedValid returns the Valid case of Validated.
+func NewValidatedValid[E any, A any](value A) Validated[E, A] {
+	return Valid[E, A]{}.Apply(value)
+}
+
+// NewValidatedInvalid returns the Invalid case of Validated.
+func NewValidatedInvalid[E any, A any](errors Array[E]) Validated[E, A] {
+	return Invalid[E, A]{}.Apply(errors)
+}
+
 //line validation/validated.gala:19
 
 // InvalidOf builds an Invalid holding a single error.
@@ -117,7 +128,7 @@ func (v Validated[E, A]) IsValid() bool {
 				if _tmp_5 {
 					return false
 				} else {
-					panic("unreachable")
+					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 				}
 			}
 		}
@@ -158,7 +169,7 @@ func (v Validated[E, A]) GetOrElse(defaultValue A) A {
 				if _tmp_11 {
 					return defaultValue
 				} else {
-					panic("unreachable")
+					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 				}
 			}
 		}
@@ -192,7 +203,7 @@ func (v Validated[E, A]) GetErrors() Array[E] {
 				if _tmp_17 {
 					return errs
 				} else {
-					panic("unreachable")
+					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 				}
 			}
 		}
@@ -227,7 +238,7 @@ func Validated_Map[B any, E any, A any](v Validated[E, A], f func(A) B) Validate
 				if _tmp_23 {
 					return Invalid[E, B]{}.Apply(errs)
 				} else {
-					panic("unreachable")
+					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 				}
 			}
 		}
@@ -263,7 +274,7 @@ func Validated_FlatMap[B any, E any, A any](v Validated[E, A], f func(A) Validat
 				if _tmp_29 {
 					return Invalid[E, B]{}.Apply(errs)
 				} else {
-					panic("unreachable")
+					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 				}
 			}
 		}
@@ -523,7 +534,7 @@ func (v Validated[E, A]) ToEither() Either[Array[E], A] {
 				if _tmp_35 {
 					return Left[Array[E], A]{}.Apply(errs)
 				} else {
-					panic("unreachable")
+					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 				}
 			}
 		}

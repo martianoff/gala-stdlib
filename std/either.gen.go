@@ -4,10 +4,11 @@ package std
 
 import "fmt"
 
-//line std/either.gala:4
+//line std/either.gala:3
 
 // Either represents a value of one of two possible types (a disjoint union).
 // An instance of Either is an instance of either Left or Right.
+// Either has no default value: create it with a case constructor, NewEitherLeft, NewEitherRight. Its zero value Either[A, B]{} is none of its cases.
 type Either[A any, B any] struct {
 	LeftValue  Immutable[A]
 	RightValue Immutable[B]
@@ -15,8 +16,8 @@ type Either[A any, B any] struct {
 }
 
 const (
-	_Either_Left uint8 = iota
-	_Either_Right
+	_Either_Left  uint8 = 1
+	_Either_Right uint8 = 2
 )
 
 type Left[A any, B any] struct {
@@ -73,6 +74,16 @@ type EitherInstance interface {
 
 func (_ Either[A, B]) IsEither() bool {
 	return true
+}
+
+// NewEitherLeft returns the Left case of Either.
+func NewEitherLeft[A any, B any](leftValue A) Either[A, B] {
+	return Left[A, B]{}.Apply(leftValue)
+}
+
+// NewEitherRight returns the Right case of Either.
+func NewEitherRight[A any, B any](rightValue B) Either[A, B] {
+	return Right[A, B]{}.Apply(rightValue)
 }
 
 //line std/either.gala:11

@@ -5,7 +5,7 @@ package yaml
 import "go.gala.fyi/stdlib/std"
 import "go.gala.fyi/stdlib/go_interop"
 
-//line yaml/naming.gala:3
+//line yaml/naming.gala:1
 
 // Naming represents a field naming strategy for serialization.
 // Mirrors json.Naming so the two codecs can be configured the same way.
@@ -13,18 +13,21 @@ import "go.gala.fyi/stdlib/go_interop"
 // Usage:
 //
 //	val codec = Codec[Person](SnakeCase())
+//
+// Use NewNaming for the default value (CamelCase), or a case constructor: NewNamingCamelCase, NewNamingSnakeCase, NewNamingKebabCase, NewNamingAsIs.
 type Naming struct {
 	_variant uint8
 }
 
 const (
-	_Naming_CamelCase uint8 = iota
-	_Naming_SnakeCase
-	_Naming_KebabCase
-	_Naming_AsIs
+	_Naming_CamelCase uint8 = 0
+	_Naming_SnakeCase uint8 = 1
+	_Naming_KebabCase uint8 = 2
+	_Naming_AsIs      uint8 = 3
 )
 
-// CamelCase converts PascalCase to camelCase (e.g., "FirstName" -> "firstName")
+// CamelCase converts PascalCase to camelCase (e.g., "FirstName" -> "firstName").
+// It is the default: a Naming nothing set is CamelCase.
 type CamelCase struct {
 }
 
@@ -100,7 +103,41 @@ func (s Naming) String() string {
 	}
 }
 
-//line yaml/naming.gala:20
+// NewNamingCamelCase returns the CamelCase case of Naming.
+//
+// CamelCase converts PascalCase to camelCase (e.g., "FirstName" -> "firstName").
+// It is the default: a Naming nothing set is CamelCase.
+func NewNamingCamelCase() Naming {
+	return CamelCase{}.Apply()
+}
+
+// NewNamingSnakeCase returns the SnakeCase case of Naming.
+//
+// SnakeCase converts PascalCase to snake_case (e.g., "FirstName" -> "first_name")
+func NewNamingSnakeCase() Naming {
+	return SnakeCase{}.Apply()
+}
+
+// NewNamingKebabCase returns the KebabCase case of Naming.
+//
+// KebabCase converts PascalCase to kebab-case (e.g., "FirstName" -> "first-name")
+func NewNamingKebabCase() Naming {
+	return KebabCase{}.Apply()
+}
+
+// NewNamingAsIs returns the AsIs case of Naming.
+//
+// AsIs keeps the original PascalCase field names unchanged
+func NewNamingAsIs() Naming {
+	return AsIs{}.Apply()
+}
+
+// NewNaming returns Naming's default value: CamelCase, what GALA uses where none is given.
+func NewNaming() Naming {
+	return Naming{}
+}
+
+//line yaml/naming.gala:21
 
 // ApplyNaming converts a single PascalCase field name using the given strategy.
 func ApplyNaming(fieldName string, naming Naming) string {
@@ -131,118 +168,118 @@ func ApplyNaming(fieldName string, naming Naming) string {
 	}(naming)
 }
 
-//line yaml/naming.gala:31
+//line yaml/naming.gala:32
 func toCamelCase(s string) string {
-//line yaml/naming.gala:32
+//line yaml/naming.gala:33
 	if s == "" {
-//line yaml/naming.gala:32
+//line yaml/naming.gala:33
 		return s
 	}
-//line yaml/naming.gala:33
-	var i = 0
 //line yaml/naming.gala:34
-	var upper = 0
+	var i = 0
 //line yaml/naming.gala:35
-	var runes = std.NewImmutable(go_interop.ToRunes(s))
+	var upper = 0
 //line yaml/naming.gala:36
-	for i < len(runes.Get()) && runes.Get()[i] >= 'A' && runes.Get()[i] <= 'Z' {
+	var runes = std.NewImmutable(go_interop.ToRunes(s))
 //line yaml/naming.gala:37
-		upper = upper + 1
+	for i < len(runes.Get()) && runes.Get()[i] >= 'A' && runes.Get()[i] <= 'Z' {
 //line yaml/naming.gala:38
+		upper = upper + 1
+//line yaml/naming.gala:39
 		i = i + 1
 	}
-//line yaml/naming.gala:40
+//line yaml/naming.gala:41
 	if upper == 0 {
-//line yaml/naming.gala:40
+//line yaml/naming.gala:41
 		return s
 	}
-//line yaml/naming.gala:41
-	if upper == 1 {
 //line yaml/naming.gala:42
-		runes.Get()[0] = runes.Get()[0] + 32
+	if upper == 1 {
 //line yaml/naming.gala:43
+		runes.Get()[0] = runes.Get()[0] + 32
+//line yaml/naming.gala:44
 		return runesToString(runes.Get())
 	}
-//line yaml/naming.gala:45
-	if upper < len(runes.Get()) {
 //line yaml/naming.gala:46
-		var j = 0
+	if upper < len(runes.Get()) {
 //line yaml/naming.gala:47
-		for j < upper-1 {
+		var j = 0
 //line yaml/naming.gala:48
-			runes.Get()[j] = runes.Get()[j] + 32
+		for j < upper-1 {
 //line yaml/naming.gala:49
+			runes.Get()[j] = runes.Get()[j] + 32
+//line yaml/naming.gala:50
 			j = j + 1
 		}
 	} else {
-//line yaml/naming.gala:52
-		var j = 0
 //line yaml/naming.gala:53
-		for j < len(runes.Get()) {
+		var j = 0
 //line yaml/naming.gala:54
-			if runes.Get()[j] >= 'A' && runes.Get()[j] <= 'Z' {
+		for j < len(runes.Get()) {
 //line yaml/naming.gala:55
+			if runes.Get()[j] >= 'A' && runes.Get()[j] <= 'Z' {
+//line yaml/naming.gala:56
 				runes.Get()[j] = runes.Get()[j] + 32
 			}
-//line yaml/naming.gala:57
+//line yaml/naming.gala:58
 			j = j + 1
 		}
 	}
-//line yaml/naming.gala:60
+//line yaml/naming.gala:61
 	return runesToString(runes.Get())
 }
 
-//line yaml/naming.gala:63
+//line yaml/naming.gala:64
 func toSnakeCase(s string) string {
 	return toDelimited(s, '_')
 }
 
-//line yaml/naming.gala:64
+//line yaml/naming.gala:65
 func toKebabCase(s string) string {
 	return toDelimited(s, '-')
 }
 
-//line yaml/naming.gala:66
+//line yaml/naming.gala:67
 func toDelimited(s string, delim rune) string {
-//line yaml/naming.gala:67
+//line yaml/naming.gala:68
 	if s == "" {
-//line yaml/naming.gala:67
+//line yaml/naming.gala:68
 		return s
 	}
-//line yaml/naming.gala:68
-	var runes = std.NewImmutable(go_interop.ToRunes(s))
 //line yaml/naming.gala:69
-	var result []rune
+	var runes = std.NewImmutable(go_interop.ToRunes(s))
 //line yaml/naming.gala:70
-	var i = 0
+	var result []rune
 //line yaml/naming.gala:71
-	for i < len(runes.Get()) {
+	var i = 0
 //line yaml/naming.gala:72
-		var r = std.NewImmutable(runes.Get()[i])
+	for i < len(runes.Get()) {
 //line yaml/naming.gala:73
-		if r.Get() >= 'A' && r.Get() <= 'Z' {
+		var r = std.NewImmutable(runes.Get()[i])
 //line yaml/naming.gala:74
-			if i > 0 {
+		if r.Get() >= 'A' && r.Get() <= 'Z' {
 //line yaml/naming.gala:75
-				var prev = std.NewImmutable(runes.Get()[i-1])
+			if i > 0 {
 //line yaml/naming.gala:76
-				if prev.Get() >= 'a' && prev.Get() <= 'z' {
+				var prev = std.NewImmutable(runes.Get()[i-1])
 //line yaml/naming.gala:77
+				if prev.Get() >= 'a' && prev.Get() <= 'z' {
+//line yaml/naming.gala:78
 					result = go_interop.SliceAppend(result, delim)
 				} else if i+1 < len(runes.Get()) && runes.Get()[i+1] >= 'a' && runes.Get()[i+1] <= 'z' && prev.Get() >= 'A' && prev.Get() <= 'Z' {
-//line yaml/naming.gala:79
+//line yaml/naming.gala:80
 					result = go_interop.SliceAppend(result, delim)
 				}
 			}
-//line yaml/naming.gala:82
+//line yaml/naming.gala:83
 			result = go_interop.SliceAppend(result, r.Get()+32)
 		} else {
-//line yaml/naming.gala:84
+//line yaml/naming.gala:85
 			result = go_interop.SliceAppend(result, r.Get())
 		}
-//line yaml/naming.gala:86
+//line yaml/naming.gala:87
 		i = i + 1
 	}
-//line yaml/naming.gala:88
+//line yaml/naming.gala:89
 	return runesToString(result)
 }

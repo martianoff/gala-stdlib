@@ -33,27 +33,19 @@ func (i Immutable[T]) Get() T {
 
 //line std/immutable.gala:10
 
-// Ptr returns a pointer to the underlying value.
-// This allows taking the address of immutable values.
-func (i *Immutable[T]) Ptr() *T {
-	return &i.value
-}
-
-//line std/immutable.gala:14
-
 // GetAny returns the underlying value as any (for interface-based unwrapping).
 func (i Immutable[T]) GetAny() any {
 	return i.value
 }
 
-//line std/immutable.gala:17
+//line std/immutable.gala:13
 
 // NewImmutable creates a new Immutable wrapper.
 func NewImmutable[T any](v T) Immutable[T] {
 	return Immutable[T]{value: v}
 }
 
-//line std/immutable.gala:20
+//line std/immutable.gala:16
 
 // AddrOfCopy returns a pointer to a fresh copy of v. The transpiler emits it
 // when a pointer-receiver method is called on a value Go cannot address — a

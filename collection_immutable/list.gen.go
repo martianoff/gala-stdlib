@@ -997,7 +997,7 @@ func List_PartitionMap[A any, B any, T any](l List[T], f func(T) Either[A, B]) T
 					if _tmp_9 {
 						rights = consList[B](r, rights)
 					} else {
-						panic("unreachable")
+						panic("gala: a std.Either matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 					}
 				}
 			}
