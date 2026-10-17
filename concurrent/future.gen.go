@@ -330,9 +330,10 @@ func FutureOn[T any](body func() T, ec go_interop.ExecutionContext) Future[T] {
 	return runAsync[T](body, ec)
 }
 
-//line concurrent/future.gala:185
+//line concurrent/future.gala:184
 
 // FutureError is a custom error type for Future-related errors.
+// From Go, create it with NewFutureError.
 type FutureError struct {
 	Message Immutable[string]
 }
@@ -353,14 +354,20 @@ func (s FutureError) Unapply(v any) (Immutable[string], bool) {
 	return *new(Immutable[string]), false
 }
 
+// NewFutureError returns a new FutureError.
+func NewFutureError(message string) FutureError {
+	return FutureError{Message: NewImmutable(message)}
+}
+
 //line concurrent/future.gala:189
 func (e FutureError) Error() string {
 	return e.Message.Get()
 }
 
-//line concurrent/future.gala:190
+//line concurrent/future.gala:189
 
 // TimeoutError is returned when a Future fails to complete before its timeout expires.
+// From Go, create it with NewTimeoutError.
 type TimeoutError struct {
 	Timeout Immutable[Duration]
 }
@@ -381,18 +388,24 @@ func (s TimeoutError) Unapply(v any) (Immutable[Duration], bool) {
 	return *new(Immutable[Duration]), false
 }
 
+// NewTimeoutError returns a new TimeoutError.
+func NewTimeoutError(timeout Duration) TimeoutError {
+	return TimeoutError{Timeout: NewImmutable(timeout)}
+}
+
 //line concurrent/future.gala:194
 func (e TimeoutError) Error() string {
 	return fmt.Sprintf("future timed out after %v", e.Timeout.Get())
 }
 
-//line concurrent/future.gala:195
+//line concurrent/future.gala:194
 
 // CancellationError is returned by a derived Future whose pending stage was
 // short-circuited because the shared cancellation token was triggered (via
 // Future.Cancel, WithTimeout firing, or losing a Race). It never aborts an
 // already-running body — Go has no goroutine interruption — it only prevents a
 // not-yet-started downstream stage from running.
+// From Go, create it with NewCancellationError.
 type CancellationError struct {
 	Message Immutable[string]
 }
@@ -411,6 +424,11 @@ func (s CancellationError) Unapply(v any) (Immutable[string], bool) {
 		return p.Message, true
 	}
 	return *new(Immutable[string]), false
+}
+
+// NewCancellationError returns a new CancellationError.
+func NewCancellationError(message string) CancellationError {
+	return CancellationError{Message: NewImmutable(message)}
 }
 
 //line concurrent/future.gala:203

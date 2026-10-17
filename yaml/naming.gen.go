@@ -82,6 +82,26 @@ func (s Naming) isKebabCase() bool {
 func (s Naming) isAsIs() bool {
 	return s._variant == _Naming_AsIs
 }
+
+// IsCamelCase reports whether s is the CamelCase case of Naming.
+func (s Naming) IsCamelCase() bool {
+	return s._variant == _Naming_CamelCase
+}
+
+// IsSnakeCase reports whether s is the SnakeCase case of Naming.
+func (s Naming) IsSnakeCase() bool {
+	return s._variant == _Naming_SnakeCase
+}
+
+// IsKebabCase reports whether s is the KebabCase case of Naming.
+func (s Naming) IsKebabCase() bool {
+	return s._variant == _Naming_KebabCase
+}
+
+// IsAsIs reports whether s is the AsIs case of Naming.
+func (s Naming) IsAsIs() bool {
+	return s._variant == _Naming_AsIs
+}
 func (s Naming) Copy() Naming {
 	return Naming{_variant: std.Copy(s._variant)}
 }

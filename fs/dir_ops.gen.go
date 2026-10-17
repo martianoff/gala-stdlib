@@ -11,12 +11,13 @@ import (
 	"path/filepath"
 )
 
-//line fs/dir_ops.gala:11
+//line fs/dir_ops.gala:10
 
 // WalkEntry pairs a filesystem path with the FileInfo snapshot for the
 // node living at that path. Returned by Walk; the Path is the full
 // path as produced by filepath.WalkDir (i.e. relative paths are kept
 // relative, absolute paths stay absolute).
+// From Go, create it with NewWalkEntry.
 type WalkEntry struct {
 	Path Immutable[string]
 	Info Immutable[FileInfo]
@@ -36,6 +37,11 @@ func (s WalkEntry) Unapply(v any) (Immutable[string], Immutable[FileInfo], bool)
 		return p.Path, p.Info, true
 	}
 	return *new(Immutable[string]), *new(Immutable[FileInfo]), false
+}
+
+// NewWalkEntry returns a new WalkEntry.
+func NewWalkEntry(path string, info FileInfo) WalkEntry {
+	return WalkEntry{Path: NewImmutable(path), Info: NewImmutable[FileInfo](info)}
 }
 
 //line fs/dir_ops.gala:20

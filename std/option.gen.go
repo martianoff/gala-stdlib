@@ -93,6 +93,16 @@ func (s Option[T]) isSome() bool {
 func (s Option[T]) isNone() bool {
 	return s._variant == _Option_None
 }
+
+// IsSome reports whether s is the Some case of Option.
+func (s Option[T]) IsSome() bool {
+	return s._variant == _Option_Some
+}
+
+// IsNone reports whether s is the None case of Option.
+func (s Option[T]) IsNone() bool {
+	return s._variant == _Option_None
+}
 func (s Option[T]) Copy() Option[T] {
 	return Option[T]{Value: Copy(s.Value), _variant: Copy(s._variant)}
 }

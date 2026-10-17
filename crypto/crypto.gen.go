@@ -319,9 +319,10 @@ func (s Md5) NewHasher() *Hasher {
 	return &Hasher{algorithm: NewImmutable("MD5"), h: md5.New()}
 }
 
-//line crypto/crypto.gala:147
+//line crypto/crypto.gala:146
 
 // HmacSha256 is HMAC-SHA-256, 32-byte tag.
+// From Go, create it with NewHmacSha256.
 type HmacSha256 struct {
 	Key Immutable[Array[byte]]
 }
@@ -340,6 +341,11 @@ func (s HmacSha256) Unapply(v any) (Immutable[Array[byte]], bool) {
 		return p.Key, true
 	}
 	return *new(Immutable[Array[byte]]), false
+}
+
+// NewHmacSha256 returns a new HmacSha256.
+func NewHmacSha256(key Array[byte]) HmacSha256 {
+	return HmacSha256{Key: NewImmutable(key)}
 }
 
 //line crypto/crypto.gala:151
@@ -368,9 +374,10 @@ func (h HmacSha256) NewHasher() *Hasher {
 	return &Hasher{algorithm: NewImmutable("HMAC-SHA256"), h: hmac.New(sha256.New, h.Key.Get().ToGoSlice())}
 }
 
-//line crypto/crypto.gala:163
+//line crypto/crypto.gala:162
 
 // HmacSha512 is HMAC-SHA-512, 64-byte tag.
+// From Go, create it with NewHmacSha512.
 type HmacSha512 struct {
 	Key Immutable[Array[byte]]
 }
@@ -389,6 +396,11 @@ func (s HmacSha512) Unapply(v any) (Immutable[Array[byte]], bool) {
 		return p.Key, true
 	}
 	return *new(Immutable[Array[byte]]), false
+}
+
+// NewHmacSha512 returns a new HmacSha512.
+func NewHmacSha512(key Array[byte]) HmacSha512 {
+	return HmacSha512{Key: NewImmutable(key)}
 }
 
 //line crypto/crypto.gala:167
@@ -417,10 +429,11 @@ func (h HmacSha512) NewHasher() *Hasher {
 	return &Hasher{algorithm: NewImmutable("HMAC-SHA512"), h: hmac.New(sha512.New, h.Key.Get().ToGoSlice())}
 }
 
-//line crypto/crypto.gala:179
+//line crypto/crypto.gala:178
 
 // HmacSha1 is HMAC-SHA-1, 20-byte tag. SHA-1 collision resistance is
 // broken, but HMAC-SHA-1 remains in use for legacy interop.
+// From Go, create it with NewHmacSha1.
 type HmacSha1 struct {
 	Key Immutable[Array[byte]]
 }
@@ -439,6 +452,11 @@ func (s HmacSha1) Unapply(v any) (Immutable[Array[byte]], bool) {
 		return p.Key, true
 	}
 	return *new(Immutable[Array[byte]]), false
+}
+
+// NewHmacSha1 returns a new HmacSha1.
+func NewHmacSha1(key Array[byte]) HmacSha1 {
+	return HmacSha1{Key: NewImmutable(key)}
 }
 
 //line crypto/crypto.gala:184
@@ -538,9 +556,10 @@ func (s Ed25519PrivateKey) Equal(other Ed25519PrivateKey) bool {
 	return Equal(s.bytes, other.bytes)
 }
 
-//line crypto/crypto.gala:234
+//line crypto/crypto.gala:233
 
 // Ed25519KeyPair bundles a matched Ed25519 public/private pair.
+// From Go, create it with NewEd25519KeyPair.
 type Ed25519KeyPair struct {
 	Public  Immutable[Ed25519PublicKey]
 	Private Immutable[Ed25519PrivateKey]
@@ -560,6 +579,11 @@ func (s Ed25519KeyPair) Unapply(v any) (Immutable[Ed25519PublicKey], Immutable[E
 		return p.Public, p.Private, true
 	}
 	return *new(Immutable[Ed25519PublicKey]), *new(Immutable[Ed25519PrivateKey]), false
+}
+
+// NewEd25519KeyPair returns a new Ed25519KeyPair.
+func NewEd25519KeyPair(public Ed25519PublicKey, private Ed25519PrivateKey) Ed25519KeyPair {
+	return Ed25519KeyPair{Public: NewImmutable(public), Private: NewImmutable(private)}
 }
 
 //line crypto/crypto.gala:237
@@ -723,9 +747,10 @@ func (s X25519PrivateKey) Equal(other X25519PrivateKey) bool {
 	return Equal(s.bytes, other.bytes)
 }
 
-//line crypto/crypto.gala:317
+//line crypto/crypto.gala:316
 
 // X25519KeyPair bundles a matched X25519 public/private pair.
+// From Go, create it with NewX25519KeyPair.
 type X25519KeyPair struct {
 	Public  Immutable[X25519PublicKey]
 	Private Immutable[X25519PrivateKey]
@@ -745,6 +770,11 @@ func (s X25519KeyPair) Unapply(v any) (Immutable[X25519PublicKey], Immutable[X25
 		return p.Public, p.Private, true
 	}
 	return *new(Immutable[X25519PublicKey]), *new(Immutable[X25519PrivateKey]), false
+}
+
+// NewX25519KeyPair returns a new X25519KeyPair.
+func NewX25519KeyPair(public X25519PublicKey, private X25519PrivateKey) X25519KeyPair {
+	return X25519KeyPair{Public: NewImmutable(public), Private: NewImmutable(private)}
 }
 
 //line crypto/crypto.gala:320

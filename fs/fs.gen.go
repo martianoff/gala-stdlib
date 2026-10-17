@@ -11,11 +11,12 @@ import (
 	"os"
 )
 
-//line fs/fs.gala:17
+//line fs/fs.gala:16
 
 // FileInfo is the immutable snapshot returned by Stat / ReadDir. It
 // intentionally exposes only fields that the gala_team and similar
 // consumers actually use; the raw os.FileInfo interface is not leaked.
+// From Go, create it with NewFileInfo.
 type FileInfo struct {
 	Name    Immutable[string]
 	Size    Immutable[int64]
@@ -38,6 +39,11 @@ func (s FileInfo) Unapply(v any) (Immutable[string], Immutable[int64], Immutable
 		return p.Name, p.Size, p.IsDir, p.Mode, p.ModTime, true
 	}
 	return *new(Immutable[string]), *new(Immutable[int64]), *new(Immutable[bool]), *new(Immutable[int]), *new(Immutable[time_utils.Instant]), false
+}
+
+// NewFileInfo returns a new FileInfo.
+func NewFileInfo(name string, size int64, isDir bool, mode int, modTime time_utils.Instant) FileInfo {
+	return FileInfo{Name: NewImmutable(name), Size: NewImmutable(size), IsDir: NewImmutable(isDir), Mode: NewImmutable(mode), ModTime: NewImmutable(modTime)}
 }
 
 //line fs/fs.gala:28
