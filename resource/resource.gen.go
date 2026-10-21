@@ -23,13 +23,13 @@ type Closeable interface {
 // then nothing to release).
 func Bracket[R any, A any](resource R, release func(R), body func(R) A) A {
 //line resource/resource.gala:31
-	var result = NewImmutable(TryApply(func() A {
+	var result = TryApply(func() A {
 		return body(resource)
-	}))
+	})
 //line resource/resource.gala:32
 	release(resource)
 //line resource/resource.gala:33
-	return result.Get().Get()
+	return result.Get()
 }
 
 //line resource/resource.gala:35

@@ -38,7 +38,7 @@ func (_ eventBusState[T]) IseventBusState() bool {
 // EventBus is the public handle. Copy-by-value is safe and intentional:
 // every copy refers to the same underlying state.
 type EventBus[T any] struct {
-	state *eventBusState[T]
+	state Immutable[*eventBusState[T]]
 }
 
 func (s EventBus[T]) Copy() EventBus[T] {
@@ -62,7 +62,7 @@ func (_ EventBus[T]) IsEventBus() bool {
 // The buffer starts with a small capacity (256) to avoid the first Push
 // allocating; it grows on demand.
 func NewEventBus[T any]() EventBus[T] {
-	return EventBus[T]{state: &eventBusState[T]{mu: go_interop.NewMutex(), events: go_interop.SliceWithCapacity[T](256), capacity: 0}}
+	return EventBus[T]{state: NewImmutable(&eventBusState[T]{mu: go_interop.NewMutex(), events: go_interop.SliceWithCapacity[T](256), capacity: 0})}
 }
 
 //line concurrent/event_bus.gala:60
@@ -72,7 +72,7 @@ func NewEventBus[T any]() EventBus[T] {
 // overflow strategy. Use the explicit Push return value for back-pressure
 // signalling. For drop-oldest semantics, drain more aggressively.
 func NewBoundedEventBus[T any](capacity int) EventBus[T] {
-	return EventBus[T]{state: &eventBusState[T]{mu: go_interop.NewMutex(), events: go_interop.SliceWithCapacity[T](capacity), capacity: capacity}}
+	return EventBus[T]{state: NewImmutable(&eventBusState[T]{mu: go_interop.NewMutex(), events: go_interop.SliceWithCapacity[T](capacity), capacity: capacity})}
 }
 
 //line concurrent/event_bus.gala:72
@@ -81,18 +81,18 @@ func NewBoundedEventBus[T any](capacity int) EventBus[T] {
 // bounded and full. Safe from any goroutine.
 func (b EventBus[T]) Push(e T) bool {
 //line concurrent/event_bus.gala:76
-	b.state.mu.Lock()
+	b.state.Get().mu.Lock()
 //line concurrent/event_bus.gala:77
-	if b.state.capacity > 0 && len(b.state.events) >= b.state.capacity {
+	if b.state.Get().capacity > 0 && len(b.state.Get().events) >= b.state.Get().capacity {
 //line concurrent/event_bus.gala:78
-		b.state.mu.Unlock()
+		b.state.Get().mu.Unlock()
 //line concurrent/event_bus.gala:79
 		return false
 	}
 //line concurrent/event_bus.gala:81
-	b.state.events = go_interop.SliceAppendAll(b.state.events, go_interop.SliceOf(e))
+	b.state.Get().events = go_interop.SliceAppendAll(b.state.Get().events, go_interop.SliceOf(e))
 //line concurrent/event_bus.gala:82
-	b.state.mu.Unlock()
+	b.state.Get().mu.Unlock()
 //line concurrent/event_bus.gala:83
 	return true
 }
@@ -105,23 +105,23 @@ func (b EventBus[T]) Push(e T) bool {
 // for a single drain consumer (typically a render-loop tick).
 func (b EventBus[T]) DrainAll() Array[T] {
 //line concurrent/event_bus.gala:91
-	b.state.mu.Lock()
+	b.state.Get().mu.Lock()
 //line concurrent/event_bus.gala:92
-	var out = NewImmutable(b.state.events)
+	var out = b.state.Get().events
 //line concurrent/event_bus.gala:93
-	var initialCap = NewImmutable(func() int {
-		if b.state.capacity > 0 {
-			return b.state.capacity
+	var initialCap = func() int {
+		if b.state.Get().capacity > 0 {
+			return b.state.Get().capacity
 		} else {
 			return 256
 		}
-	}())
+	}()
 //line concurrent/event_bus.gala:94
-	b.state.events = go_interop.SliceWithCapacity[T](initialCap.Get())
+	b.state.Get().events = go_interop.SliceWithCapacity[T](initialCap)
 //line concurrent/event_bus.gala:95
-	b.state.mu.Unlock()
+	b.state.Get().mu.Unlock()
 //line concurrent/event_bus.gala:96
-	return ArrayFromSlice(out.Get())
+	return ArrayFromSlice(out)
 }
 
 //line concurrent/event_bus.gala:98
@@ -131,22 +131,22 @@ func (b EventBus[T]) DrainAll() Array[T] {
 // it does one lock acquisition for the whole batch.
 func (b EventBus[T]) TryTake() Option[T] {
 //line concurrent/event_bus.gala:103
-	b.state.mu.Lock()
+	b.state.Get().mu.Lock()
 //line concurrent/event_bus.gala:104
-	if len(b.state.events) == 0 {
+	if len(b.state.Get().events) == 0 {
 //line concurrent/event_bus.gala:105
-		b.state.mu.Unlock()
+		b.state.Get().mu.Unlock()
 //line concurrent/event_bus.gala:106
 		return None[T]{}.Apply()
 	}
 //line concurrent/event_bus.gala:108
-	var e = NewImmutable(b.state.events[0])
+	var e = b.state.Get().events[0]
 //line concurrent/event_bus.gala:109
-	b.state.events = go_interop.SliceDrop(b.state.events, 1)
+	b.state.Get().events = go_interop.SliceDrop(b.state.Get().events, 1)
 //line concurrent/event_bus.gala:110
-	b.state.mu.Unlock()
+	b.state.Get().mu.Unlock()
 //line concurrent/event_bus.gala:111
-	return Some[T]{}.Apply(e.Get())
+	return Some[T]{}.Apply(e)
 }
 
 //line concurrent/event_bus.gala:113
@@ -155,13 +155,13 @@ func (b EventBus[T]) TryTake() Option[T] {
 // and back-pressure checks.
 func (b EventBus[T]) Size() int {
 //line concurrent/event_bus.gala:117
-	b.state.mu.Lock()
+	b.state.Get().mu.Lock()
 //line concurrent/event_bus.gala:118
-	var n = NewImmutable(len(b.state.events))
+	var n = len(b.state.Get().events)
 //line concurrent/event_bus.gala:119
-	b.state.mu.Unlock()
+	b.state.Get().mu.Unlock()
 //line concurrent/event_bus.gala:120
-	return n.Get()
+	return n
 }
 
 //line concurrent/event_bus.gala:122
@@ -175,5 +175,5 @@ func (b EventBus[T]) IsEmpty() bool {
 
 // Capacity returns the bus's capacity, or 0 if unbounded.
 func (b EventBus[T]) Capacity() int {
-	return b.state.capacity
+	return b.state.Get().capacity
 }

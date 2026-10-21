@@ -8,7 +8,7 @@ import "go.gala.fyi/stdlib/go_interop"
 //line lazy/lazy.gala:6
 
 // Lazy[T] defers a computation and caches the result on first access.
-// Thread-safe via go_interop.Once. Pointer-based (*Lazy[T]).
+// Thread-safe via go_interop.Once. Pointer-based (Ptr[Lazy[T]]).
 type Lazy[T any] struct {
 	thunk func() T
 	value T
@@ -44,18 +44,21 @@ func New[T any](thunk func() T) *Lazy[T] {
 // Of creates an already-evaluated Lazy holding value.
 func Of[T any](value T) *Lazy[T] {
 //line lazy/lazy.gala:23
-	var l = std.NewImmutable(&Lazy[T]{value: value, once: go_interop.NewOnce(), done: true})
+	var l = &Lazy[T]{value: value, once: go_interop.NewOnce(), done: true}
 //line lazy/lazy.gala:24
-	l.Get().once.Do(func() {
+	l.once.Do(func() {
 	})
 //line lazy/lazy.gala:25
-	return l.Get()
+	return l
 }
 
 //line lazy/lazy.gala:27
 
 // Get returns the computed value, evaluating the thunk on first call.
 func (l *Lazy[T]) Get() T {
+	if l == nil {
+		panic("Lazy.Get: receiver l is a Ptr[lazy.Lazy[T]], but the caller passed nil")
+	}
 //line lazy/lazy.gala:30
 	l.once.Do(func() {
 //line lazy/lazy.gala:31
@@ -73,6 +76,9 @@ func (l *Lazy[T]) Get() T {
 
 // IsEvaluated returns true if the thunk has been evaluated.
 func (l *Lazy[T]) IsEvaluated() bool {
+	if l == nil {
+		panic("Lazy.IsEvaluated: receiver l is a Ptr[lazy.Lazy[T]], but the caller passed nil")
+	}
 	return l.done
 }
 
@@ -80,6 +86,9 @@ func (l *Lazy[T]) IsEvaluated() bool {
 
 // Map returns a new Lazy that lazily applies f to this value.
 func Lazy_Map[U any, T any](l *Lazy[T], f func(T) U) *Lazy[U] {
+	if l == nil {
+		panic("Lazy.Map: receiver l is a Ptr[lazy.Lazy[T]], but the caller passed nil")
+	}
 	return New[U](func() U {
 		return f(l.Get())
 	})
@@ -89,6 +98,9 @@ func Lazy_Map[U any, T any](l *Lazy[T], f func(T) U) *Lazy[U] {
 
 // FlatMap returns a new Lazy that lazily applies f and flattens.
 func Lazy_FlatMap[U any, T any](l *Lazy[T], f func(T) *Lazy[U]) *Lazy[U] {
+	if l == nil {
+		panic("Lazy.FlatMap: receiver l is a Ptr[lazy.Lazy[T]], but the caller passed nil")
+	}
 	return New[U](func() U {
 		return f(l.Get()).Get()
 	})

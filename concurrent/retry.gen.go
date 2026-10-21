@@ -20,13 +20,13 @@ func Retry[T any](maxAttempts int, backoff func(int) Duration, action func(int) 
 //line concurrent/retry.gala:15
 	for i := 0; i < maxAttempts; i++ {
 //line concurrent/retry.gala:16
-		var result = NewImmutable(action(i))
+		var result = action(i)
 //line concurrent/retry.gala:17
-		lastResult = result.Get()
+		lastResult = result
 //line concurrent/retry.gala:18
-		if result.Get().IsSuccess() {
+		if result.IsSuccess() {
 //line concurrent/retry.gala:19
-			return result.Get()
+			return result
 		}
 //line concurrent/retry.gala:21
 		if i < maxAttempts-1 {

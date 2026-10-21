@@ -21,9 +21,9 @@ var mutableTreeBlack Immutable[int] = NewImmutable[int](1)
 // treeSetNode represents a node in the Red-Black tree.
 type treeSetNode[T comparable] struct {
 	value  T
-	left   *treeSetNode[T]
-	right  *treeSetNode[T]
-	parent *treeSetNode[T]
+	left   OptionPtr[treeSetNode[T]]
+	right  OptionPtr[treeSetNode[T]]
+	parent OptionPtr[treeSetNode[T]]
 	color  int
 }
 
@@ -46,7 +46,7 @@ func (_ treeSetNode[T]) IstreeSetNode() bool {
 
 // TreeSet represents a mutable sorted set.
 type TreeSet[T comparable] struct {
-	root *treeSetNode[T]
+	root OptionPtr[treeSetNode[T]]
 	size int
 }
 
@@ -69,139 +69,148 @@ func (_ TreeSet[T]) IsTreeSet() bool {
 
 // EmptyTreeSet returns a new empty TreeSet.
 func EmptyTreeSet[T comparable]() *TreeSet[T] {
-//line collection_mutable/treeset.gala:45
-	var nilRoot *treeSetNode[T] = nil
-//line collection_mutable/treeset.gala:46
-	return &TreeSet[T]{root: nilRoot, size: 0}
+	return &TreeSet[T]{root: EmptyOptionPtr[treeSetNode[T]](), size: 0}
 }
 
-//line collection_mutable/treeset.gala:48
+//line collection_mutable/treeset.gala:45
 
 // TreeSetOf creates a TreeSet from variadic arguments.
 // Example: TreeSetOf[int](3, 1, 2) creates TreeSet(1, 2, 3)
 func TreeSetOf[T comparable](elements ...T) *TreeSet[T] {
-//line collection_mutable/treeset.gala:52
+//line collection_mutable/treeset.gala:49
 	var result = EmptyTreeSet[T]()
-//line collection_mutable/treeset.gala:53
+//line collection_mutable/treeset.gala:50
 	for i := 0; i < len(elements); i++ {
-//line collection_mutable/treeset.gala:54
+//line collection_mutable/treeset.gala:51
 		result.Add(elements[i])
 	}
-//line collection_mutable/treeset.gala:56
+//line collection_mutable/treeset.gala:53
 	return result
 }
 
-//line collection_mutable/treeset.gala:58
+//line collection_mutable/treeset.gala:55
 
 // TreeSetFromSlice creates a TreeSet from a slice.
 func TreeSetFromSlice[T comparable](elements []T) *TreeSet[T] {
-//line collection_mutable/treeset.gala:61
+//line collection_mutable/treeset.gala:58
 	var result = EmptyTreeSet[T]()
-//line collection_mutable/treeset.gala:62
+//line collection_mutable/treeset.gala:59
 	for i := 0; i < len(elements); i++ {
-//line collection_mutable/treeset.gala:63
+//line collection_mutable/treeset.gala:60
 		result.Add(elements[i])
 	}
-//line collection_mutable/treeset.gala:65
+//line collection_mutable/treeset.gala:62
 	return result
+}
+
+//line collection_mutable/treeset.gala:66
+
+// IsEmpty returns true if the set is empty.
+func (s *TreeSet[T]) IsEmpty() bool {
+	if s == nil {
+		panic("TreeSet.IsEmpty: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	return s.size == 0
 }
 
 //line collection_mutable/treeset.gala:69
 
-// IsEmpty returns true if the set is empty.
-func (s *TreeSet[T]) IsEmpty() bool {
-	return s.size == 0
+// NonEmpty returns true if the set is not empty.
+func (s *TreeSet[T]) NonEmpty() bool {
+	if s == nil {
+		panic("TreeSet.NonEmpty: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	return s.size > 0
 }
 
 //line collection_mutable/treeset.gala:72
 
-// NonEmpty returns true if the set is not empty.
-func (s *TreeSet[T]) NonEmpty() bool {
-	return s.size > 0
+// Size returns the number of elements. O(1) - cached.
+func (s *TreeSet[T]) Size() int {
+	if s == nil {
+		panic("TreeSet.Size: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	return s.size
 }
 
 //line collection_mutable/treeset.gala:75
 
-// Size returns the number of elements. O(1) - cached.
-func (s *TreeSet[T]) Size() int {
-	return s.size
-}
-
-//line collection_mutable/treeset.gala:78
-
 // Length is an alias for Size.
 func (s *TreeSet[T]) Length() int {
+	if s == nil {
+		panic("TreeSet.Length: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return s.size
 }
 
-//line collection_mutable/treeset.gala:83
+//line collection_mutable/treeset.gala:80
 
 // treeSetCompare compares two values and returns -1, 0, or 1.
 func treeSetCompare[T comparable](a T, b T) int {
+//line collection_mutable/treeset.gala:83
+	var va any = a
+//line collection_mutable/treeset.gala:84
+	var vb any = b
 //line collection_mutable/treeset.gala:86
-	var va Immutable[any] = NewImmutable[any](a)
-//line collection_mutable/treeset.gala:87
-	var vb Immutable[any] = NewImmutable[any](b)
-//line collection_mutable/treeset.gala:89
-	var result = NewImmutable(func(obj any) int {
+	var result = func(obj any) int {
 		{
 			ai, _tmp_1 := As[int](obj)
 			if _tmp_1 {
-				return treeSetCompareIntsAny(ai, vb.Get())
+				return treeSetCompareIntsAny(ai, vb)
 			} else {
 				as, _tmp_2 := As[string](obj)
 				if _tmp_2 {
-					return treeSetCompareStringsAny(as, vb.Get())
+					return treeSetCompareStringsAny(as, vb)
 				} else {
 					ai64, _tmp_3 := As[int64](obj)
 					if _tmp_3 {
-						return treeSetCompareInt64sAny(ai64, vb.Get())
+						return treeSetCompareInt64sAny(ai64, vb)
 					} else {
 						ai32, _tmp_4 := As[int32](obj)
 						if _tmp_4 {
-							return treeSetCompareInt32sAny(ai32, vb.Get())
+							return treeSetCompareInt32sAny(ai32, vb)
 						} else {
 							af64, _tmp_5 := As[float64](obj)
 							if _tmp_5 {
-								return treeSetCompareFloat64sAny(af64, vb.Get())
+								return treeSetCompareFloat64sAny(af64, vb)
 							} else {
 								af32, _tmp_6 := As[float32](obj)
 								if _tmp_6 {
-									return treeSetCompareFloat32sAny(af32, vb.Get())
+									return treeSetCompareFloat32sAny(af32, vb)
 								} else {
 									au, _tmp_7 := As[uint](obj)
 									if _tmp_7 {
-										return treeSetCompareUintsAny(au, vb.Get())
+										return treeSetCompareUintsAny(au, vb)
 									} else {
 										au64, _tmp_8 := As[uint64](obj)
 										if _tmp_8 {
-											return treeSetCompareUint64sAny(au64, vb.Get())
+											return treeSetCompareUint64sAny(au64, vb)
 										} else {
 											au32, _tmp_9 := As[uint32](obj)
 											if _tmp_9 {
-												return treeSetCompareUint32sAny(au32, vb.Get())
+												return treeSetCompareUint32sAny(au32, vb)
 											} else {
 												ai16, _tmp_10 := As[int16](obj)
 												if _tmp_10 {
-													return treeSetCompareInt16sAny(ai16, vb.Get())
+													return treeSetCompareInt16sAny(ai16, vb)
 												} else {
 													ai8, _tmp_11 := As[int8](obj)
 													if _tmp_11 {
-														return treeSetCompareInt8sAny(ai8, vb.Get())
+														return treeSetCompareInt8sAny(ai8, vb)
 													} else {
 														au16, _tmp_12 := As[uint16](obj)
 														if _tmp_12 {
-															return treeSetCompareUint16sAny(au16, vb.Get())
+															return treeSetCompareUint16sAny(au16, vb)
 														} else {
 															au8, _tmp_13 := As[uint8](obj)
 															if _tmp_13 {
-																return treeSetCompareUint8sAny(au8, vb.Get())
+																return treeSetCompareUint8sAny(au8, vb)
 															} else {
 																ao, _tmp_14 := As[Ordered[T]](obj)
 																if _tmp_14 {
 																	return ao.Compare(b)
 																} else {
-																	return treeSetPanicNotOrdered(va.Get())
+																	return treeSetPanicNotOrdered(va)
 																}
 															}
 														}
@@ -217,17 +226,17 @@ func treeSetCompare[T comparable](a T, b T) int {
 				}
 			}
 		}
-	}(va.Get()))
-//line collection_mutable/treeset.gala:106
-	return result.Get()
+	}(va)
+//line collection_mutable/treeset.gala:103
+	return result
 }
 
-//line collection_mutable/treeset.gala:108
+//line collection_mutable/treeset.gala:105
 
 // Type-specific comparison helpers
 func treeSetCompareIntsAny(a int, vb any) int {
-//line collection_mutable/treeset.gala:111
-	var b = NewImmutable(func(obj any) int {
+//line collection_mutable/treeset.gala:108
+	var b = func(obj any) int {
 		{
 			bi, _tmp_15 := As[int](obj)
 			if _tmp_15 {
@@ -236,25 +245,25 @@ func treeSetCompareIntsAny(a int, vb any) int {
 				return 0
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:112
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:112
+	}(vb)
+//line collection_mutable/treeset.gala:109
+	if a < b {
+//line collection_mutable/treeset.gala:109
 		return -1
 	}
-//line collection_mutable/treeset.gala:113
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:113
+//line collection_mutable/treeset.gala:110
+	if a > b {
+//line collection_mutable/treeset.gala:110
 		return 1
 	}
-//line collection_mutable/treeset.gala:114
+//line collection_mutable/treeset.gala:111
 	return 0
 }
 
-//line collection_mutable/treeset.gala:117
+//line collection_mutable/treeset.gala:114
 func treeSetCompareStringsAny(a string, vb any) int {
-//line collection_mutable/treeset.gala:118
-	var b = NewImmutable(func(obj any) string {
+//line collection_mutable/treeset.gala:115
+	var b = func(obj any) string {
 		{
 			bs, _tmp_16 := As[string](obj)
 			if _tmp_16 {
@@ -263,25 +272,25 @@ func treeSetCompareStringsAny(a string, vb any) int {
 				return ""
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:119
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:119
+	}(vb)
+//line collection_mutable/treeset.gala:116
+	if a < b {
+//line collection_mutable/treeset.gala:116
 		return -1
 	}
-//line collection_mutable/treeset.gala:120
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:120
+//line collection_mutable/treeset.gala:117
+	if a > b {
+//line collection_mutable/treeset.gala:117
 		return 1
 	}
-//line collection_mutable/treeset.gala:121
+//line collection_mutable/treeset.gala:118
 	return 0
 }
 
-//line collection_mutable/treeset.gala:124
+//line collection_mutable/treeset.gala:121
 func treeSetCompareInt64sAny(a int64, vb any) int {
-//line collection_mutable/treeset.gala:125
-	var b = NewImmutable(func(obj any) int64 {
+//line collection_mutable/treeset.gala:122
+	var b = func(obj any) int64 {
 		{
 			bi, _tmp_17 := As[int64](obj)
 			if _tmp_17 {
@@ -290,25 +299,25 @@ func treeSetCompareInt64sAny(a int64, vb any) int {
 				return int64(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:126
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:126
+	}(vb)
+//line collection_mutable/treeset.gala:123
+	if a < b {
+//line collection_mutable/treeset.gala:123
 		return -1
 	}
-//line collection_mutable/treeset.gala:127
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:127
+//line collection_mutable/treeset.gala:124
+	if a > b {
+//line collection_mutable/treeset.gala:124
 		return 1
 	}
-//line collection_mutable/treeset.gala:128
+//line collection_mutable/treeset.gala:125
 	return 0
 }
 
-//line collection_mutable/treeset.gala:131
+//line collection_mutable/treeset.gala:128
 func treeSetCompareInt32sAny(a int32, vb any) int {
-//line collection_mutable/treeset.gala:132
-	var b = NewImmutable(func(obj any) int32 {
+//line collection_mutable/treeset.gala:129
+	var b = func(obj any) int32 {
 		{
 			bi, _tmp_18 := As[int32](obj)
 			if _tmp_18 {
@@ -317,25 +326,25 @@ func treeSetCompareInt32sAny(a int32, vb any) int {
 				return int32(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:133
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:133
+	}(vb)
+//line collection_mutable/treeset.gala:130
+	if a < b {
+//line collection_mutable/treeset.gala:130
 		return -1
 	}
-//line collection_mutable/treeset.gala:134
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:134
+//line collection_mutable/treeset.gala:131
+	if a > b {
+//line collection_mutable/treeset.gala:131
 		return 1
 	}
-//line collection_mutable/treeset.gala:135
+//line collection_mutable/treeset.gala:132
 	return 0
 }
 
-//line collection_mutable/treeset.gala:138
+//line collection_mutable/treeset.gala:135
 func treeSetCompareInt16sAny(a int16, vb any) int {
-//line collection_mutable/treeset.gala:139
-	var b = NewImmutable(func(obj any) int16 {
+//line collection_mutable/treeset.gala:136
+	var b = func(obj any) int16 {
 		{
 			bi, _tmp_19 := As[int16](obj)
 			if _tmp_19 {
@@ -344,25 +353,25 @@ func treeSetCompareInt16sAny(a int16, vb any) int {
 				return int16(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:140
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:140
+	}(vb)
+//line collection_mutable/treeset.gala:137
+	if a < b {
+//line collection_mutable/treeset.gala:137
 		return -1
 	}
-//line collection_mutable/treeset.gala:141
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:141
+//line collection_mutable/treeset.gala:138
+	if a > b {
+//line collection_mutable/treeset.gala:138
 		return 1
 	}
-//line collection_mutable/treeset.gala:142
+//line collection_mutable/treeset.gala:139
 	return 0
 }
 
-//line collection_mutable/treeset.gala:145
+//line collection_mutable/treeset.gala:142
 func treeSetCompareInt8sAny(a int8, vb any) int {
-//line collection_mutable/treeset.gala:146
-	var b = NewImmutable(func(obj any) int8 {
+//line collection_mutable/treeset.gala:143
+	var b = func(obj any) int8 {
 		{
 			bi, _tmp_20 := As[int8](obj)
 			if _tmp_20 {
@@ -371,25 +380,25 @@ func treeSetCompareInt8sAny(a int8, vb any) int {
 				return int8(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:147
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:147
+	}(vb)
+//line collection_mutable/treeset.gala:144
+	if a < b {
+//line collection_mutable/treeset.gala:144
 		return -1
 	}
-//line collection_mutable/treeset.gala:148
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:148
+//line collection_mutable/treeset.gala:145
+	if a > b {
+//line collection_mutable/treeset.gala:145
 		return 1
 	}
-//line collection_mutable/treeset.gala:149
+//line collection_mutable/treeset.gala:146
 	return 0
 }
 
-//line collection_mutable/treeset.gala:152
+//line collection_mutable/treeset.gala:149
 func treeSetCompareFloat64sAny(a float64, vb any) int {
-//line collection_mutable/treeset.gala:153
-	var b = NewImmutable(func(obj any) float64 {
+//line collection_mutable/treeset.gala:150
+	var b = func(obj any) float64 {
 		{
 			bf, _tmp_21 := As[float64](obj)
 			if _tmp_21 {
@@ -398,25 +407,25 @@ func treeSetCompareFloat64sAny(a float64, vb any) int {
 				return float64(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:154
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:154
+	}(vb)
+//line collection_mutable/treeset.gala:151
+	if a < b {
+//line collection_mutable/treeset.gala:151
 		return -1
 	}
-//line collection_mutable/treeset.gala:155
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:155
+//line collection_mutable/treeset.gala:152
+	if a > b {
+//line collection_mutable/treeset.gala:152
 		return 1
 	}
-//line collection_mutable/treeset.gala:156
+//line collection_mutable/treeset.gala:153
 	return 0
 }
 
-//line collection_mutable/treeset.gala:159
+//line collection_mutable/treeset.gala:156
 func treeSetCompareFloat32sAny(a float32, vb any) int {
-//line collection_mutable/treeset.gala:160
-	var b = NewImmutable(func(obj any) float32 {
+//line collection_mutable/treeset.gala:157
+	var b = func(obj any) float32 {
 		{
 			bf, _tmp_22 := As[float32](obj)
 			if _tmp_22 {
@@ -425,25 +434,25 @@ func treeSetCompareFloat32sAny(a float32, vb any) int {
 				return float32(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:161
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:161
+	}(vb)
+//line collection_mutable/treeset.gala:158
+	if a < b {
+//line collection_mutable/treeset.gala:158
 		return -1
 	}
-//line collection_mutable/treeset.gala:162
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:162
+//line collection_mutable/treeset.gala:159
+	if a > b {
+//line collection_mutable/treeset.gala:159
 		return 1
 	}
-//line collection_mutable/treeset.gala:163
+//line collection_mutable/treeset.gala:160
 	return 0
 }
 
-//line collection_mutable/treeset.gala:166
+//line collection_mutable/treeset.gala:163
 func treeSetCompareUintsAny(a uint, vb any) int {
-//line collection_mutable/treeset.gala:167
-	var b = NewImmutable(func(obj any) uint {
+//line collection_mutable/treeset.gala:164
+	var b = func(obj any) uint {
 		{
 			bu, _tmp_23 := As[uint](obj)
 			if _tmp_23 {
@@ -452,25 +461,25 @@ func treeSetCompareUintsAny(a uint, vb any) int {
 				return uint(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:168
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:168
+	}(vb)
+//line collection_mutable/treeset.gala:165
+	if a < b {
+//line collection_mutable/treeset.gala:165
 		return -1
 	}
-//line collection_mutable/treeset.gala:169
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:169
+//line collection_mutable/treeset.gala:166
+	if a > b {
+//line collection_mutable/treeset.gala:166
 		return 1
 	}
-//line collection_mutable/treeset.gala:170
+//line collection_mutable/treeset.gala:167
 	return 0
 }
 
-//line collection_mutable/treeset.gala:173
+//line collection_mutable/treeset.gala:170
 func treeSetCompareUint64sAny(a uint64, vb any) int {
-//line collection_mutable/treeset.gala:174
-	var b = NewImmutable(func(obj any) uint64 {
+//line collection_mutable/treeset.gala:171
+	var b = func(obj any) uint64 {
 		{
 			bu, _tmp_24 := As[uint64](obj)
 			if _tmp_24 {
@@ -479,25 +488,25 @@ func treeSetCompareUint64sAny(a uint64, vb any) int {
 				return uint64(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:175
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:175
+	}(vb)
+//line collection_mutable/treeset.gala:172
+	if a < b {
+//line collection_mutable/treeset.gala:172
 		return -1
 	}
-//line collection_mutable/treeset.gala:176
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:176
+//line collection_mutable/treeset.gala:173
+	if a > b {
+//line collection_mutable/treeset.gala:173
 		return 1
 	}
-//line collection_mutable/treeset.gala:177
+//line collection_mutable/treeset.gala:174
 	return 0
 }
 
-//line collection_mutable/treeset.gala:180
+//line collection_mutable/treeset.gala:177
 func treeSetCompareUint32sAny(a uint32, vb any) int {
-//line collection_mutable/treeset.gala:181
-	var b = NewImmutable(func(obj any) uint32 {
+//line collection_mutable/treeset.gala:178
+	var b = func(obj any) uint32 {
 		{
 			bu, _tmp_25 := As[uint32](obj)
 			if _tmp_25 {
@@ -506,25 +515,25 @@ func treeSetCompareUint32sAny(a uint32, vb any) int {
 				return uint32(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:182
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:182
+	}(vb)
+//line collection_mutable/treeset.gala:179
+	if a < b {
+//line collection_mutable/treeset.gala:179
 		return -1
 	}
-//line collection_mutable/treeset.gala:183
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:183
+//line collection_mutable/treeset.gala:180
+	if a > b {
+//line collection_mutable/treeset.gala:180
 		return 1
 	}
-//line collection_mutable/treeset.gala:184
+//line collection_mutable/treeset.gala:181
 	return 0
 }
 
-//line collection_mutable/treeset.gala:187
+//line collection_mutable/treeset.gala:184
 func treeSetCompareUint16sAny(a uint16, vb any) int {
-//line collection_mutable/treeset.gala:188
-	var b = NewImmutable(func(obj any) uint16 {
+//line collection_mutable/treeset.gala:185
+	var b = func(obj any) uint16 {
 		{
 			bu, _tmp_26 := As[uint16](obj)
 			if _tmp_26 {
@@ -533,25 +542,25 @@ func treeSetCompareUint16sAny(a uint16, vb any) int {
 				return uint16(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:189
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:189
+	}(vb)
+//line collection_mutable/treeset.gala:186
+	if a < b {
+//line collection_mutable/treeset.gala:186
 		return -1
 	}
-//line collection_mutable/treeset.gala:190
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:190
+//line collection_mutable/treeset.gala:187
+	if a > b {
+//line collection_mutable/treeset.gala:187
 		return 1
 	}
-//line collection_mutable/treeset.gala:191
+//line collection_mutable/treeset.gala:188
 	return 0
 }
 
-//line collection_mutable/treeset.gala:194
+//line collection_mutable/treeset.gala:191
 func treeSetCompareUint8sAny(a uint8, vb any) int {
-//line collection_mutable/treeset.gala:195
-	var b = NewImmutable(func(obj any) uint8 {
+//line collection_mutable/treeset.gala:192
+	var b = func(obj any) uint8 {
 		{
 			bu, _tmp_27 := As[uint8](obj)
 			if _tmp_27 {
@@ -560,1336 +569,1529 @@ func treeSetCompareUint8sAny(a uint8, vb any) int {
 				return uint8(0)
 			}
 		}
-	}(vb))
-//line collection_mutable/treeset.gala:196
-	if a < b.Get() {
-//line collection_mutable/treeset.gala:196
+	}(vb)
+//line collection_mutable/treeset.gala:193
+	if a < b {
+//line collection_mutable/treeset.gala:193
 		return -1
 	}
-//line collection_mutable/treeset.gala:197
-	if a > b.Get() {
-//line collection_mutable/treeset.gala:197
+//line collection_mutable/treeset.gala:194
+	if a > b {
+//line collection_mutable/treeset.gala:194
 		return 1
 	}
-//line collection_mutable/treeset.gala:198
+//line collection_mutable/treeset.gala:195
 	return 0
 }
 
-//line collection_mutable/treeset.gala:201
+//line collection_mutable/treeset.gala:198
 func treeSetPanicNotOrdered(v any) int {
-//line collection_mutable/treeset.gala:202
+//line collection_mutable/treeset.gala:199
 	panic(fmt.Sprintf("TreeSet: type %T must implement std.Ordered interface", v))
 }
 
-//line collection_mutable/treeset.gala:204
+//line collection_mutable/treeset.gala:201
 
-// isRedTreeSetNode checks if a node is red (nil nodes are black).
-func isRedTreeSetNode[T comparable](node *treeSetNode[T]) bool {
-//line collection_mutable/treeset.gala:207
-	if node == nil {
-//line collection_mutable/treeset.gala:208
-		return false
-	}
-//line collection_mutable/treeset.gala:210
-	return node.color == mutableTreeRed.Get()
+// isRedTreeSetNode checks if a node is red (empty nodes are black).
+func isRedTreeSetNode[T comparable](tree OptionPtr[treeSetNode[T]]) bool {
+	return tree.IsDefined() && tree.Get().color == mutableTreeRed.Get()
 }
 
-//line collection_mutable/treeset.gala:214
+//line collection_mutable/treeset.gala:207
 
 // Contains checks if the set contains the given element. O(log n).
+// It walks the tree itself: findNode is too large to inline.
 func (s *TreeSet[T]) Contains(elem T) bool {
-//line collection_mutable/treeset.gala:217
-	var node = s.root
+	if s == nil {
+		panic("TreeSet.Contains: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:211
+	var current = s.root
+//line collection_mutable/treeset.gala:212
+	for current.IsDefined() {
+//line collection_mutable/treeset.gala:213
+		var node = current.Get()
+//line collection_mutable/treeset.gala:214
+		var cmp = treeSetCompare[T](elem, node.value)
+//line collection_mutable/treeset.gala:215
+		if cmp < 0 {
+//line collection_mutable/treeset.gala:216
+			current = node.left
+		} else if cmp > 0 {
 //line collection_mutable/treeset.gala:218
-	for node != nil {
-//line collection_mutable/treeset.gala:219
-		var cmp = NewImmutable(treeSetCompare[T](elem, node.value))
-//line collection_mutable/treeset.gala:220
-		if cmp.Get() < 0 {
-//line collection_mutable/treeset.gala:221
-			node = node.left
-		} else if cmp.Get() > 0 {
-//line collection_mutable/treeset.gala:223
-			node = node.right
+			current = node.right
 		} else {
-//line collection_mutable/treeset.gala:225
+//line collection_mutable/treeset.gala:220
 			return true
 		}
 	}
-//line collection_mutable/treeset.gala:228
+//line collection_mutable/treeset.gala:223
 	return false
 }
 
-//line collection_mutable/treeset.gala:232
+//line collection_mutable/treeset.gala:227
 
 // Add adds an element to the set. O(log n).
 // Returns true if the element was added (not already present).
 func (s *TreeSet[T]) Add(elem T) bool {
-//line collection_mutable/treeset.gala:236
-	if s.root == nil {
-//line collection_mutable/treeset.gala:237
-		s.root = &treeSetNode[T]{value: elem, color: mutableTreeBlack.Get()}
-//line collection_mutable/treeset.gala:238
+	if s == nil {
+		panic("TreeSet.Add: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:231
+	if s.root.IsEmpty() {
+//line collection_mutable/treeset.gala:232
+		s.root = SomePtr(&treeSetNode[T]{value: elem, color: mutableTreeBlack.Get()})
+//line collection_mutable/treeset.gala:233
 		s.size = 1
-//line collection_mutable/treeset.gala:239
+//line collection_mutable/treeset.gala:234
 		return true
 	}
-//line collection_mutable/treeset.gala:243
-	var parent *treeSetNode[T] = nil
-//line collection_mutable/treeset.gala:244
-	var node = s.root
-//line collection_mutable/treeset.gala:245
+//line collection_mutable/treeset.gala:238
+	var parent = s.root.Get()
+//line collection_mutable/treeset.gala:239
 	var cmp = 0
-//line collection_mutable/treeset.gala:246
-	for node != nil {
-//line collection_mutable/treeset.gala:247
-		parent = node
-//line collection_mutable/treeset.gala:248
-		cmp = treeSetCompare[T](elem, node.value)
-//line collection_mutable/treeset.gala:249
-		if cmp < 0 {
-//line collection_mutable/treeset.gala:250
-			node = node.left
-		} else if cmp > 0 {
-//line collection_mutable/treeset.gala:252
-			node = node.right
-		} else {
-//line collection_mutable/treeset.gala:254
+//line collection_mutable/treeset.gala:240
+	for {
+//line collection_mutable/treeset.gala:241
+		cmp = treeSetCompare[T](elem, parent.value)
+//line collection_mutable/treeset.gala:242
+		if cmp == 0 {
+//line collection_mutable/treeset.gala:243
 			return false
 		}
+//line collection_mutable/treeset.gala:245
+		var next = func() OptionPtr[treeSetNode[T]] {
+			if cmp < 0 {
+				return parent.left
+			} else {
+				return parent.right
+			}
+		}()
+//line collection_mutable/treeset.gala:246
+		if next.IsEmpty() {
+//line collection_mutable/treeset.gala:247
+			break
+		}
+//line collection_mutable/treeset.gala:249
+		parent = next.Get()
+	}
+//line collection_mutable/treeset.gala:253
+	var newNode = &treeSetNode[T]{value: elem, parent: SomePtr(parent), color: mutableTreeRed.Get()}
+//line collection_mutable/treeset.gala:254
+	if cmp < 0 {
+//line collection_mutable/treeset.gala:255
+		parent.left = SomePtr(newNode)
+	} else {
+//line collection_mutable/treeset.gala:257
+		parent.right = SomePtr(newNode)
 	}
 //line collection_mutable/treeset.gala:259
-	var newNode = &treeSetNode[T]{value: elem, parent: parent, color: mutableTreeRed.Get()}
-//line collection_mutable/treeset.gala:260
-	if cmp < 0 {
-//line collection_mutable/treeset.gala:261
-		parent.left = newNode
-	} else {
-//line collection_mutable/treeset.gala:263
-		parent.right = newNode
-	}
-//line collection_mutable/treeset.gala:265
 	s.size++
-//line collection_mutable/treeset.gala:268
+//line collection_mutable/treeset.gala:262
 	s.fixAfterInsert(newNode)
-//line collection_mutable/treeset.gala:269
+//line collection_mutable/treeset.gala:263
 	return true
 }
 
-//line collection_mutable/treeset.gala:271
+//line collection_mutable/treeset.gala:265
 
-// fixAfterInsert rebalances the tree after insertion.
+// fixAfterInsert rebalances the tree after insertion. A red node is never the
+// root, so a node whose parent is red has a grandparent.
 func (s *TreeSet[T]) fixAfterInsert(node *treeSetNode[T]) {
+//line collection_mutable/treeset.gala:269
+	for isRedTreeSetNode[T](node.parent) {
+//line collection_mutable/treeset.gala:270
+		var parent = node.parent.Get()
+//line collection_mutable/treeset.gala:271
+		var grand = parent.parent.Get()
+//line collection_mutable/treeset.gala:272
+		if grand.left == node.parent {
+//line collection_mutable/treeset.gala:273
+			var uncle = grand.right
 //line collection_mutable/treeset.gala:274
-	for node != s.root && node.parent.color == mutableTreeRed.Get() {
-//line collection_mutable/treeset.gala:275
-		if node.parent == node.parent.parent.left {
-//line collection_mutable/treeset.gala:276
-			var uncle = node.parent.parent.right
-//line collection_mutable/treeset.gala:277
 			if isRedTreeSetNode[T](uncle) {
+//line collection_mutable/treeset.gala:276
+				parent.color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:277
+				uncle.Get().color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:278
+				grand.color = mutableTreeRed.Get()
 //line collection_mutable/treeset.gala:279
-				node.parent.color = mutableTreeBlack.Get()
-//line collection_mutable/treeset.gala:280
-				uncle.color = mutableTreeBlack.Get()
-//line collection_mutable/treeset.gala:281
-				node.parent.parent.color = mutableTreeRed.Get()
-//line collection_mutable/treeset.gala:282
-				node = node.parent.parent
+				node = grand
 			} else {
+//line collection_mutable/treeset.gala:281
+				if parent.right == SomePtr(node) {
+//line collection_mutable/treeset.gala:283
+					node = parent
 //line collection_mutable/treeset.gala:284
-				if node == node.parent.right {
-//line collection_mutable/treeset.gala:286
-					node = node.parent
-//line collection_mutable/treeset.gala:287
 					s.rotateLeft(node)
 				}
+//line collection_mutable/treeset.gala:287
+				var p = node.parent.Get()
+//line collection_mutable/treeset.gala:288
+				p.color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:289
+				var g = p.parent.Get()
 //line collection_mutable/treeset.gala:290
-				node.parent.color = mutableTreeBlack.Get()
+				g.color = mutableTreeRed.Get()
 //line collection_mutable/treeset.gala:291
-				node.parent.parent.color = mutableTreeRed.Get()
-//line collection_mutable/treeset.gala:292
-				s.rotateRight(node.parent.parent)
+				s.rotateRight(g)
 			}
 		} else {
+//line collection_mutable/treeset.gala:294
+			var uncle = grand.left
 //line collection_mutable/treeset.gala:295
-			var uncle = node.parent.parent.left
-//line collection_mutable/treeset.gala:296
 			if isRedTreeSetNode[T](uncle) {
+//line collection_mutable/treeset.gala:297
+				parent.color = mutableTreeBlack.Get()
 //line collection_mutable/treeset.gala:298
-				node.parent.color = mutableTreeBlack.Get()
+				uncle.Get().color = mutableTreeBlack.Get()
 //line collection_mutable/treeset.gala:299
-				uncle.color = mutableTreeBlack.Get()
+				grand.color = mutableTreeRed.Get()
 //line collection_mutable/treeset.gala:300
-				node.parent.parent.color = mutableTreeRed.Get()
-//line collection_mutable/treeset.gala:301
-				node = node.parent.parent
+				node = grand
 			} else {
-//line collection_mutable/treeset.gala:303
-				if node == node.parent.left {
+//line collection_mutable/treeset.gala:302
+				if parent.left == SomePtr(node) {
+//line collection_mutable/treeset.gala:304
+					node = parent
 //line collection_mutable/treeset.gala:305
-					node = node.parent
-//line collection_mutable/treeset.gala:306
 					s.rotateRight(node)
 				}
+//line collection_mutable/treeset.gala:308
+				var p = node.parent.Get()
 //line collection_mutable/treeset.gala:309
-				node.parent.color = mutableTreeBlack.Get()
+				p.color = mutableTreeBlack.Get()
 //line collection_mutable/treeset.gala:310
-				node.parent.parent.color = mutableTreeRed.Get()
+				var g = p.parent.Get()
 //line collection_mutable/treeset.gala:311
-				s.rotateLeft(node.parent.parent)
+				g.color = mutableTreeRed.Get()
+//line collection_mutable/treeset.gala:312
+				s.rotateLeft(g)
 			}
 		}
 	}
-//line collection_mutable/treeset.gala:315
-	s.root.color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:316
+	s.root.Get().color = mutableTreeBlack.Get()
 }
 
-//line collection_mutable/treeset.gala:317
+//line collection_mutable/treeset.gala:318
 
-// rotateLeft performs a left rotation.
-func (s *TreeSet[T]) rotateLeft(x *treeSetNode[T]) {
-//line collection_mutable/treeset.gala:320
-	var y = x.right
-//line collection_mutable/treeset.gala:321
-	x.right = y.left
+// replaceChild points whatever pointed at old (its parent, or the root) at
+// replacement instead.
+func (s *TreeSet[T]) replaceChild(old *treeSetNode[T], replacement OptionPtr[treeSetNode[T]]) {
 //line collection_mutable/treeset.gala:322
-	if y.left != nil {
+	if old.parent.IsEmpty() {
 //line collection_mutable/treeset.gala:323
-		y.left.parent = x
+		s.root = replacement
+//line collection_mutable/treeset.gala:324
+		return
 	}
-//line collection_mutable/treeset.gala:325
-	y.parent = x.parent
 //line collection_mutable/treeset.gala:326
-	if x.parent == nil {
+	var parent = old.parent.Get()
 //line collection_mutable/treeset.gala:327
-		s.root = y
-	} else if x == x.parent.left {
-//line collection_mutable/treeset.gala:329
-		x.parent.left = y
+	if parent.left == SomePtr(old) {
+//line collection_mutable/treeset.gala:328
+		parent.left = replacement
 	} else {
-//line collection_mutable/treeset.gala:331
-		x.parent.right = y
+//line collection_mutable/treeset.gala:330
+		parent.right = replacement
 	}
+}
+
 //line collection_mutable/treeset.gala:333
-	y.left = x
-//line collection_mutable/treeset.gala:334
-	x.parent = y
-}
 
+// rotateLeft performs a left rotation. x has a right child.
+func (s *TreeSet[T]) rotateLeft(x *treeSetNode[T]) {
 //line collection_mutable/treeset.gala:336
-
-// rotateRight performs a right rotation.
-func (s *TreeSet[T]) rotateRight(x *treeSetNode[T]) {
+	var y = x.right.Get()
+//line collection_mutable/treeset.gala:337
+	x.right = y.left
+//line collection_mutable/treeset.gala:338
+	if y.left.IsDefined() {
 //line collection_mutable/treeset.gala:339
-	var y = x.left
-//line collection_mutable/treeset.gala:340
-	x.left = y.right
+		y.left.Get().parent = SomePtr(x)
+	}
 //line collection_mutable/treeset.gala:341
-	if y.right != nil {
-//line collection_mutable/treeset.gala:342
-		y.right.parent = x
-	}
-//line collection_mutable/treeset.gala:344
 	y.parent = x.parent
-//line collection_mutable/treeset.gala:345
-	if x.parent == nil {
-//line collection_mutable/treeset.gala:346
-		s.root = y
-	} else if x == x.parent.right {
-//line collection_mutable/treeset.gala:348
-		x.parent.right = y
-	} else {
-//line collection_mutable/treeset.gala:350
-		x.parent.left = y
-	}
-//line collection_mutable/treeset.gala:352
-	y.right = x
-//line collection_mutable/treeset.gala:353
-	x.parent = y
+//line collection_mutable/treeset.gala:342
+	s.replaceChild(x, SomePtr(y))
+//line collection_mutable/treeset.gala:343
+	y.left = SomePtr(x)
+//line collection_mutable/treeset.gala:344
+	x.parent = SomePtr(y)
 }
 
+//line collection_mutable/treeset.gala:346
+
+// rotateRight performs a right rotation. x has a left child.
+func (s *TreeSet[T]) rotateRight(x *treeSetNode[T]) {
+//line collection_mutable/treeset.gala:349
+	var y = x.left.Get()
+//line collection_mutable/treeset.gala:350
+	x.left = y.right
+//line collection_mutable/treeset.gala:351
+	if y.right.IsDefined() {
+//line collection_mutable/treeset.gala:352
+		y.right.Get().parent = SomePtr(x)
+	}
+//line collection_mutable/treeset.gala:354
+	y.parent = x.parent
 //line collection_mutable/treeset.gala:355
+	s.replaceChild(x, SomePtr(y))
+//line collection_mutable/treeset.gala:356
+	y.right = SomePtr(x)
+//line collection_mutable/treeset.gala:357
+	x.parent = SomePtr(y)
+}
+
+//line collection_mutable/treeset.gala:359
 
 // AddAll adds all elements from a slice.
 func (s *TreeSet[T]) AddAll(elements []T) {
-//line collection_mutable/treeset.gala:358
+	if s == nil {
+		panic("TreeSet.AddAll: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:362
 	for i := 0; i < len(elements); i++ {
-//line collection_mutable/treeset.gala:359
+//line collection_mutable/treeset.gala:363
 		s.Add(elements[i])
 	}
 }
 
-//line collection_mutable/treeset.gala:362
+//line collection_mutable/treeset.gala:366
 
 // AddFrom adds all elements from another TreeSet.
 func (s *TreeSet[T]) AddFrom(other *TreeSet[T]) {
-//line collection_mutable/treeset.gala:365
+	if s == nil {
+		panic("TreeSet.AddFrom: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("TreeSet.AddFrom: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:369
 	other.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:366
+//line collection_mutable/treeset.gala:370
 		s.Add(elem)
 	})
 }
 
-//line collection_mutable/treeset.gala:369
+//line collection_mutable/treeset.gala:373
 
 // Remove removes an element from the set. O(log n).
 // Returns true if the element was removed (was present).
 func (s *TreeSet[T]) Remove(elem T) bool {
-//line collection_mutable/treeset.gala:373
-	var node = s.findNode(elem)
-//line collection_mutable/treeset.gala:374
-	if node == nil {
-//line collection_mutable/treeset.gala:375
-		return false
+	if s == nil {
+		panic("TreeSet.Remove: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
 //line collection_mutable/treeset.gala:377
-	s.deleteNode(node)
+	var found = s.findNode(elem)
 //line collection_mutable/treeset.gala:378
-	s.size--
+	if found.IsEmpty() {
 //line collection_mutable/treeset.gala:379
+		return false
+	}
+//line collection_mutable/treeset.gala:381
+	s.deleteNode(found.Get())
+//line collection_mutable/treeset.gala:382
+	s.size--
+//line collection_mutable/treeset.gala:383
 	return true
 }
 
-//line collection_mutable/treeset.gala:381
+//line collection_mutable/treeset.gala:385
 
 // findNode finds the node containing the element.
-func (s *TreeSet[T]) findNode(elem T) *treeSetNode[T] {
-//line collection_mutable/treeset.gala:384
-	var node = s.root
-//line collection_mutable/treeset.gala:385
-	for node != nil {
-//line collection_mutable/treeset.gala:386
-		var cmp = NewImmutable(treeSetCompare[T](elem, node.value))
-//line collection_mutable/treeset.gala:387
-		if cmp.Get() < 0 {
+func (s *TreeSet[T]) findNode(elem T) OptionPtr[treeSetNode[T]] {
 //line collection_mutable/treeset.gala:388
-			node = node.left
-		} else if cmp.Get() > 0 {
+	var current = s.root
+//line collection_mutable/treeset.gala:389
+	for current.IsDefined() {
 //line collection_mutable/treeset.gala:390
-			node = node.right
-		} else {
+		var node = current.Get()
+//line collection_mutable/treeset.gala:391
+		var cmp = treeSetCompare[T](elem, node.value)
 //line collection_mutable/treeset.gala:392
-			return node
+		if cmp < 0 {
+//line collection_mutable/treeset.gala:393
+			current = node.left
+		} else if cmp > 0 {
+//line collection_mutable/treeset.gala:395
+			current = node.right
+		} else {
+//line collection_mutable/treeset.gala:397
+			return current
 		}
 	}
-//line collection_mutable/treeset.gala:395
-	return nil
+//line collection_mutable/treeset.gala:400
+	return current
 }
 
-//line collection_mutable/treeset.gala:397
+//line collection_mutable/treeset.gala:402
 
 // deleteNode removes a node from the tree.
 func (s *TreeSet[T]) deleteNode(node *treeSetNode[T]) {
-//line collection_mutable/treeset.gala:401
-	if node.left != nil && node.right != nil {
-//line collection_mutable/treeset.gala:402
-		var successor = s.minNode(node.right)
-//line collection_mutable/treeset.gala:403
+//line collection_mutable/treeset.gala:406
+	if node.left.IsDefined() && node.right.IsDefined() {
+//line collection_mutable/treeset.gala:407
+		var successor = s.minNode(node.right.Get())
+//line collection_mutable/treeset.gala:408
 		node.value = successor.value
-//line collection_mutable/treeset.gala:404
+//line collection_mutable/treeset.gala:409
 		node = successor
 	}
-//line collection_mutable/treeset.gala:408
-	var child *treeSetNode[T]
-//line collection_mutable/treeset.gala:409
-	if node.left != nil {
-//line collection_mutable/treeset.gala:410
-		child = node.left
-	} else {
-//line collection_mutable/treeset.gala:412
-		child = node.right
-	}
-//line collection_mutable/treeset.gala:415
-	if child != nil {
-//line collection_mutable/treeset.gala:416
-		child.parent = node.parent
-//line collection_mutable/treeset.gala:417
-		if node.parent == nil {
-//line collection_mutable/treeset.gala:418
-			s.root = child
-		} else if node == node.parent.left {
-//line collection_mutable/treeset.gala:420
-			node.parent.left = child
+//line collection_mutable/treeset.gala:413
+	var child = func() OptionPtr[treeSetNode[T]] {
+		if node.left.IsDefined() {
+			return node.left
 		} else {
-//line collection_mutable/treeset.gala:422
-			node.parent.right = child
+			return node.right
 		}
+	}()
+//line collection_mutable/treeset.gala:415
+	if child.IsDefined() {
+//line collection_mutable/treeset.gala:416
+		child.Get().parent = node.parent
+//line collection_mutable/treeset.gala:417
+		s.replaceChild(node, child)
+//line collection_mutable/treeset.gala:418
+		if node.color == mutableTreeBlack.Get() {
+//line collection_mutable/treeset.gala:419
+			s.fixAfterDelete(child.Get())
+		}
+	} else if node.parent.IsEmpty() {
+//line collection_mutable/treeset.gala:422
+		s.root = EmptyOptionPtr[treeSetNode[T]]()
+	} else {
 //line collection_mutable/treeset.gala:425
 		if node.color == mutableTreeBlack.Get() {
 //line collection_mutable/treeset.gala:426
-			s.fixAfterDelete(child)
-		}
-	} else if node.parent == nil {
-//line collection_mutable/treeset.gala:429
-		s.root = nil
-	} else {
-//line collection_mutable/treeset.gala:431
-		if node.color == mutableTreeBlack.Get() {
-//line collection_mutable/treeset.gala:432
 			s.fixAfterDelete(node)
 		}
-//line collection_mutable/treeset.gala:435
-		if node.parent != nil {
-//line collection_mutable/treeset.gala:436
-			if node == node.parent.left {
-//line collection_mutable/treeset.gala:437
-				node.parent.left = nil
-			} else {
-//line collection_mutable/treeset.gala:439
-				node.parent.right = nil
-			}
-		}
+//line collection_mutable/treeset.gala:428
+		s.replaceChild(node, EmptyOptionPtr[treeSetNode[T]]())
 	}
 }
 
-//line collection_mutable/treeset.gala:444
+//line collection_mutable/treeset.gala:431
 
-// fixAfterDelete rebalances the tree after deletion.
+// fixAfterDelete rebalances the tree after deletion. Rotations on node's parent
+// or sibling keep node's parent link, so each pass reads it once.
 func (s *TreeSet[T]) fixAfterDelete(node *treeSetNode[T]) {
-//line collection_mutable/treeset.gala:447
-	for node != s.root && (node == nil || node.color == mutableTreeBlack.Get()) {
-//line collection_mutable/treeset.gala:448
-		if node == nil {
-//line collection_mutable/treeset.gala:449
-			return
-		}
-//line collection_mutable/treeset.gala:451
-		if node.parent == nil {
-//line collection_mutable/treeset.gala:452
-			return
-		}
-//line collection_mutable/treeset.gala:454
-		if node == node.parent.left {
-//line collection_mutable/treeset.gala:455
-			var sibling = node.parent.right
-//line collection_mutable/treeset.gala:456
-			if sibling != nil && sibling.color == mutableTreeRed.Get() {
-//line collection_mutable/treeset.gala:457
-				sibling.color = mutableTreeBlack.Get()
-//line collection_mutable/treeset.gala:458
-				node.parent.color = mutableTreeRed.Get()
-//line collection_mutable/treeset.gala:459
-				s.rotateLeft(node.parent)
-//line collection_mutable/treeset.gala:460
-				sibling = node.parent.right
+//line collection_mutable/treeset.gala:435
+	for node.parent.IsDefined() && node.color == mutableTreeBlack.Get() {
+//line collection_mutable/treeset.gala:436
+		var parent = node.parent.Get()
+//line collection_mutable/treeset.gala:437
+		if parent.left == SomePtr(node) {
+//line collection_mutable/treeset.gala:438
+			var sibling = parent.right
+//line collection_mutable/treeset.gala:439
+			if isRedTreeSetNode[T](sibling) {
+//line collection_mutable/treeset.gala:440
+				sibling.Get().color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:441
+				parent.color = mutableTreeRed.Get()
+//line collection_mutable/treeset.gala:442
+				s.rotateLeft(parent)
+//line collection_mutable/treeset.gala:443
+				sibling = parent.right
 			}
-//line collection_mutable/treeset.gala:463
-			if sibling == nil {
-//line collection_mutable/treeset.gala:464
-				node = node.parent
-			} else if (!isRedTreeSetNode[T](sibling.left)) && (!isRedTreeSetNode[T](sibling.right)) {
-//line collection_mutable/treeset.gala:466
-				sibling.color = mutableTreeRed.Get()
-//line collection_mutable/treeset.gala:467
-				node = node.parent
+//line collection_mutable/treeset.gala:446
+			if sibling.IsEmpty() {
+//line collection_mutable/treeset.gala:447
+				node = parent
+			} else if !isRedTreeSetNode[T](sibling.Get().left) && !isRedTreeSetNode[T](sibling.Get().right) {
+//line collection_mutable/treeset.gala:449
+				sibling.Get().color = mutableTreeRed.Get()
+//line collection_mutable/treeset.gala:450
+				node = parent
 			} else {
-//line collection_mutable/treeset.gala:469
-				if !isRedTreeSetNode[T](sibling.right) {
-//line collection_mutable/treeset.gala:470
-					if sibling.left != nil {
-//line collection_mutable/treeset.gala:471
-						sibling.left.color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:452
+				if !isRedTreeSetNode[T](sibling.Get().right) {
+//line collection_mutable/treeset.gala:453
+					var sib = sibling.Get()
+//line collection_mutable/treeset.gala:454
+					if sib.left.IsDefined() {
+//line collection_mutable/treeset.gala:455
+						sib.left.Get().color = mutableTreeBlack.Get()
 					}
-//line collection_mutable/treeset.gala:473
-					sibling.color = mutableTreeRed.Get()
-//line collection_mutable/treeset.gala:474
-					s.rotateRight(sibling)
-//line collection_mutable/treeset.gala:475
-					sibling = node.parent.right
+//line collection_mutable/treeset.gala:457
+					sib.color = mutableTreeRed.Get()
+//line collection_mutable/treeset.gala:458
+					s.rotateRight(sib)
+//line collection_mutable/treeset.gala:459
+					sibling = parent.right
 				}
-//line collection_mutable/treeset.gala:477
-				if sibling != nil {
-//line collection_mutable/treeset.gala:478
-					sibling.color = node.parent.color
+//line collection_mutable/treeset.gala:461
+				if sibling.IsDefined() {
+//line collection_mutable/treeset.gala:462
+					sibling.Get().color = parent.color
 				}
-//line collection_mutable/treeset.gala:480
-				node.parent.color = mutableTreeBlack.Get()
-//line collection_mutable/treeset.gala:481
-				if sibling != nil && sibling.right != nil {
-//line collection_mutable/treeset.gala:482
-					sibling.right.color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:464
+				parent.color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:465
+				if sibling.IsDefined() && sibling.Get().right.IsDefined() {
+//line collection_mutable/treeset.gala:466
+					sibling.Get().right.Get().color = mutableTreeBlack.Get()
 				}
-//line collection_mutable/treeset.gala:484
-				s.rotateLeft(node.parent)
-//line collection_mutable/treeset.gala:485
-				node = s.root
+//line collection_mutable/treeset.gala:468
+				s.rotateLeft(parent)
+//line collection_mutable/treeset.gala:469
+				node = s.root.Get()
 			}
 		} else {
-//line collection_mutable/treeset.gala:488
-			var sibling = node.parent.left
-//line collection_mutable/treeset.gala:489
-			if sibling != nil && sibling.color == mutableTreeRed.Get() {
-//line collection_mutable/treeset.gala:490
-				sibling.color = mutableTreeBlack.Get()
-//line collection_mutable/treeset.gala:491
-				node.parent.color = mutableTreeRed.Get()
-//line collection_mutable/treeset.gala:492
-				s.rotateRight(node.parent)
-//line collection_mutable/treeset.gala:493
-				sibling = node.parent.left
+//line collection_mutable/treeset.gala:472
+			var sibling = parent.left
+//line collection_mutable/treeset.gala:473
+			if isRedTreeSetNode[T](sibling) {
+//line collection_mutable/treeset.gala:474
+				sibling.Get().color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:475
+				parent.color = mutableTreeRed.Get()
+//line collection_mutable/treeset.gala:476
+				s.rotateRight(parent)
+//line collection_mutable/treeset.gala:477
+				sibling = parent.left
 			}
-//line collection_mutable/treeset.gala:496
-			if sibling == nil {
-//line collection_mutable/treeset.gala:497
-				node = node.parent
-			} else if (!isRedTreeSetNode[T](sibling.right)) && (!isRedTreeSetNode[T](sibling.left)) {
-//line collection_mutable/treeset.gala:499
-				sibling.color = mutableTreeRed.Get()
-//line collection_mutable/treeset.gala:500
-				node = node.parent
+//line collection_mutable/treeset.gala:480
+			if sibling.IsEmpty() {
+//line collection_mutable/treeset.gala:481
+				node = parent
+			} else if !isRedTreeSetNode[T](sibling.Get().right) && !isRedTreeSetNode[T](sibling.Get().left) {
+//line collection_mutable/treeset.gala:483
+				sibling.Get().color = mutableTreeRed.Get()
+//line collection_mutable/treeset.gala:484
+				node = parent
 			} else {
-//line collection_mutable/treeset.gala:502
-				if !isRedTreeSetNode[T](sibling.left) {
-//line collection_mutable/treeset.gala:503
-					if sibling.right != nil {
-//line collection_mutable/treeset.gala:504
-						sibling.right.color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:486
+				if !isRedTreeSetNode[T](sibling.Get().left) {
+//line collection_mutable/treeset.gala:487
+					var sib = sibling.Get()
+//line collection_mutable/treeset.gala:488
+					if sib.right.IsDefined() {
+//line collection_mutable/treeset.gala:489
+						sib.right.Get().color = mutableTreeBlack.Get()
 					}
-//line collection_mutable/treeset.gala:506
-					sibling.color = mutableTreeRed.Get()
-//line collection_mutable/treeset.gala:507
-					s.rotateLeft(sibling)
-//line collection_mutable/treeset.gala:508
-					sibling = node.parent.left
+//line collection_mutable/treeset.gala:491
+					sib.color = mutableTreeRed.Get()
+//line collection_mutable/treeset.gala:492
+					s.rotateLeft(sib)
+//line collection_mutable/treeset.gala:493
+					sibling = parent.left
 				}
-//line collection_mutable/treeset.gala:510
-				if sibling != nil {
-//line collection_mutable/treeset.gala:511
-					sibling.color = node.parent.color
+//line collection_mutable/treeset.gala:495
+				if sibling.IsDefined() {
+//line collection_mutable/treeset.gala:496
+					sibling.Get().color = parent.color
 				}
-//line collection_mutable/treeset.gala:513
-				node.parent.color = mutableTreeBlack.Get()
-//line collection_mutable/treeset.gala:514
-				if sibling != nil && sibling.left != nil {
-//line collection_mutable/treeset.gala:515
-					sibling.left.color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:498
+				parent.color = mutableTreeBlack.Get()
+//line collection_mutable/treeset.gala:499
+				if sibling.IsDefined() && sibling.Get().left.IsDefined() {
+//line collection_mutable/treeset.gala:500
+					sibling.Get().left.Get().color = mutableTreeBlack.Get()
 				}
-//line collection_mutable/treeset.gala:517
-				s.rotateRight(node.parent)
-//line collection_mutable/treeset.gala:518
-				node = s.root
+//line collection_mutable/treeset.gala:502
+				s.rotateRight(parent)
+//line collection_mutable/treeset.gala:503
+				node = s.root.Get()
 			}
 		}
 	}
-//line collection_mutable/treeset.gala:522
-	if node != nil {
-//line collection_mutable/treeset.gala:523
-		node.color = mutableTreeBlack.Get()
-	}
+//line collection_mutable/treeset.gala:507
+	node.color = mutableTreeBlack.Get()
 }
 
-//line collection_mutable/treeset.gala:526
+//line collection_mutable/treeset.gala:509
 
 // RemoveAll removes all elements from a slice.
 func (s *TreeSet[T]) RemoveAll(elements []T) {
-//line collection_mutable/treeset.gala:529
+	if s == nil {
+		panic("TreeSet.RemoveAll: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:512
 	for i := 0; i < len(elements); i++ {
-//line collection_mutable/treeset.gala:530
+//line collection_mutable/treeset.gala:513
 		s.Remove(elements[i])
 	}
 }
 
-//line collection_mutable/treeset.gala:533
+//line collection_mutable/treeset.gala:516
 
 // Clear removes all elements. O(1).
 func (s *TreeSet[T]) Clear() {
-//line collection_mutable/treeset.gala:536
-	s.root = nil
-//line collection_mutable/treeset.gala:537
+	if s == nil {
+		panic("TreeSet.Clear: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:519
+	s.root = EmptyOptionPtr[treeSetNode[T]]()
+//line collection_mutable/treeset.gala:520
 	s.size = 0
 }
 
-//line collection_mutable/treeset.gala:541
+//line collection_mutable/treeset.gala:524
 
 // Min returns the minimum element in the set. O(log n).
 // Panics if the set is empty.
 func (s *TreeSet[T]) Min() T {
-//line collection_mutable/treeset.gala:545
+	if s == nil {
+		panic("TreeSet.Min: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:528
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:546
+//line collection_mutable/treeset.gala:529
 		panic("TreeSet.Min on empty set")
 	}
-//line collection_mutable/treeset.gala:548
-	return s.minNode(s.root).value
+//line collection_mutable/treeset.gala:531
+	return s.minNode(s.root.Get()).value
 }
 
-//line collection_mutable/treeset.gala:550
+//line collection_mutable/treeset.gala:533
 
 // minNode finds the node with minimum value in subtree.
 func (s *TreeSet[T]) minNode(node *treeSetNode[T]) *treeSetNode[T] {
-//line collection_mutable/treeset.gala:553
-	for node.left != nil {
-//line collection_mutable/treeset.gala:554
-		node = node.left
+//line collection_mutable/treeset.gala:536
+	for node.left.IsDefined() {
+//line collection_mutable/treeset.gala:537
+		node = node.left.Get()
 	}
-//line collection_mutable/treeset.gala:556
+//line collection_mutable/treeset.gala:539
 	return node
 }
 
-//line collection_mutable/treeset.gala:558
+//line collection_mutable/treeset.gala:541
 
 // MinOption returns the minimum element wrapped in Option. O(log n).
 func (s *TreeSet[T]) MinOption() Option[T] {
-//line collection_mutable/treeset.gala:561
+	if s == nil {
+		panic("TreeSet.MinOption: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:544
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:562
+//line collection_mutable/treeset.gala:545
 		return None[T]{}.Apply()
 	}
-//line collection_mutable/treeset.gala:564
+//line collection_mutable/treeset.gala:547
 	return Some[T]{}.Apply(s.Min())
 }
 
-//line collection_mutable/treeset.gala:566
+//line collection_mutable/treeset.gala:549
 
 // Max returns the maximum element in the set. O(log n).
 // Panics if the set is empty.
 func (s *TreeSet[T]) Max() T {
-//line collection_mutable/treeset.gala:570
+	if s == nil {
+		panic("TreeSet.Max: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:553
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:571
+//line collection_mutable/treeset.gala:554
 		panic("TreeSet.Max on empty set")
 	}
-//line collection_mutable/treeset.gala:573
-	return s.maxNode(s.root).value
+//line collection_mutable/treeset.gala:556
+	return s.maxNode(s.root.Get()).value
 }
 
-//line collection_mutable/treeset.gala:575
+//line collection_mutable/treeset.gala:558
 
 // maxNode finds the node with maximum value in subtree.
 func (s *TreeSet[T]) maxNode(node *treeSetNode[T]) *treeSetNode[T] {
-//line collection_mutable/treeset.gala:578
-	for node.right != nil {
-//line collection_mutable/treeset.gala:579
-		node = node.right
+//line collection_mutable/treeset.gala:561
+	for node.right.IsDefined() {
+//line collection_mutable/treeset.gala:562
+		node = node.right.Get()
 	}
-//line collection_mutable/treeset.gala:581
+//line collection_mutable/treeset.gala:564
 	return node
 }
 
-//line collection_mutable/treeset.gala:583
+//line collection_mutable/treeset.gala:566
 
 // MaxOption returns the maximum element wrapped in Option. O(log n).
 func (s *TreeSet[T]) MaxOption() Option[T] {
-//line collection_mutable/treeset.gala:586
+	if s == nil {
+		panic("TreeSet.MaxOption: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:569
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:587
+//line collection_mutable/treeset.gala:570
 		return None[T]{}.Apply()
 	}
-//line collection_mutable/treeset.gala:589
+//line collection_mutable/treeset.gala:572
 	return Some[T]{}.Apply(s.Max())
 }
 
-//line collection_mutable/treeset.gala:591
+//line collection_mutable/treeset.gala:574
 
 // PopMin removes and returns the minimum element. O(log n).
 // Panics if the set is empty.
 func (s *TreeSet[T]) PopMin() T {
-//line collection_mutable/treeset.gala:595
+	if s == nil {
+		panic("TreeSet.PopMin: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:578
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:596
+//line collection_mutable/treeset.gala:579
 		panic("TreeSet.PopMin on empty set")
 	}
-//line collection_mutable/treeset.gala:598
+//line collection_mutable/treeset.gala:581
 	var minVal = s.Min()
-//line collection_mutable/treeset.gala:599
+//line collection_mutable/treeset.gala:582
 	s.Remove(minVal)
-//line collection_mutable/treeset.gala:600
+//line collection_mutable/treeset.gala:583
 	return minVal
 }
 
-//line collection_mutable/treeset.gala:602
+//line collection_mutable/treeset.gala:585
 
 // PopMax removes and returns the maximum element. O(log n).
 // Panics if the set is empty.
 func (s *TreeSet[T]) PopMax() T {
-//line collection_mutable/treeset.gala:606
+	if s == nil {
+		panic("TreeSet.PopMax: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:589
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:607
+//line collection_mutable/treeset.gala:590
 		panic("TreeSet.PopMax on empty set")
 	}
-//line collection_mutable/treeset.gala:609
+//line collection_mutable/treeset.gala:592
 	var maxVal = s.Max()
-//line collection_mutable/treeset.gala:610
+//line collection_mutable/treeset.gala:593
 	s.Remove(maxVal)
-//line collection_mutable/treeset.gala:611
+//line collection_mutable/treeset.gala:594
 	return maxVal
 }
 
-//line collection_mutable/treeset.gala:615
+//line collection_mutable/treeset.gala:598
 
 // Union returns a new set containing all elements from both sets.
 func (s *TreeSet[T]) Union(other *TreeSet[T]) *TreeSet[T] {
-//line collection_mutable/treeset.gala:618
+	if s == nil {
+		panic("TreeSet.Union: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("TreeSet.Union: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:601
 	var result = s.Clone()
-//line collection_mutable/treeset.gala:619
+//line collection_mutable/treeset.gala:602
 	result.AddFrom(other)
-//line collection_mutable/treeset.gala:620
+//line collection_mutable/treeset.gala:603
 	return result
 }
 
-//line collection_mutable/treeset.gala:622
+//line collection_mutable/treeset.gala:605
 
 // Intersect returns a new set containing only elements present in both sets.
 func (s *TreeSet[T]) Intersect(other *TreeSet[T]) *TreeSet[T] {
-//line collection_mutable/treeset.gala:626
+	if s == nil {
+		panic("TreeSet.Intersect: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("TreeSet.Intersect: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:609
 	if s.Size() <= other.Size() {
-//line collection_mutable/treeset.gala:627
-		return TreeSet_FoldLeft[*TreeSet[T]](s, EmptyTreeSet[T](), func(acc *TreeSet[T], elem T) *TreeSet[T] {
-//line collection_mutable/treeset.gala:628
+//line collection_mutable/treeset.gala:610
+		return TreeSet_FoldLeft[*TreeSet[T], T](s, EmptyTreeSet[T](), func(acc *TreeSet[T], elem T) *TreeSet[T] {
+//line collection_mutable/treeset.gala:611
 			if other.Contains(elem) {
-//line collection_mutable/treeset.gala:629
+//line collection_mutable/treeset.gala:612
 				acc.Add(elem)
 			}
-//line collection_mutable/treeset.gala:631
+//line collection_mutable/treeset.gala:614
 			return acc
 		})
 	}
-//line collection_mutable/treeset.gala:634
+//line collection_mutable/treeset.gala:617
 	return TreeSet_FoldLeft[*TreeSet[T], T](other, EmptyTreeSet[T](), func(acc *TreeSet[T], elem T) *TreeSet[T] {
-//line collection_mutable/treeset.gala:635
+//line collection_mutable/treeset.gala:618
 		if s.Contains(elem) {
-//line collection_mutable/treeset.gala:636
+//line collection_mutable/treeset.gala:619
 			acc.Add(elem)
 		}
-//line collection_mutable/treeset.gala:638
+//line collection_mutable/treeset.gala:621
 		return acc
 	})
 }
 
-//line collection_mutable/treeset.gala:641
+//line collection_mutable/treeset.gala:624
 
 // Diff returns a new set containing elements in this set but not in other.
 func (s *TreeSet[T]) Diff(other *TreeSet[T]) *TreeSet[T] {
-//line collection_mutable/treeset.gala:644
-	return TreeSet_FoldLeft[*TreeSet[T]](s, EmptyTreeSet[T](), func(acc *TreeSet[T], elem T) *TreeSet[T] {
-//line collection_mutable/treeset.gala:645
+	if s == nil {
+		panic("TreeSet.Diff: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("TreeSet.Diff: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:627
+	return TreeSet_FoldLeft[*TreeSet[T], T](s, EmptyTreeSet[T](), func(acc *TreeSet[T], elem T) *TreeSet[T] {
+//line collection_mutable/treeset.gala:628
 		if !other.Contains(elem) {
-//line collection_mutable/treeset.gala:646
+//line collection_mutable/treeset.gala:629
 			acc.Add(elem)
 		}
-//line collection_mutable/treeset.gala:648
+//line collection_mutable/treeset.gala:631
 		return acc
 	})
 }
 
-//line collection_mutable/treeset.gala:651
+//line collection_mutable/treeset.gala:634
 
 // SubsetOf returns true if this set is a subset of other.
 func (s *TreeSet[T]) SubsetOf(other *TreeSet[T]) bool {
-//line collection_mutable/treeset.gala:654
+	if s == nil {
+		panic("TreeSet.SubsetOf: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("TreeSet.SubsetOf: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:637
 	if s.Size() > other.Size() {
-//line collection_mutable/treeset.gala:655
+//line collection_mutable/treeset.gala:638
 		return false
 	}
-//line collection_mutable/treeset.gala:657
-	return TreeSet_FoldLeft[bool](s, true, func(acc bool, elem T) bool {
+//line collection_mutable/treeset.gala:640
+	return TreeSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
 		return acc && other.Contains(elem)
 	})
 }
 
-//line collection_mutable/treeset.gala:659
+//line collection_mutable/treeset.gala:642
 
 // SupersetOf returns true if this set is a superset of other.
 func (s *TreeSet[T]) SupersetOf(other *TreeSet[T]) bool {
+	if s == nil {
+		panic("TreeSet.SupersetOf: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("TreeSet.SupersetOf: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return other.SubsetOf(s)
 }
 
-//line collection_mutable/treeset.gala:664
+//line collection_mutable/treeset.gala:647
 
 // UnionInPlace adds all elements from other to this set.
 func (s *TreeSet[T]) UnionInPlace(other *TreeSet[T]) {
-//line collection_mutable/treeset.gala:667
+	if s == nil {
+		panic("TreeSet.UnionInPlace: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("TreeSet.UnionInPlace: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:650
 	s.AddFrom(other)
 }
 
-//line collection_mutable/treeset.gala:669
+//line collection_mutable/treeset.gala:652
 
 // IntersectInPlace removes elements not in other.
 func (s *TreeSet[T]) IntersectInPlace(other *TreeSet[T]) {
-//line collection_mutable/treeset.gala:672
+	if s == nil {
+		panic("TreeSet.IntersectInPlace: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("TreeSet.IntersectInPlace: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:655
 	var toRemove []T
-//line collection_mutable/treeset.gala:673
+//line collection_mutable/treeset.gala:656
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:674
+//line collection_mutable/treeset.gala:657
 		if !other.Contains(elem) {
-//line collection_mutable/treeset.gala:675
+//line collection_mutable/treeset.gala:658
 			toRemove = go_interop.SliceAppend(toRemove, elem)
 		}
 	})
-//line collection_mutable/treeset.gala:678
+//line collection_mutable/treeset.gala:661
 	s.RemoveAll(toRemove)
 }
 
-//line collection_mutable/treeset.gala:680
+//line collection_mutable/treeset.gala:663
 
 // DiffInPlace removes elements that are in other.
 func (s *TreeSet[T]) DiffInPlace(other *TreeSet[T]) {
-//line collection_mutable/treeset.gala:683
+	if s == nil {
+		panic("TreeSet.DiffInPlace: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("TreeSet.DiffInPlace: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:666
 	var toRemove []T
-//line collection_mutable/treeset.gala:684
+//line collection_mutable/treeset.gala:667
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:685
+//line collection_mutable/treeset.gala:668
 		if other.Contains(elem) {
-//line collection_mutable/treeset.gala:686
+//line collection_mutable/treeset.gala:669
 			toRemove = go_interop.SliceAppend(toRemove, elem)
 		}
 	})
-//line collection_mutable/treeset.gala:689
+//line collection_mutable/treeset.gala:672
 	s.RemoveAll(toRemove)
 }
 
-//line collection_mutable/treeset.gala:693
+//line collection_mutable/treeset.gala:676
 
 // Range returns elements in the range [from, to] inclusive as a new TreeSet.
 func (s *TreeSet[T]) Range(from T, to T) *TreeSet[T] {
-//line collection_mutable/treeset.gala:696
+	if s == nil {
+		panic("TreeSet.Range: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:679
 	var result = EmptyTreeSet[T]()
-//line collection_mutable/treeset.gala:697
+//line collection_mutable/treeset.gala:680
 	s.rangeInOrder(s.root, from, to, func(elem T) {
-//line collection_mutable/treeset.gala:698
+//line collection_mutable/treeset.gala:681
 		result.Add(elem)
 	})
-//line collection_mutable/treeset.gala:700
+//line collection_mutable/treeset.gala:683
 	return result
 }
 
-//line collection_mutable/treeset.gala:702
+//line collection_mutable/treeset.gala:685
 
 // rangeInOrder traverses nodes within the range in order.
-func (s *TreeSet[T]) rangeInOrder(node *treeSetNode[T], from T, to T, f func(T)) {
-//line collection_mutable/treeset.gala:705
-	if node == nil {
-//line collection_mutable/treeset.gala:706
+func (s *TreeSet[T]) rangeInOrder(tree OptionPtr[treeSetNode[T]], from T, to T, f func(T)) {
+//line collection_mutable/treeset.gala:688
+	if tree.IsEmpty() {
+//line collection_mutable/treeset.gala:689
 		return
 	}
-//line collection_mutable/treeset.gala:708
-	var cmpFrom = NewImmutable(treeSetCompare[T](node.value, from))
-//line collection_mutable/treeset.gala:709
-	var cmpTo = NewImmutable(treeSetCompare[T](node.value, to))
-//line collection_mutable/treeset.gala:711
-	if cmpFrom.Get() > 0 {
-//line collection_mutable/treeset.gala:712
+//line collection_mutable/treeset.gala:691
+	var node = tree.Get()
+//line collection_mutable/treeset.gala:692
+	var cmpFrom = treeSetCompare[T](node.value, from)
+//line collection_mutable/treeset.gala:693
+	var cmpTo = treeSetCompare[T](node.value, to)
+//line collection_mutable/treeset.gala:695
+	if cmpFrom > 0 {
+//line collection_mutable/treeset.gala:696
 		s.rangeInOrder(node.left, from, to, f)
 	}
-//line collection_mutable/treeset.gala:714
-	if cmpFrom.Get() >= 0 && cmpTo.Get() <= 0 {
-//line collection_mutable/treeset.gala:715
+//line collection_mutable/treeset.gala:698
+	if cmpFrom >= 0 && cmpTo <= 0 {
+//line collection_mutable/treeset.gala:699
 		f(node.value)
 	}
-//line collection_mutable/treeset.gala:717
-	if cmpTo.Get() < 0 {
-//line collection_mutable/treeset.gala:718
+//line collection_mutable/treeset.gala:701
+	if cmpTo < 0 {
+//line collection_mutable/treeset.gala:702
 		s.rangeInOrder(node.right, from, to, f)
 	}
 }
 
-//line collection_mutable/treeset.gala:721
+//line collection_mutable/treeset.gala:705
 
 // RangeFrom returns all elements >= from.
 func (s *TreeSet[T]) RangeFrom(from T) *TreeSet[T] {
-//line collection_mutable/treeset.gala:724
+	if s == nil {
+		panic("TreeSet.RangeFrom: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:708
 	var result = EmptyTreeSet[T]()
-//line collection_mutable/treeset.gala:725
+//line collection_mutable/treeset.gala:709
 	s.rangeFromInOrder(s.root, from, func(elem T) {
-//line collection_mutable/treeset.gala:726
+//line collection_mutable/treeset.gala:710
 		result.Add(elem)
 	})
-//line collection_mutable/treeset.gala:728
+//line collection_mutable/treeset.gala:712
 	return result
+}
+
+//line collection_mutable/treeset.gala:714
+
+// rangeFromInOrder traverses nodes >= from in order.
+func (s *TreeSet[T]) rangeFromInOrder(tree OptionPtr[treeSetNode[T]], from T, f func(T)) {
+//line collection_mutable/treeset.gala:717
+	if tree.IsEmpty() {
+//line collection_mutable/treeset.gala:718
+		return
+	}
+//line collection_mutable/treeset.gala:720
+	var node = tree.Get()
+//line collection_mutable/treeset.gala:721
+	var cmp = treeSetCompare[T](node.value, from)
+//line collection_mutable/treeset.gala:722
+	if cmp > 0 {
+//line collection_mutable/treeset.gala:723
+		s.rangeFromInOrder(node.left, from, f)
+	}
+//line collection_mutable/treeset.gala:725
+	if cmp >= 0 {
+//line collection_mutable/treeset.gala:726
+		f(node.value)
+	}
+//line collection_mutable/treeset.gala:728
+	s.rangeFromInOrder(node.right, from, f)
 }
 
 //line collection_mutable/treeset.gala:730
 
-// rangeFromInOrder traverses nodes >= from in order.
-func (s *TreeSet[T]) rangeFromInOrder(node *treeSetNode[T], from T, f func(T)) {
-//line collection_mutable/treeset.gala:733
-	if node == nil {
-//line collection_mutable/treeset.gala:734
-		return
-	}
-//line collection_mutable/treeset.gala:736
-	var cmp = NewImmutable(treeSetCompare[T](node.value, from))
-//line collection_mutable/treeset.gala:737
-	if cmp.Get() > 0 {
-//line collection_mutable/treeset.gala:738
-		s.rangeFromInOrder(node.left, from, f)
-	}
-//line collection_mutable/treeset.gala:740
-	if cmp.Get() >= 0 {
-//line collection_mutable/treeset.gala:741
-		f(node.value)
-	}
-//line collection_mutable/treeset.gala:743
-	s.rangeFromInOrder(node.right, from, f)
-}
-
-//line collection_mutable/treeset.gala:745
-
 // RangeTo returns all elements <= to.
 func (s *TreeSet[T]) RangeTo(to T) *TreeSet[T] {
-//line collection_mutable/treeset.gala:748
+	if s == nil {
+		panic("TreeSet.RangeTo: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:733
 	var result = EmptyTreeSet[T]()
-//line collection_mutable/treeset.gala:749
+//line collection_mutable/treeset.gala:734
 	s.rangeToInOrder(s.root, to, func(elem T) {
-//line collection_mutable/treeset.gala:750
+//line collection_mutable/treeset.gala:735
 		result.Add(elem)
 	})
-//line collection_mutable/treeset.gala:752
+//line collection_mutable/treeset.gala:737
 	return result
 }
 
-//line collection_mutable/treeset.gala:754
+//line collection_mutable/treeset.gala:739
 
 // rangeToInOrder traverses nodes <= to in order.
-func (s *TreeSet[T]) rangeToInOrder(node *treeSetNode[T], to T, f func(T)) {
-//line collection_mutable/treeset.gala:757
-	if node == nil {
-//line collection_mutable/treeset.gala:758
+func (s *TreeSet[T]) rangeToInOrder(tree OptionPtr[treeSetNode[T]], to T, f func(T)) {
+//line collection_mutable/treeset.gala:742
+	if tree.IsEmpty() {
+//line collection_mutable/treeset.gala:743
 		return
 	}
-//line collection_mutable/treeset.gala:760
-	var cmp = NewImmutable(treeSetCompare[T](node.value, to))
-//line collection_mutable/treeset.gala:761
+//line collection_mutable/treeset.gala:745
+	var node = tree.Get()
+//line collection_mutable/treeset.gala:746
+	var cmp = treeSetCompare[T](node.value, to)
+//line collection_mutable/treeset.gala:747
 	s.rangeToInOrder(node.left, to, f)
-//line collection_mutable/treeset.gala:762
-	if cmp.Get() <= 0 {
-//line collection_mutable/treeset.gala:763
+//line collection_mutable/treeset.gala:748
+	if cmp <= 0 {
+//line collection_mutable/treeset.gala:749
 		f(node.value)
 	}
-//line collection_mutable/treeset.gala:765
-	if cmp.Get() < 0 {
-//line collection_mutable/treeset.gala:766
+//line collection_mutable/treeset.gala:751
+	if cmp < 0 {
+//line collection_mutable/treeset.gala:752
 		s.rangeToInOrder(node.right, to, f)
 	}
 }
 
-//line collection_mutable/treeset.gala:771
+//line collection_mutable/treeset.gala:757
 
 // ForEach applies a function to each element in sorted order.
 func (s *TreeSet[T]) ForEach(f func(T)) {
-//line collection_mutable/treeset.gala:774
+	if s == nil {
+		panic("TreeSet.ForEach: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:760
 	s.inOrder(s.root, f)
 }
 
-//line collection_mutable/treeset.gala:776
+//line collection_mutable/treeset.gala:762
 
 // inOrder traverses the tree in sorted order.
-func (s *TreeSet[T]) inOrder(node *treeSetNode[T], f func(T)) {
-//line collection_mutable/treeset.gala:779
-	if node == nil {
-//line collection_mutable/treeset.gala:780
+func (s *TreeSet[T]) inOrder(tree OptionPtr[treeSetNode[T]], f func(T)) {
+//line collection_mutable/treeset.gala:765
+	if tree.IsEmpty() {
+//line collection_mutable/treeset.gala:766
 		return
 	}
-//line collection_mutable/treeset.gala:782
+//line collection_mutable/treeset.gala:768
+	var node = tree.Get()
+//line collection_mutable/treeset.gala:769
 	s.inOrder(node.left, f)
-//line collection_mutable/treeset.gala:783
+//line collection_mutable/treeset.gala:770
 	f(node.value)
-//line collection_mutable/treeset.gala:784
+//line collection_mutable/treeset.gala:771
 	s.inOrder(node.right, f)
 }
 
-//line collection_mutable/treeset.gala:786
+//line collection_mutable/treeset.gala:773
 
 // ForEachReverse applies a function to each element in reverse sorted order.
 func (s *TreeSet[T]) ForEachReverse(f func(T)) {
-//line collection_mutable/treeset.gala:789
+	if s == nil {
+		panic("TreeSet.ForEachReverse: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:776
 	s.reverseOrder(s.root, f)
+}
+
+//line collection_mutable/treeset.gala:778
+
+// reverseOrder traverses the tree in reverse sorted order.
+func (s *TreeSet[T]) reverseOrder(tree OptionPtr[treeSetNode[T]], f func(T)) {
+//line collection_mutable/treeset.gala:781
+	if tree.IsEmpty() {
+//line collection_mutable/treeset.gala:782
+		return
+	}
+//line collection_mutable/treeset.gala:784
+	var node = tree.Get()
+//line collection_mutable/treeset.gala:785
+	s.reverseOrder(node.right, f)
+//line collection_mutable/treeset.gala:786
+	f(node.value)
+//line collection_mutable/treeset.gala:787
+	s.reverseOrder(node.left, f)
 }
 
 //line collection_mutable/treeset.gala:791
 
-// reverseOrder traverses the tree in reverse sorted order.
-func (s *TreeSet[T]) reverseOrder(node *treeSetNode[T], f func(T)) {
-//line collection_mutable/treeset.gala:794
-	if node == nil {
-//line collection_mutable/treeset.gala:795
-		return
-	}
-//line collection_mutable/treeset.gala:797
-	s.reverseOrder(node.right, f)
-//line collection_mutable/treeset.gala:798
-	f(node.value)
-//line collection_mutable/treeset.gala:799
-	s.reverseOrder(node.left, f)
-}
-
-//line collection_mutable/treeset.gala:803
-
 // Filter returns a new TreeSet with only elements that satisfy the predicate.
 func (s *TreeSet[T]) Filter(p func(T) bool) *TreeSet[T] {
-//line collection_mutable/treeset.gala:806
-	return TreeSet_FoldLeft[*TreeSet[T]](s, EmptyTreeSet[T](), func(acc *TreeSet[T], elem T) *TreeSet[T] {
-//line collection_mutable/treeset.gala:807
+	if s == nil {
+		panic("TreeSet.Filter: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:794
+	return TreeSet_FoldLeft[*TreeSet[T], T](s, EmptyTreeSet[T](), func(acc *TreeSet[T], elem T) *TreeSet[T] {
+//line collection_mutable/treeset.gala:795
 		if p(elem) {
-//line collection_mutable/treeset.gala:808
+//line collection_mutable/treeset.gala:796
 			acc.Add(elem)
 		}
-//line collection_mutable/treeset.gala:810
+//line collection_mutable/treeset.gala:798
 		return acc
 	})
 }
 
-//line collection_mutable/treeset.gala:813
+//line collection_mutable/treeset.gala:801
 
 // FilterNot returns a new TreeSet with elements that do not satisfy the predicate.
 func (s *TreeSet[T]) FilterNot(p func(T) bool) *TreeSet[T] {
+	if s == nil {
+		panic("TreeSet.FilterNot: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return s.Filter(func(elem T) bool {
 		return !p(elem)
 	})
 }
 
-//line collection_mutable/treeset.gala:816
+//line collection_mutable/treeset.gala:804
 
 // Collect applies a partial function to each element and collects the results.
 // Elements for which the function returns None are filtered out.
 // Returns a mutable Array since the result type may not be comparable.
 func TreeSet_Collect[U any, T comparable](s *TreeSet[T], pf func(T) Option[U]) *Array[U] {
-//line collection_mutable/treeset.gala:821
+	if s == nil {
+		panic("TreeSet.Collect: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:809
 	var result = EmptyArray[U]()
-//line collection_mutable/treeset.gala:822
+//line collection_mutable/treeset.gala:810
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:823
-		var opt = NewImmutable(pf(elem))
-//line collection_mutable/treeset.gala:824
-		if opt.Get().IsDefined() {
-//line collection_mutable/treeset.gala:825
-			result.Append(opt.Get().Get())
+//line collection_mutable/treeset.gala:811
+		var opt = pf(elem)
+//line collection_mutable/treeset.gala:812
+		if opt.IsDefined() {
+//line collection_mutable/treeset.gala:813
+			result.Append(opt.Get())
 		}
 	})
-//line collection_mutable/treeset.gala:828
+//line collection_mutable/treeset.gala:816
 	return result
 }
 
-//line collection_mutable/treeset.gala:830
+//line collection_mutable/treeset.gala:818
 
 // Partition splits the set into two sets based on a predicate.
 func (s *TreeSet[T]) Partition(p func(T) bool) Tuple[*TreeSet[T], *TreeSet[T]] {
-//line collection_mutable/treeset.gala:833
-	var left = NewImmutable(s.Filter(p))
-//line collection_mutable/treeset.gala:834
-	var right = NewImmutable(s.FilterNot(p))
-//line collection_mutable/treeset.gala:835
-	return Tuple[*TreeSet[T], *TreeSet[T]]{V1: NewImmutable(left.Get()), V2: NewImmutable(right.Get())}
+	if s == nil {
+		panic("TreeSet.Partition: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:821
+	var left = s.Filter(p)
+//line collection_mutable/treeset.gala:822
+	var right = s.FilterNot(p)
+//line collection_mutable/treeset.gala:823
+	return Tuple[*TreeSet[T], *TreeSet[T]]{V1: NewImmutable(left), V2: NewImmutable(right)}
 }
 
-//line collection_mutable/treeset.gala:837
+//line collection_mutable/treeset.gala:825
 
 // Map applies a function to each element and returns a new set.
 func TreeSet_Map[U comparable, T comparable](s *TreeSet[T], f func(T) U) *TreeSet[U] {
-//line collection_mutable/treeset.gala:840
-	return TreeSet_FoldLeft[*TreeSet[U]](s, EmptyTreeSet[U](), func(acc *TreeSet[U], elem T) *TreeSet[U] {
-//line collection_mutable/treeset.gala:841
+	if s == nil {
+		panic("TreeSet.Map: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:828
+	return TreeSet_FoldLeft[*TreeSet[U], T](s, EmptyTreeSet[U](), func(acc *TreeSet[U], elem T) *TreeSet[U] {
+//line collection_mutable/treeset.gala:829
 		acc.Add(f(elem))
-//line collection_mutable/treeset.gala:842
+//line collection_mutable/treeset.gala:830
 		return acc
 	})
 }
 
-//line collection_mutable/treeset.gala:845
+//line collection_mutable/treeset.gala:833
 
 // FlatMap applies a function that returns a set to each element and flattens.
 func TreeSet_FlatMap[U comparable, T comparable](s *TreeSet[T], f func(T) *TreeSet[U]) *TreeSet[U] {
-//line collection_mutable/treeset.gala:848
-	return TreeSet_FoldLeft[*TreeSet[U]](s, EmptyTreeSet[U](), func(acc *TreeSet[U], elem T) *TreeSet[U] {
-//line collection_mutable/treeset.gala:849
+	if s == nil {
+		panic("TreeSet.FlatMap: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:836
+	return TreeSet_FoldLeft[*TreeSet[U], T](s, EmptyTreeSet[U](), func(acc *TreeSet[U], elem T) *TreeSet[U] {
+//line collection_mutable/treeset.gala:837
 		acc.AddFrom(f(elem))
-//line collection_mutable/treeset.gala:850
+//line collection_mutable/treeset.gala:838
 		return acc
 	})
 }
 
-//line collection_mutable/treeset.gala:855
+//line collection_mutable/treeset.gala:843
 
 // FoldLeft applies a binary operator from left to right (in sorted order).
 func TreeSet_FoldLeft[U any, T comparable](s *TreeSet[T], initial U, f func(U, T) U) U {
-//line collection_mutable/treeset.gala:858
+	if s == nil {
+		panic("TreeSet.FoldLeft: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:846
 	var acc = initial
-//line collection_mutable/treeset.gala:859
+//line collection_mutable/treeset.gala:847
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:860
+//line collection_mutable/treeset.gala:848
 		acc = f(acc, elem)
 	})
-//line collection_mutable/treeset.gala:862
+//line collection_mutable/treeset.gala:850
 	return acc
 }
 
-//line collection_mutable/treeset.gala:864
+//line collection_mutable/treeset.gala:852
 
 // Reduce applies a binary operator, starting with the first element.
 // Panics if the set is empty.
 func (s *TreeSet[T]) Reduce(f func(T, T) T) T {
-//line collection_mutable/treeset.gala:868
+	if s == nil {
+		panic("TreeSet.Reduce: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:856
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:869
+//line collection_mutable/treeset.gala:857
 		panic("TreeSet.Reduce on empty set")
 	}
-//line collection_mutable/treeset.gala:871
+//line collection_mutable/treeset.gala:859
 	var first = true
-//line collection_mutable/treeset.gala:872
+//line collection_mutable/treeset.gala:860
 	var acc T
-//line collection_mutable/treeset.gala:873
+//line collection_mutable/treeset.gala:861
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:874
+//line collection_mutable/treeset.gala:862
 		if first {
-//line collection_mutable/treeset.gala:875
+//line collection_mutable/treeset.gala:863
 			acc = elem
-//line collection_mutable/treeset.gala:876
+//line collection_mutable/treeset.gala:864
 			first = false
 		} else {
-//line collection_mutable/treeset.gala:878
+//line collection_mutable/treeset.gala:866
 			acc = f(acc, elem)
 		}
 	})
-//line collection_mutable/treeset.gala:881
+//line collection_mutable/treeset.gala:869
 	return acc
 }
 
-//line collection_mutable/treeset.gala:883
+//line collection_mutable/treeset.gala:871
 
 // ReduceOption is like Reduce but returns None for empty set.
 func (s *TreeSet[T]) ReduceOption(f func(T, T) T) Option[T] {
-//line collection_mutable/treeset.gala:886
+	if s == nil {
+		panic("TreeSet.ReduceOption: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:874
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:887
+//line collection_mutable/treeset.gala:875
 		return None[T]{}.Apply()
 	}
-//line collection_mutable/treeset.gala:889
+//line collection_mutable/treeset.gala:877
 	return Some[T]{}.Apply(s.Reduce(f))
 }
 
-//line collection_mutable/treeset.gala:893
+//line collection_mutable/treeset.gala:881
 
 // Exists returns true if any element satisfies the predicate.
 func (s *TreeSet[T]) Exists(p func(T) bool) bool {
-//line collection_mutable/treeset.gala:896
-	return TreeSet_FoldLeft[bool](s, false, func(acc bool, elem T) bool {
+	if s == nil {
+		panic("TreeSet.Exists: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:884
+	return TreeSet_FoldLeft[bool, T](s, false, func(acc bool, elem T) bool {
 		return acc || p(elem)
 	})
 }
 
-//line collection_mutable/treeset.gala:898
+//line collection_mutable/treeset.gala:886
 
 // ForAll returns true if all elements satisfy the predicate.
 func (s *TreeSet[T]) ForAll(p func(T) bool) bool {
-//line collection_mutable/treeset.gala:901
-	return TreeSet_FoldLeft[bool](s, true, func(acc bool, elem T) bool {
+	if s == nil {
+		panic("TreeSet.ForAll: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:889
+	return TreeSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
 		return acc && p(elem)
 	})
 }
 
-//line collection_mutable/treeset.gala:903
+//line collection_mutable/treeset.gala:891
 
 // Find returns the first element (in sorted order) that satisfies the predicate.
 func (s *TreeSet[T]) Find(p func(T) bool) Option[T] {
-//line collection_mutable/treeset.gala:906
-	return TreeSet_FoldLeft[Option[T]](s, None[T]{}.Apply(), func(acc Option[T], elem T) Option[T] {
-//line collection_mutable/treeset.gala:907
+	if s == nil {
+		panic("TreeSet.Find: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:894
+	return TreeSet_FoldLeft[Option[T], T](s, None[T]{}.Apply(), func(acc Option[T], elem T) Option[T] {
+//line collection_mutable/treeset.gala:895
 		if acc.IsEmpty() && p(elem) {
-//line collection_mutable/treeset.gala:908
+//line collection_mutable/treeset.gala:896
 			return Some[T]{}.Apply(elem)
 		}
-//line collection_mutable/treeset.gala:910
+//line collection_mutable/treeset.gala:898
+		return acc
+	})
+}
+
+//line collection_mutable/treeset.gala:901
+
+// Count returns the number of elements satisfying the predicate.
+func (s *TreeSet[T]) Count(p func(T) bool) int {
+	if s == nil {
+		panic("TreeSet.Count: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:904
+	return TreeSet_FoldLeft[int, T](s, 0, func(acc int, elem T) int {
+//line collection_mutable/treeset.gala:905
+		if p(elem) {
+//line collection_mutable/treeset.gala:906
+			return acc + 1
+		}
+//line collection_mutable/treeset.gala:908
 		return acc
 	})
 }
 
 //line collection_mutable/treeset.gala:913
 
-// Count returns the number of elements satisfying the predicate.
-func (s *TreeSet[T]) Count(p func(T) bool) int {
-//line collection_mutable/treeset.gala:916
-	return TreeSet_FoldLeft[int](s, 0, func(acc int, elem T) int {
-//line collection_mutable/treeset.gala:917
-		if p(elem) {
-//line collection_mutable/treeset.gala:918
-			return acc + 1
-		}
-//line collection_mutable/treeset.gala:920
-		return acc
-	})
-}
-
-//line collection_mutable/treeset.gala:925
-
 // Head returns the minimum element (alias for Min).
 // Panics if the set is empty.
 func (s *TreeSet[T]) Head() T {
+	if s == nil {
+		panic("TreeSet.Head: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return s.Min()
 }
 
-//line collection_mutable/treeset.gala:929
+//line collection_mutable/treeset.gala:917
 
 // HeadOption returns the minimum element wrapped in Option.
 func (s *TreeSet[T]) HeadOption() Option[T] {
+	if s == nil {
+		panic("TreeSet.HeadOption: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return s.MinOption()
 }
 
-//line collection_mutable/treeset.gala:932
+//line collection_mutable/treeset.gala:920
 
 // Last returns the maximum element (alias for Max).
 // Panics if the set is empty.
 func (s *TreeSet[T]) Last() T {
+	if s == nil {
+		panic("TreeSet.Last: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return s.Max()
 }
 
-//line collection_mutable/treeset.gala:936
+//line collection_mutable/treeset.gala:924
 
 // LastOption returns the maximum element wrapped in Option.
 func (s *TreeSet[T]) LastOption() Option[T] {
+	if s == nil {
+		panic("TreeSet.LastOption: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return s.MaxOption()
 }
 
-//line collection_mutable/treeset.gala:941
+//line collection_mutable/treeset.gala:929
 
 // ToGoSlice converts the set to a Go slice in sorted order.
 func (s *TreeSet[T]) ToGoSlice() []T {
-//line collection_mutable/treeset.gala:944
+	if s == nil {
+		panic("TreeSet.ToGoSlice: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:932
 	var result []T
-//line collection_mutable/treeset.gala:945
+//line collection_mutable/treeset.gala:933
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:946
+//line collection_mutable/treeset.gala:934
 		result = go_interop.SliceAppend(result, elem)
 	})
-//line collection_mutable/treeset.gala:948
+//line collection_mutable/treeset.gala:936
 	return result
 }
 
-//line collection_mutable/treeset.gala:950
+//line collection_mutable/treeset.gala:938
 
 // ToArray converts the set to a mutable Array (in sorted order).
 func (s *TreeSet[T]) ToArray() *Array[T] {
-//line collection_mutable/treeset.gala:953
+	if s == nil {
+		panic("TreeSet.ToArray: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:941
 	var result = ArrayWithCapacity[T](s.Size())
-//line collection_mutable/treeset.gala:954
+//line collection_mutable/treeset.gala:942
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:955
+//line collection_mutable/treeset.gala:943
 		result.Append(elem)
 	})
-//line collection_mutable/treeset.gala:957
+//line collection_mutable/treeset.gala:945
 	return result
 }
 
-//line collection_mutable/treeset.gala:959
+//line collection_mutable/treeset.gala:947
 
 // ToList converts the set to a mutable List (in sorted order).
 func (s *TreeSet[T]) ToList() *List[T] {
-//line collection_mutable/treeset.gala:963
+	if s == nil {
+		panic("TreeSet.ToList: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:951
 	var result = EmptyList[T]()
-//line collection_mutable/treeset.gala:964
+//line collection_mutable/treeset.gala:952
 	s.ForEachReverse(func(elem T) {
-//line collection_mutable/treeset.gala:965
+//line collection_mutable/treeset.gala:953
 		result.Prepend(elem)
 	})
-//line collection_mutable/treeset.gala:967
+//line collection_mutable/treeset.gala:955
 	return result
 }
 
-//line collection_mutable/treeset.gala:969
+//line collection_mutable/treeset.gala:957
 
 // ToHashSet converts the set to a mutable HashSet (loses ordering but gains O(1) lookup).
 func (s *TreeSet[T]) ToHashSet() *HashSet[T] {
-//line collection_mutable/treeset.gala:972
+	if s == nil {
+		panic("TreeSet.ToHashSet: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:960
 	var result = EmptyHashSet[T]()
-//line collection_mutable/treeset.gala:973
+//line collection_mutable/treeset.gala:961
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:974
+//line collection_mutable/treeset.gala:962
 		result.Add(elem)
 	})
-//line collection_mutable/treeset.gala:976
+//line collection_mutable/treeset.gala:964
 	return result
 }
 
-//line collection_mutable/treeset.gala:978
+//line collection_mutable/treeset.gala:966
 
 // Clone creates a shallow copy of the set.
 func (s *TreeSet[T]) Clone() *TreeSet[T] {
-//line collection_mutable/treeset.gala:981
+	if s == nil {
+		panic("TreeSet.Clone: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:969
 	var result = EmptyTreeSet[T]()
-//line collection_mutable/treeset.gala:982
+//line collection_mutable/treeset.gala:970
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:983
+//line collection_mutable/treeset.gala:971
 		result.Add(elem)
 	})
-//line collection_mutable/treeset.gala:985
+//line collection_mutable/treeset.gala:973
 	return result
 }
 
-//line collection_mutable/treeset.gala:987
+//line collection_mutable/treeset.gala:975
 
 // String returns a string representation of the set in sorted order.
 func (s *TreeSet[T]) String() string {
-//line collection_mutable/treeset.gala:990
+	if s == nil {
+		panic("TreeSet.String: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:978
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:991
+//line collection_mutable/treeset.gala:979
 		return "TreeSet()"
 	}
-//line collection_mutable/treeset.gala:993
+//line collection_mutable/treeset.gala:981
 	var result = "TreeSet("
-//line collection_mutable/treeset.gala:994
+//line collection_mutable/treeset.gala:982
 	var first = true
-//line collection_mutable/treeset.gala:995
+//line collection_mutable/treeset.gala:983
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:996
+//line collection_mutable/treeset.gala:984
 		if !first {
-//line collection_mutable/treeset.gala:997
+//line collection_mutable/treeset.gala:985
 			result = result + ", "
 		}
-//line collection_mutable/treeset.gala:999
+//line collection_mutable/treeset.gala:987
 		result = result + fmt.Sprintf("%v", elem)
-//line collection_mutable/treeset.gala:1000
+//line collection_mutable/treeset.gala:988
 		first = false
 	})
-//line collection_mutable/treeset.gala:1002
+//line collection_mutable/treeset.gala:990
 	return result + ")"
 }
 
-//line collection_mutable/treeset.gala:1004
+//line collection_mutable/treeset.gala:992
 
 // MkString joins elements into a string with separator.
 func (s *TreeSet[T]) MkString(sep string) string {
-//line collection_mutable/treeset.gala:1007
+	if s == nil {
+		panic("TreeSet.MkString: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
+//line collection_mutable/treeset.gala:995
 	if s.size == 0 {
-//line collection_mutable/treeset.gala:1008
+//line collection_mutable/treeset.gala:996
 		return ""
 	}
-//line collection_mutable/treeset.gala:1010
+//line collection_mutable/treeset.gala:998
 	var result = ""
-//line collection_mutable/treeset.gala:1011
+//line collection_mutable/treeset.gala:999
 	var first = true
-//line collection_mutable/treeset.gala:1012
+//line collection_mutable/treeset.gala:1000
 	s.ForEach(func(elem T) {
-//line collection_mutable/treeset.gala:1013
+//line collection_mutable/treeset.gala:1001
 		if !first {
-//line collection_mutable/treeset.gala:1014
+//line collection_mutable/treeset.gala:1002
 			result = result + sep
 		}
-//line collection_mutable/treeset.gala:1016
+//line collection_mutable/treeset.gala:1004
 		result = result + fmt.Sprintf("%v", elem)
-//line collection_mutable/treeset.gala:1017
+//line collection_mutable/treeset.gala:1005
 		first = false
 	})
-//line collection_mutable/treeset.gala:1019
+//line collection_mutable/treeset.gala:1007
 	return result
 }
 
-//line collection_mutable/treeset.gala:1023
+//line collection_mutable/treeset.gala:1011
 
 // Sorted returns a mutable Array of elements in natural sorted order (already sorted).
 func (s *TreeSet[T]) Sorted() *Array[T] {
+	if s == nil {
+		panic("TreeSet.Sorted: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return s.ToArray()
 }
 
-//line collection_mutable/treeset.gala:1026
+//line collection_mutable/treeset.gala:1014
 
 // SortWith returns a mutable Array of elements sorted using the given comparison function.
 func (s *TreeSet[T]) SortWith(less func(T, T) bool) *Array[T] {
+	if s == nil {
+		panic("TreeSet.SortWith: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return s.ToArray().SortWith(less)
 }
 
-//line collection_mutable/treeset.gala:1029
+//line collection_mutable/treeset.gala:1017
 
 // SortBy returns a mutable Array of elements sorted by a key extracted from each element.
 func TreeSet_SortBy[K comparable, T comparable](s *TreeSet[T], f func(T) K) *Array[T] {
+	if s == nil {
+		panic("TreeSet.SortBy: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
+	}
 	return Array_SortBy(s.ToArray(), f)
 }

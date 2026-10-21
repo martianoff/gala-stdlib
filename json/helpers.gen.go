@@ -99,24 +99,24 @@ func BuildKeys(numFields int, fieldName func(int) string, naming Naming, config 
 //line json/helpers.gala:49
 	for i < numFields {
 //line json/helpers.gala:50
-		var name = std.NewImmutable(fieldName(i))
+		var name = fieldName(i)
 //line json/helpers.gala:51
-		if config.Omits.Get().Contains(name.Get()) {
+		if config.Omits.Get().Contains(name) {
 //line json/helpers.gala:52
 			keys = keys.Append("")
 //line json/helpers.gala:53
 			omitIfEmpty = omitIfEmpty.Append(false)
 		} else {
 //line json/helpers.gala:55
-			var renamed = std.NewImmutable(config.Renames.Get().Get(name.Get()))
+			var renamed = config.Renames.Get().Get(name)
 //line json/helpers.gala:56
-			var key = std.NewImmutable(renamed.Get().GetOrElse(ApplyNaming(name.Get(), naming)))
+			var key = renamed.GetOrElse(ApplyNaming(name, naming))
 //line json/helpers.gala:57
-			keys = keys.Append(key.Get())
+			keys = keys.Append(key)
 //line json/helpers.gala:58
-			reverseKeys = reverseKeys.Put(key.Get(), name.Get())
+			reverseKeys = reverseKeys.Put(key, name)
 //line json/helpers.gala:59
-			omitIfEmpty = omitIfEmpty.Append(config.OmitEmpties.Get().Contains(name.Get()))
+			omitIfEmpty = omitIfEmpty.Append(config.OmitEmpties.Get().Contains(name))
 		}
 //line json/helpers.gala:61
 		i = i + 1

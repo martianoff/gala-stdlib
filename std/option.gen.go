@@ -10,7 +10,7 @@ import "fmt"
 // It handles Option types by checking defined field, bool types by their value,
 // nil as false, and all other types as true.
 func isDefined(opt any) bool {
-	return func() bool {
+	{
 		if opt == nil {
 			return false
 		} else {
@@ -30,7 +30,7 @@ func isDefined(opt any) bool {
 				}
 			}(opt)
 		}
-	}()
+	}
 }
 
 //line std/option.gala:13
@@ -285,24 +285,24 @@ func (o Option[T]) Filter(p func(T) bool) Option[T] {
 
 // When returns Some(value) if condition is true, None otherwise.
 func When[T any](condition bool, value T) Option[T] {
-	return func() Option[T] {
+	{
 		if condition {
 			return Some[T]{}.Apply(value)
 		} else {
 			return None[T]{}.Apply()
 		}
-	}()
+	}
 }
 
 //line std/option.gala:116
 
 // Unless returns Some(value) if condition is false, None otherwise.
 func Unless[T any](condition bool, value T) Option[T] {
-	return func() Option[T] {
+	{
 		if !condition {
 			return Some[T]{}.Apply(value)
 		} else {
 			return None[T]{}.Apply()
 		}
-	}()
+	}
 }

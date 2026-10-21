@@ -74,7 +74,7 @@ func (s processState) Equal(other processState) bool {
 // (Kill / Wait from one, ReadLine from another) but each ReadLine /
 // WriteLine call itself is sequential — the caller serialises reads.
 type Process struct {
-	state *processState
+	state Immutable[*processState]
 }
 
 func (s Process) Copy() Process {
@@ -97,44 +97,41 @@ func Spawn(opts SpawnOpts) Try[Process] {
 		return Failure[Process]{}.Apply(errors.New("subprocess.Spawn: empty Cmd"))
 	}
 //line subprocess/subprocess.gala:57
-	var c = NewImmutable(exec.Command(opts.Cmd.Get(), opts.Args.Get()...))
+	var c = exec.Command(opts.Cmd.Get(), opts.Args.Get()...)
 //line subprocess/subprocess.gala:58
 	if opts.Dir.Get() != "" {
 //line subprocess/subprocess.gala:59
-		c.Get().Dir = opts.Dir.Get()
+		c.Dir = opts.Dir.Get()
 	}
 //line subprocess/subprocess.gala:61
 	if len(opts.Env.Get()) > 0 {
 //line subprocess/subprocess.gala:64
-		c.Get().Env = go_interop.SliceAppendAll(c.Get().Environ(), opts.Env.Get())
+		c.Env = go_interop.SliceAppendAll(c.Environ(), opts.Env.Get())
 	}
 //line subprocess/subprocess.gala:70
 	return Try_FlatMap[Process, io.WriteCloser](Try[io.WriteCloser]{}.Apply(func() io.WriteCloser {
-		_v0, _err := c.Get().StdinPipe()
+		_v0, _err := c.StdinPipe()
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
-	}), func(_bind_sin io.WriteCloser) Try[Process] {
-		sin := NewImmutable(_bind_sin)
+	}), func(sin io.WriteCloser) Try[Process] {
 		return Try_FlatMap[Process, io.ReadCloser](Try[io.ReadCloser]{}.Apply(func() io.ReadCloser {
-			_v0, _err := c.Get().StdoutPipe()
+			_v0, _err := c.StdoutPipe()
 			if _err != nil {
 				panic(_err)
 			}
 			return _v0
-		}), func(_bind_sout io.ReadCloser) Try[Process] {
-			sout := NewImmutable(_bind_sout)
+		}), func(sout io.ReadCloser) Try[Process] {
 			return Try_FlatMap[Process, io.ReadCloser](Try[io.ReadCloser]{}.Apply(func() io.ReadCloser {
-				_v0, _err := c.Get().StderrPipe()
+				_v0, _err := c.StderrPipe()
 				if _err != nil {
 					panic(_err)
 				}
 				return _v0
-			}), func(_bind_serr io.ReadCloser) Try[Process] {
-				serr := NewImmutable(_bind_serr)
-				return Try_Map(FromError(c.Get().Start()), func(_ Void) Process {
-					return Process{state: &processState{cmd: c.Get(), stdin: sin.Get(), stdoutScan: newLineScanner(sout.Get()), stderrScan: newLineScanner(serr.Get()), stdinMu: go_interop.NewMutex(), waitOnce: go_interop.NewOnce(), waitDone: go_interop.NewSignal()}}
+			}), func(serr io.ReadCloser) Try[Process] {
+				return Try_Map(FromError(c.Start()), func(_ Void) Process {
+					return Process{state: NewImmutable(&processState{cmd: c, stdin: sin, stdoutScan: newLineScanner(sout), stderrScan: newLineScanner(serr), stdinMu: go_interop.NewMutex(), waitOnce: go_interop.NewOnce(), waitDone: go_interop.NewSignal()})}
 				})
 			})
 		})
@@ -151,28 +148,22 @@ func Spawn(opts SpawnOpts) Try[Process] {
 // value is Void — there is nothing to report beyond "it went through".
 func (p Process) WriteLine(s string) Try[Void] {
 //line subprocess/subprocess.gala:91
-	var st = NewImmutable(p.state)
+	var st = p.state.Get()
 //line subprocess/subprocess.gala:92
-	return WithLock(st.Get().stdinMu, func() Try[Void] {
+	return WithLock(st.stdinMu, func() Try[Void] {
 //line subprocess/subprocess.gala:93
-		var (
-			_, _tmp_1 = io.WriteString(st.Get().stdin, s)
-			e1        = NewImmutable(_tmp_1)
-		)
+		var _, e1 = io.WriteString(st.stdin, s)
 //line subprocess/subprocess.gala:94
-		if e1.Get() != nil {
+		if e1 != nil {
 //line subprocess/subprocess.gala:94
-			return Failure[Void]{}.Apply(e1.Get())
+			return Failure[Void]{}.Apply(e1)
 		}
 //line subprocess/subprocess.gala:95
-		var (
-			_, _tmp_2 = io.WriteString(st.Get().stdin, "\n")
-			e2        = NewImmutable(_tmp_2)
-		)
+		var _, e2 = io.WriteString(st.stdin, "\n")
 //line subprocess/subprocess.gala:96
-		if e2.Get() != nil {
+		if e2 != nil {
 //line subprocess/subprocess.gala:96
-			return Failure[Void]{}.Apply(e2.Get())
+			return Failure[Void]{}.Apply(e2)
 		}
 //line subprocess/subprocess.gala:97
 		return Success[Void]{}.Apply(Void{})
@@ -193,11 +184,11 @@ func (p Process) WriteLine(s string) Try[Void] {
 // mutex so a write in flight isn't truncated.
 func (p Process) CloseStdin() Try[Void] {
 //line subprocess/subprocess.gala:112
-	var st = NewImmutable(p.state)
+	var st = p.state.Get()
 //line subprocess/subprocess.gala:113
-	return WithLock(st.Get().stdinMu, func() Try[Void] {
+	return WithLock(st.stdinMu, func() Try[Void] {
 //line subprocess/subprocess.gala:114
-		st.Get().stdin.Close()
+		st.stdin.Close()
 //line subprocess/subprocess.gala:115
 		return Success[Void]{}.Apply(Void{})
 	})
@@ -211,19 +202,19 @@ func (p Process) CloseStdin() Try[Void] {
 // Try API (e.g. .Recover) and treat it as "stream done", not as an error.
 func (p Process) ReadLine() Try[string] {
 //line subprocess/subprocess.gala:124
-	if !p.state.stdoutScan.Scan() {
+	if !p.state.Get().stdoutScan.Scan() {
 //line subprocess/subprocess.gala:125
-		var err = NewImmutable(p.state.stdoutScan.Err())
+		var err = p.state.Get().stdoutScan.Err()
 //line subprocess/subprocess.gala:126
-		if err.Get() != nil {
+		if err != nil {
 //line subprocess/subprocess.gala:126
-			return Failure[string]{}.Apply(err.Get())
+			return Failure[string]{}.Apply(err)
 		}
 //line subprocess/subprocess.gala:127
 		return Failure[string]{}.Apply(io.EOF)
 	}
 //line subprocess/subprocess.gala:129
-	return Success[string]{}.Apply(p.state.stdoutScan.Text())
+	return Success[string]{}.Apply(p.state.Get().stdoutScan.Text())
 }
 
 //line subprocess/subprocess.gala:131
@@ -231,19 +222,19 @@ func (p Process) ReadLine() Try[string] {
 // ReadStderrLine is the stderr counterpart to ReadLine. Same EOF semantics.
 func (p Process) ReadStderrLine() Try[string] {
 //line subprocess/subprocess.gala:134
-	if !p.state.stderrScan.Scan() {
+	if !p.state.Get().stderrScan.Scan() {
 //line subprocess/subprocess.gala:135
-		var err = NewImmutable(p.state.stderrScan.Err())
+		var err = p.state.Get().stderrScan.Err()
 //line subprocess/subprocess.gala:136
-		if err.Get() != nil {
+		if err != nil {
 //line subprocess/subprocess.gala:136
-			return Failure[string]{}.Apply(err.Get())
+			return Failure[string]{}.Apply(err)
 		}
 //line subprocess/subprocess.gala:137
 		return Failure[string]{}.Apply(io.EOF)
 	}
 //line subprocess/subprocess.gala:139
-	return Success[string]{}.Apply(p.state.stderrScan.Text())
+	return Success[string]{}.Apply(p.state.Get().stderrScan.Text())
 }
 
 //line subprocess/subprocess.gala:141
@@ -257,41 +248,37 @@ func (p Process) ReadStderrLine() Try[string] {
 // scanner returning EOF naturally signals "you can Wait now".
 func (p Process) Wait() Try[int] {
 //line subprocess/subprocess.gala:150
-	var st = NewImmutable(p.state)
+	var st = p.state.Get()
 //line subprocess/subprocess.gala:151
-	st.Get().waitOnce.Do(func() {
+	st.waitOnce.Do(func() {
 //line subprocess/subprocess.gala:152
-		var err = NewImmutable(st.Get().cmd.Wait())
+		var err = st.cmd.Wait()
 //line subprocess/subprocess.gala:154
-		FromError(st.Get().stdin.Close())
+		FromError(st.stdin.Close())
 //line subprocess/subprocess.gala:155
-		if err.Get() == nil {
+		if err == nil {
 //line subprocess/subprocess.gala:156
-			st.Get().exitCode = st.Get().cmd.ProcessState.ExitCode()
+			st.exitCode = st.cmd.ProcessState.ExitCode()
 		} else {
 //line subprocess/subprocess.gala:162
-			var (
-				_tmp_3, _tmp_4 = exitCodeFromError(err.Get())
-				code           = NewImmutable(_tmp_3)
-				residualErr    = NewImmutable(_tmp_4)
-			)
+			var code, residualErr = exitCodeFromError(err)
 //line subprocess/subprocess.gala:163
-			st.Get().exitCode = code.Get()
+			st.exitCode = code
 //line subprocess/subprocess.gala:164
-			st.Get().waitErr = residualErr.Get()
+			st.waitErr = residualErr
 		}
 //line subprocess/subprocess.gala:166
-		go_interop.CloseSignal(st.Get().waitDone)
+		go_interop.CloseSignal(st.waitDone)
 	})
 //line subprocess/subprocess.gala:168
-	go_interop.WaitSignal(st.Get().waitDone)
+	go_interop.WaitSignal(st.waitDone)
 //line subprocess/subprocess.gala:169
-	if st.Get().waitErr != nil {
+	if st.waitErr != nil {
 //line subprocess/subprocess.gala:169
-		return Failure[int]{}.Apply(st.Get().waitErr)
+		return Failure[int]{}.Apply(st.waitErr)
 	}
 //line subprocess/subprocess.gala:170
-	return Success[int]{}.Apply(st.Get().exitCode)
+	return Success[int]{}.Apply(st.exitCode)
 }
 
 //line subprocess/subprocess.gala:172
@@ -307,16 +294,16 @@ func (p Process) Kill() Try[Void] {
 		return Success[Void]{}.Apply(Void{})
 	}
 //line subprocess/subprocess.gala:181
-	var err = NewImmutable(p.state.cmd.Process.Kill())
+	var err = p.state.Get().cmd.Process.Kill()
 //line subprocess/subprocess.gala:182
-	if err.Get() != nil {
+	if err != nil {
 //line subprocess/subprocess.gala:185
-		if isProcessFinished(err.Get()) {
+		if isProcessFinished(err) {
 //line subprocess/subprocess.gala:185
 			return Success[Void]{}.Apply(Void{})
 		}
 //line subprocess/subprocess.gala:186
-		return Failure[Void]{}.Apply(err.Get())
+		return Failure[Void]{}.Apply(err)
 	}
 //line subprocess/subprocess.gala:188
 	return Success[Void]{}.Apply(Void{})
@@ -328,12 +315,12 @@ func (p Process) Kill() Try[Void] {
 // the cached Wait result first, then falls back to a process-state poll.
 func (p Process) IsAlive() bool {
 //line subprocess/subprocess.gala:196
-	if go_interop.WaitSignalTimeout(p.state.waitDone, 0) {
+	if go_interop.WaitSignalTimeout(p.state.Get().waitDone, 0) {
 //line subprocess/subprocess.gala:197
 		return false
 	}
 //line subprocess/subprocess.gala:199
-	if p.state.cmd.ProcessState != nil {
+	if p.state.Get().cmd.ProcessState != nil {
 //line subprocess/subprocess.gala:200
 		return false
 	}
@@ -346,12 +333,12 @@ func (p Process) IsAlive() bool {
 // Pid returns the OS process id; -1 if the child failed to start.
 func (p Process) Pid() int {
 //line subprocess/subprocess.gala:207
-	if p.state.cmd.Process == nil {
+	if p.state.Get().cmd.Process == nil {
 //line subprocess/subprocess.gala:208
 		return -1
 	}
 //line subprocess/subprocess.gala:210
-	return p.state.cmd.Process.Pid
+	return p.state.Get().cmd.Process.Pid
 }
 
 //line subprocess/subprocess.gala:212

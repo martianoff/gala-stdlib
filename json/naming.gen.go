@@ -200,9 +200,9 @@ func toCamelCase(s string) string {
 //line json/naming.gala:35
 	var upper = 0
 //line json/naming.gala:36
-	var runes = std.NewImmutable(go_interop.ToRunes(s))
+	var runes = go_interop.ToRunes(s)
 //line json/naming.gala:37
-	for i < len(runes.Get()) && runes.Get()[i] >= 'A' && runes.Get()[i] <= 'Z' {
+	for i < len(runes) && runes[i] >= 'A' && runes[i] <= 'Z' {
 //line json/naming.gala:38
 		upper = upper + 1
 //line json/naming.gala:39
@@ -216,18 +216,18 @@ func toCamelCase(s string) string {
 //line json/naming.gala:42
 	if upper == 1 {
 //line json/naming.gala:43
-		runes.Get()[0] = runes.Get()[0] + 32
+		std.NewImmutable(runes).Get()[0] = runes[0] + 32
 //line json/naming.gala:44
-		return runesToString(runes.Get())
+		return runesToString(runes)
 	}
 //line json/naming.gala:46
-	if upper < len(runes.Get()) {
+	if upper < len(runes) {
 //line json/naming.gala:47
 		var j = 0
 //line json/naming.gala:48
 		for j < upper-1 {
 //line json/naming.gala:49
-			runes.Get()[j] = runes.Get()[j] + 32
+			std.NewImmutable(runes).Get()[j] = runes[j] + 32
 //line json/naming.gala:50
 			j = j + 1
 		}
@@ -235,18 +235,18 @@ func toCamelCase(s string) string {
 //line json/naming.gala:53
 		var j = 0
 //line json/naming.gala:54
-		for j < len(runes.Get()) {
+		for j < len(runes) {
 //line json/naming.gala:55
-			if runes.Get()[j] >= 'A' && runes.Get()[j] <= 'Z' {
+			if runes[j] >= 'A' && runes[j] <= 'Z' {
 //line json/naming.gala:56
-				runes.Get()[j] = runes.Get()[j] + 32
+				std.NewImmutable(runes).Get()[j] = runes[j] + 32
 			}
 //line json/naming.gala:58
 			j = j + 1
 		}
 	}
 //line json/naming.gala:61
-	return runesToString(runes.Get())
+	return runesToString(runes)
 }
 
 //line json/naming.gala:64
@@ -267,35 +267,35 @@ func toDelimited(s string, delim rune) string {
 		return s
 	}
 //line json/naming.gala:69
-	var runes = std.NewImmutable(go_interop.ToRunes(s))
+	var runes = go_interop.ToRunes(s)
 //line json/naming.gala:70
 	var result []rune
 //line json/naming.gala:71
 	var i = 0
 //line json/naming.gala:72
-	for i < len(runes.Get()) {
+	for i < len(runes) {
 //line json/naming.gala:73
-		var r = std.NewImmutable(runes.Get()[i])
+		var r = runes[i]
 //line json/naming.gala:74
-		if r.Get() >= 'A' && r.Get() <= 'Z' {
+		if r >= 'A' && r <= 'Z' {
 //line json/naming.gala:75
 			if i > 0 {
 //line json/naming.gala:76
-				var prev = std.NewImmutable(runes.Get()[i-1])
+				var prev = runes[i-1]
 //line json/naming.gala:77
-				if prev.Get() >= 'a' && prev.Get() <= 'z' {
+				if prev >= 'a' && prev <= 'z' {
 //line json/naming.gala:78
 					result = go_interop.SliceAppend(result, delim)
-				} else if i+1 < len(runes.Get()) && runes.Get()[i+1] >= 'a' && runes.Get()[i+1] <= 'z' && prev.Get() >= 'A' && prev.Get() <= 'Z' {
+				} else if i+1 < len(runes) && runes[i+1] >= 'a' && runes[i+1] <= 'z' && prev >= 'A' && prev <= 'Z' {
 //line json/naming.gala:80
 					result = go_interop.SliceAppend(result, delim)
 				}
 			}
 //line json/naming.gala:83
-			result = go_interop.SliceAppend(result, r.Get()+32)
+			result = go_interop.SliceAppend(result, r+32)
 		} else {
 //line json/naming.gala:85
-			result = go_interop.SliceAppend(result, r.Get())
+			result = go_interop.SliceAppend(result, r)
 		}
 //line json/naming.gala:87
 		i = i + 1

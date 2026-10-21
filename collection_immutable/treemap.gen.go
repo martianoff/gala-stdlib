@@ -19,11 +19,14 @@ var treeMapBlack Immutable[int] = NewImmutable[int](1)
 //line collection_immutable/treemap.gala:29
 
 // treeMapNode represents a node in the Red-Black tree.
+//
+// Its links and TreeMap's root are never reassigned; they are `var` for the
+// reason List's tail is.
 type treeMapNode[K comparable, V any] struct {
 	key   Immutable[K]
 	value Immutable[V]
-	left  Immutable[*treeMapNode[K, V]]
-	right Immutable[*treeMapNode[K, V]]
+	left  OptionPtr[treeMapNode[K, V]]
+	right OptionPtr[treeMapNode[K, V]]
 	color Immutable[int]
 }
 
@@ -42,11 +45,11 @@ func (_ treeMapNode[K, V]) IstreeMapNode() bool {
 	return true
 }
 
-//line collection_immutable/treemap.gala:38
+//line collection_immutable/treemap.gala:41
 
 // TreeMap represents an immutable sorted map.
 type TreeMap[K comparable, V any] struct {
-	root Immutable[*treeMapNode[K, V]]
+	root OptionPtr[treeMapNode[K, V]]
 	size Immutable[int]
 }
 
@@ -65,158 +68,156 @@ func (_ TreeMap[K, V]) IsTreeMap() bool {
 	return true
 }
 
-//line collection_immutable/treemap.gala:44
+//line collection_immutable/treemap.gala:47
 
 // EmptyTreeMap returns an empty TreeMap.
 func EmptyTreeMap[K comparable, V any]() TreeMap[K, V] {
-//line collection_immutable/treemap.gala:47
-	var nilRoot *treeMapNode[K, V] = nil
-//line collection_immutable/treemap.gala:48
-	return TreeMap[K, V]{root: NewImmutable(nilRoot), size: NewImmutable(0)}
+//line collection_immutable/treemap.gala:50
+	return TreeMap[K, V]{root: EmptyOptionPtr[treeMapNode[K, V]](), size: NewImmutable(0)}
 }
 
-//line collection_immutable/treemap.gala:50
+//line collection_immutable/treemap.gala:52
 
 // TreeMapOf creates a TreeMap from key-value tuples.
 // Example: TreeMapOf(("a", 1), ("b", 2)) creates TreeMap(a -> 1, b -> 2)
 func TreeMapOf[K comparable, V any](entries ...Tuple[K, V]) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:54
-	var result = EmptyTreeMap[K, V]()
-//line collection_immutable/treemap.gala:55
-	for i := 0; i < len(entries); i++ {
 //line collection_immutable/treemap.gala:56
+	var result = EmptyTreeMap[K, V]()
+//line collection_immutable/treemap.gala:57
+	for i := 0; i < len(entries); i++ {
+//line collection_immutable/treemap.gala:58
 		result = result.Put(entries[i].V1.Get(), entries[i].V2.Get())
 	}
-//line collection_immutable/treemap.gala:58
+//line collection_immutable/treemap.gala:60
 	return result
 }
 
-//line collection_immutable/treemap.gala:60
+//line collection_immutable/treemap.gala:62
 
 // TreeMapFromSlice creates a TreeMap from a slice of tuples.
 func TreeMapFromSlice[K comparable, V any](entries []Tuple[K, V]) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:63
-	var result = EmptyTreeMap[K, V]()
-//line collection_immutable/treemap.gala:64
-	for i := 0; i < len(entries); i++ {
 //line collection_immutable/treemap.gala:65
+	var result = EmptyTreeMap[K, V]()
+//line collection_immutable/treemap.gala:66
+	for i := 0; i < len(entries); i++ {
+//line collection_immutable/treemap.gala:67
 		result = result.Put(entries[i].V1.Get(), entries[i].V2.Get())
 	}
-//line collection_immutable/treemap.gala:67
+//line collection_immutable/treemap.gala:69
 	return result
 }
 
-//line collection_immutable/treemap.gala:69
+//line collection_immutable/treemap.gala:71
 
 // TreeMapFromGoMap creates a TreeMap from a Go map.
 func TreeMapFromGoMap[K comparable, V any](m map[K]V) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:72
-	var result = EmptyTreeMap[K, V]()
-//line collection_immutable/treemap.gala:73
-	for k, v := range m {
 //line collection_immutable/treemap.gala:74
+	var result = EmptyTreeMap[K, V]()
+//line collection_immutable/treemap.gala:75
+	for k, v := range m {
+//line collection_immutable/treemap.gala:76
 		result = result.Put(k, v)
 	}
-//line collection_immutable/treemap.gala:76
+//line collection_immutable/treemap.gala:78
 	return result
 }
 
-//line collection_immutable/treemap.gala:80
+//line collection_immutable/treemap.gala:82
 
 // IsEmpty returns true if the map is empty.
 func (m TreeMap[K, V]) IsEmpty() bool {
 	return m.size.Get() == 0
 }
 
-//line collection_immutable/treemap.gala:83
+//line collection_immutable/treemap.gala:85
 
 // NonEmpty returns true if the map is not empty.
 func (m TreeMap[K, V]) NonEmpty() bool {
 	return m.size.Get() > 0
 }
 
-//line collection_immutable/treemap.gala:86
+//line collection_immutable/treemap.gala:88
 
 // Size returns the number of entries. O(1) - cached.
 func (m TreeMap[K, V]) Size() int {
 	return m.size.Get()
 }
 
-//line collection_immutable/treemap.gala:89
+//line collection_immutable/treemap.gala:91
 
 // Length is an alias for Size.
 func (m TreeMap[K, V]) Length() int {
 	return m.size.Get()
 }
 
-//line collection_immutable/treemap.gala:94
+//line collection_immutable/treemap.gala:96
 
 // treeMapCompare compares two keys and returns -1, 0, or 1.
 func treeMapCompare[K comparable](a K, b K) int {
-//line collection_immutable/treemap.gala:97
-	var va Immutable[any] = NewImmutable[any](a)
-//line collection_immutable/treemap.gala:98
-	var vb Immutable[any] = NewImmutable[any](b)
+//line collection_immutable/treemap.gala:99
+	var va any = a
 //line collection_immutable/treemap.gala:100
-	var result = NewImmutable(func(obj any) int {
+	var vb any = b
+//line collection_immutable/treemap.gala:102
+	var result = func(obj any) int {
 		{
 			ai, _tmp_1 := As[int](obj)
 			if _tmp_1 {
-				return treeMapCompareIntsAny(ai, vb.Get())
+				return treeMapCompareIntsAny(ai, vb)
 			} else {
 				as, _tmp_2 := As[string](obj)
 				if _tmp_2 {
-					return treeMapCompareStringsAny(as, vb.Get())
+					return treeMapCompareStringsAny(as, vb)
 				} else {
 					ai64, _tmp_3 := As[int64](obj)
 					if _tmp_3 {
-						return treeMapCompareInt64sAny(ai64, vb.Get())
+						return treeMapCompareInt64sAny(ai64, vb)
 					} else {
 						ai32, _tmp_4 := As[int32](obj)
 						if _tmp_4 {
-							return treeMapCompareInt32sAny(ai32, vb.Get())
+							return treeMapCompareInt32sAny(ai32, vb)
 						} else {
 							af64, _tmp_5 := As[float64](obj)
 							if _tmp_5 {
-								return treeMapCompareFloat64sAny(af64, vb.Get())
+								return treeMapCompareFloat64sAny(af64, vb)
 							} else {
 								af32, _tmp_6 := As[float32](obj)
 								if _tmp_6 {
-									return treeMapCompareFloat32sAny(af32, vb.Get())
+									return treeMapCompareFloat32sAny(af32, vb)
 								} else {
 									au, _tmp_7 := As[uint](obj)
 									if _tmp_7 {
-										return treeMapCompareUintsAny(au, vb.Get())
+										return treeMapCompareUintsAny(au, vb)
 									} else {
 										au64, _tmp_8 := As[uint64](obj)
 										if _tmp_8 {
-											return treeMapCompareUint64sAny(au64, vb.Get())
+											return treeMapCompareUint64sAny(au64, vb)
 										} else {
 											au32, _tmp_9 := As[uint32](obj)
 											if _tmp_9 {
-												return treeMapCompareUint32sAny(au32, vb.Get())
+												return treeMapCompareUint32sAny(au32, vb)
 											} else {
 												ai16, _tmp_10 := As[int16](obj)
 												if _tmp_10 {
-													return treeMapCompareInt16sAny(ai16, vb.Get())
+													return treeMapCompareInt16sAny(ai16, vb)
 												} else {
 													ai8, _tmp_11 := As[int8](obj)
 													if _tmp_11 {
-														return treeMapCompareInt8sAny(ai8, vb.Get())
+														return treeMapCompareInt8sAny(ai8, vb)
 													} else {
 														au16, _tmp_12 := As[uint16](obj)
 														if _tmp_12 {
-															return treeMapCompareUint16sAny(au16, vb.Get())
+															return treeMapCompareUint16sAny(au16, vb)
 														} else {
 															au8, _tmp_13 := As[uint8](obj)
 															if _tmp_13 {
-																return treeMapCompareUint8sAny(au8, vb.Get())
+																return treeMapCompareUint8sAny(au8, vb)
 															} else {
 																ao, _tmp_14 := As[Ordered[K]](obj)
 																if _tmp_14 {
 																	return ao.Compare(b)
 																} else {
-																	return treeMapPanicNotOrdered(va.Get())
+																	return treeMapPanicNotOrdered(va)
 																}
 															}
 														}
@@ -232,17 +233,17 @@ func treeMapCompare[K comparable](a K, b K) int {
 				}
 			}
 		}
-	}(va.Get()))
-//line collection_immutable/treemap.gala:117
-	return result.Get()
+	}(va)
+//line collection_immutable/treemap.gala:119
+	return result
 }
 
-//line collection_immutable/treemap.gala:119
+//line collection_immutable/treemap.gala:121
 
 // Type-specific comparison helpers
 func treeMapCompareIntsAny(a int, vb any) int {
-//line collection_immutable/treemap.gala:122
-	var b = NewImmutable(func(obj any) int {
+//line collection_immutable/treemap.gala:124
+	var b = func(obj any) int {
 		{
 			bi, _tmp_15 := As[int](obj)
 			if _tmp_15 {
@@ -251,25 +252,25 @@ func treeMapCompareIntsAny(a int, vb any) int {
 				return 0
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:123
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:123
+	}(vb)
+//line collection_immutable/treemap.gala:125
+	if a < b {
+//line collection_immutable/treemap.gala:125
 		return -1
 	}
-//line collection_immutable/treemap.gala:124
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:124
+//line collection_immutable/treemap.gala:126
+	if a > b {
+//line collection_immutable/treemap.gala:126
 		return 1
 	}
-//line collection_immutable/treemap.gala:125
+//line collection_immutable/treemap.gala:127
 	return 0
 }
 
-//line collection_immutable/treemap.gala:128
+//line collection_immutable/treemap.gala:130
 func treeMapCompareStringsAny(a string, vb any) int {
-//line collection_immutable/treemap.gala:129
-	var b = NewImmutable(func(obj any) string {
+//line collection_immutable/treemap.gala:131
+	var b = func(obj any) string {
 		{
 			bs, _tmp_16 := As[string](obj)
 			if _tmp_16 {
@@ -278,25 +279,25 @@ func treeMapCompareStringsAny(a string, vb any) int {
 				return ""
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:130
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:130
+	}(vb)
+//line collection_immutable/treemap.gala:132
+	if a < b {
+//line collection_immutable/treemap.gala:132
 		return -1
 	}
-//line collection_immutable/treemap.gala:131
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:131
+//line collection_immutable/treemap.gala:133
+	if a > b {
+//line collection_immutable/treemap.gala:133
 		return 1
 	}
-//line collection_immutable/treemap.gala:132
+//line collection_immutable/treemap.gala:134
 	return 0
 }
 
-//line collection_immutable/treemap.gala:135
+//line collection_immutable/treemap.gala:137
 func treeMapCompareInt64sAny(a int64, vb any) int {
-//line collection_immutable/treemap.gala:136
-	var b = NewImmutable(func(obj any) int64 {
+//line collection_immutable/treemap.gala:138
+	var b = func(obj any) int64 {
 		{
 			bi, _tmp_17 := As[int64](obj)
 			if _tmp_17 {
@@ -305,25 +306,25 @@ func treeMapCompareInt64sAny(a int64, vb any) int {
 				return int64(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:137
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:137
+	}(vb)
+//line collection_immutable/treemap.gala:139
+	if a < b {
+//line collection_immutable/treemap.gala:139
 		return -1
 	}
-//line collection_immutable/treemap.gala:138
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:138
+//line collection_immutable/treemap.gala:140
+	if a > b {
+//line collection_immutable/treemap.gala:140
 		return 1
 	}
-//line collection_immutable/treemap.gala:139
+//line collection_immutable/treemap.gala:141
 	return 0
 }
 
-//line collection_immutable/treemap.gala:142
+//line collection_immutable/treemap.gala:144
 func treeMapCompareInt32sAny(a int32, vb any) int {
-//line collection_immutable/treemap.gala:143
-	var b = NewImmutable(func(obj any) int32 {
+//line collection_immutable/treemap.gala:145
+	var b = func(obj any) int32 {
 		{
 			bi, _tmp_18 := As[int32](obj)
 			if _tmp_18 {
@@ -332,25 +333,25 @@ func treeMapCompareInt32sAny(a int32, vb any) int {
 				return int32(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:144
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:144
+	}(vb)
+//line collection_immutable/treemap.gala:146
+	if a < b {
+//line collection_immutable/treemap.gala:146
 		return -1
 	}
-//line collection_immutable/treemap.gala:145
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:145
+//line collection_immutable/treemap.gala:147
+	if a > b {
+//line collection_immutable/treemap.gala:147
 		return 1
 	}
-//line collection_immutable/treemap.gala:146
+//line collection_immutable/treemap.gala:148
 	return 0
 }
 
-//line collection_immutable/treemap.gala:149
+//line collection_immutable/treemap.gala:151
 func treeMapCompareInt16sAny(a int16, vb any) int {
-//line collection_immutable/treemap.gala:150
-	var b = NewImmutable(func(obj any) int16 {
+//line collection_immutable/treemap.gala:152
+	var b = func(obj any) int16 {
 		{
 			bi, _tmp_19 := As[int16](obj)
 			if _tmp_19 {
@@ -359,25 +360,25 @@ func treeMapCompareInt16sAny(a int16, vb any) int {
 				return int16(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:151
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:151
+	}(vb)
+//line collection_immutable/treemap.gala:153
+	if a < b {
+//line collection_immutable/treemap.gala:153
 		return -1
 	}
-//line collection_immutable/treemap.gala:152
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:152
+//line collection_immutable/treemap.gala:154
+	if a > b {
+//line collection_immutable/treemap.gala:154
 		return 1
 	}
-//line collection_immutable/treemap.gala:153
+//line collection_immutable/treemap.gala:155
 	return 0
 }
 
-//line collection_immutable/treemap.gala:156
+//line collection_immutable/treemap.gala:158
 func treeMapCompareInt8sAny(a int8, vb any) int {
-//line collection_immutable/treemap.gala:157
-	var b = NewImmutable(func(obj any) int8 {
+//line collection_immutable/treemap.gala:159
+	var b = func(obj any) int8 {
 		{
 			bi, _tmp_20 := As[int8](obj)
 			if _tmp_20 {
@@ -386,25 +387,25 @@ func treeMapCompareInt8sAny(a int8, vb any) int {
 				return int8(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:158
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:158
+	}(vb)
+//line collection_immutable/treemap.gala:160
+	if a < b {
+//line collection_immutable/treemap.gala:160
 		return -1
 	}
-//line collection_immutable/treemap.gala:159
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:159
+//line collection_immutable/treemap.gala:161
+	if a > b {
+//line collection_immutable/treemap.gala:161
 		return 1
 	}
-//line collection_immutable/treemap.gala:160
+//line collection_immutable/treemap.gala:162
 	return 0
 }
 
-//line collection_immutable/treemap.gala:163
+//line collection_immutable/treemap.gala:165
 func treeMapCompareFloat64sAny(a float64, vb any) int {
-//line collection_immutable/treemap.gala:164
-	var b = NewImmutable(func(obj any) float64 {
+//line collection_immutable/treemap.gala:166
+	var b = func(obj any) float64 {
 		{
 			bf, _tmp_21 := As[float64](obj)
 			if _tmp_21 {
@@ -413,25 +414,25 @@ func treeMapCompareFloat64sAny(a float64, vb any) int {
 				return float64(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:165
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:165
+	}(vb)
+//line collection_immutable/treemap.gala:167
+	if a < b {
+//line collection_immutable/treemap.gala:167
 		return -1
 	}
-//line collection_immutable/treemap.gala:166
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:166
+//line collection_immutable/treemap.gala:168
+	if a > b {
+//line collection_immutable/treemap.gala:168
 		return 1
 	}
-//line collection_immutable/treemap.gala:167
+//line collection_immutable/treemap.gala:169
 	return 0
 }
 
-//line collection_immutable/treemap.gala:170
+//line collection_immutable/treemap.gala:172
 func treeMapCompareFloat32sAny(a float32, vb any) int {
-//line collection_immutable/treemap.gala:171
-	var b = NewImmutable(func(obj any) float32 {
+//line collection_immutable/treemap.gala:173
+	var b = func(obj any) float32 {
 		{
 			bf, _tmp_22 := As[float32](obj)
 			if _tmp_22 {
@@ -440,25 +441,25 @@ func treeMapCompareFloat32sAny(a float32, vb any) int {
 				return float32(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:172
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:172
+	}(vb)
+//line collection_immutable/treemap.gala:174
+	if a < b {
+//line collection_immutable/treemap.gala:174
 		return -1
 	}
-//line collection_immutable/treemap.gala:173
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:173
+//line collection_immutable/treemap.gala:175
+	if a > b {
+//line collection_immutable/treemap.gala:175
 		return 1
 	}
-//line collection_immutable/treemap.gala:174
+//line collection_immutable/treemap.gala:176
 	return 0
 }
 
-//line collection_immutable/treemap.gala:177
+//line collection_immutable/treemap.gala:179
 func treeMapCompareUintsAny(a uint, vb any) int {
-//line collection_immutable/treemap.gala:178
-	var b = NewImmutable(func(obj any) uint {
+//line collection_immutable/treemap.gala:180
+	var b = func(obj any) uint {
 		{
 			bu, _tmp_23 := As[uint](obj)
 			if _tmp_23 {
@@ -467,25 +468,25 @@ func treeMapCompareUintsAny(a uint, vb any) int {
 				return uint(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:179
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:179
+	}(vb)
+//line collection_immutable/treemap.gala:181
+	if a < b {
+//line collection_immutable/treemap.gala:181
 		return -1
 	}
-//line collection_immutable/treemap.gala:180
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:180
+//line collection_immutable/treemap.gala:182
+	if a > b {
+//line collection_immutable/treemap.gala:182
 		return 1
 	}
-//line collection_immutable/treemap.gala:181
+//line collection_immutable/treemap.gala:183
 	return 0
 }
 
-//line collection_immutable/treemap.gala:184
+//line collection_immutable/treemap.gala:186
 func treeMapCompareUint64sAny(a uint64, vb any) int {
-//line collection_immutable/treemap.gala:185
-	var b = NewImmutable(func(obj any) uint64 {
+//line collection_immutable/treemap.gala:187
+	var b = func(obj any) uint64 {
 		{
 			bu, _tmp_24 := As[uint64](obj)
 			if _tmp_24 {
@@ -494,25 +495,25 @@ func treeMapCompareUint64sAny(a uint64, vb any) int {
 				return uint64(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:186
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:186
+	}(vb)
+//line collection_immutable/treemap.gala:188
+	if a < b {
+//line collection_immutable/treemap.gala:188
 		return -1
 	}
-//line collection_immutable/treemap.gala:187
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:187
+//line collection_immutable/treemap.gala:189
+	if a > b {
+//line collection_immutable/treemap.gala:189
 		return 1
 	}
-//line collection_immutable/treemap.gala:188
+//line collection_immutable/treemap.gala:190
 	return 0
 }
 
-//line collection_immutable/treemap.gala:191
+//line collection_immutable/treemap.gala:193
 func treeMapCompareUint32sAny(a uint32, vb any) int {
-//line collection_immutable/treemap.gala:192
-	var b = NewImmutable(func(obj any) uint32 {
+//line collection_immutable/treemap.gala:194
+	var b = func(obj any) uint32 {
 		{
 			bu, _tmp_25 := As[uint32](obj)
 			if _tmp_25 {
@@ -521,25 +522,25 @@ func treeMapCompareUint32sAny(a uint32, vb any) int {
 				return uint32(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:193
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:193
+	}(vb)
+//line collection_immutable/treemap.gala:195
+	if a < b {
+//line collection_immutable/treemap.gala:195
 		return -1
 	}
-//line collection_immutable/treemap.gala:194
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:194
+//line collection_immutable/treemap.gala:196
+	if a > b {
+//line collection_immutable/treemap.gala:196
 		return 1
 	}
-//line collection_immutable/treemap.gala:195
+//line collection_immutable/treemap.gala:197
 	return 0
 }
 
-//line collection_immutable/treemap.gala:198
+//line collection_immutable/treemap.gala:200
 func treeMapCompareUint16sAny(a uint16, vb any) int {
-//line collection_immutable/treemap.gala:199
-	var b = NewImmutable(func(obj any) uint16 {
+//line collection_immutable/treemap.gala:201
+	var b = func(obj any) uint16 {
 		{
 			bu, _tmp_26 := As[uint16](obj)
 			if _tmp_26 {
@@ -548,25 +549,25 @@ func treeMapCompareUint16sAny(a uint16, vb any) int {
 				return uint16(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:200
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:200
+	}(vb)
+//line collection_immutable/treemap.gala:202
+	if a < b {
+//line collection_immutable/treemap.gala:202
 		return -1
 	}
-//line collection_immutable/treemap.gala:201
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:201
+//line collection_immutable/treemap.gala:203
+	if a > b {
+//line collection_immutable/treemap.gala:203
 		return 1
 	}
-//line collection_immutable/treemap.gala:202
+//line collection_immutable/treemap.gala:204
 	return 0
 }
 
-//line collection_immutable/treemap.gala:205
+//line collection_immutable/treemap.gala:207
 func treeMapCompareUint8sAny(a uint8, vb any) int {
-//line collection_immutable/treemap.gala:206
-	var b = NewImmutable(func(obj any) uint8 {
+//line collection_immutable/treemap.gala:208
+	var b = func(obj any) uint8 {
 		{
 			bu, _tmp_27 := As[uint8](obj)
 			if _tmp_27 {
@@ -575,101 +576,99 @@ func treeMapCompareUint8sAny(a uint8, vb any) int {
 				return uint8(0)
 			}
 		}
-	}(vb))
-//line collection_immutable/treemap.gala:207
-	if a < b.Get() {
-//line collection_immutable/treemap.gala:207
+	}(vb)
+//line collection_immutable/treemap.gala:209
+	if a < b {
+//line collection_immutable/treemap.gala:209
 		return -1
 	}
-//line collection_immutable/treemap.gala:208
-	if a > b.Get() {
-//line collection_immutable/treemap.gala:208
+//line collection_immutable/treemap.gala:210
+	if a > b {
+//line collection_immutable/treemap.gala:210
 		return 1
 	}
-//line collection_immutable/treemap.gala:209
+//line collection_immutable/treemap.gala:211
 	return 0
 }
 
-//line collection_immutable/treemap.gala:212
+//line collection_immutable/treemap.gala:214
 func treeMapPanicNotOrdered(v any) int {
-//line collection_immutable/treemap.gala:213
+//line collection_immutable/treemap.gala:215
 	panic(fmt.Sprintf("TreeMap: type %T must implement std.Ordered interface", v))
 }
 
-//line collection_immutable/treemap.gala:215
+//line collection_immutable/treemap.gala:217
 
-// isRedTreeMapNode checks if a node is red (nil nodes are black).
-func isRedTreeMapNode[K comparable, V any](node *treeMapNode[K, V]) bool {
-//line collection_immutable/treemap.gala:218
-	if node == nil {
-//line collection_immutable/treemap.gala:219
-		return false
-	}
-//line collection_immutable/treemap.gala:221
-	return node.color.Get() == treeMapRed.Get()
+// isRedTreeMapNode checks if a node is red (empty nodes are black).
+func isRedTreeMapNode[K comparable, V any](tree OptionPtr[treeMapNode[K, V]]) bool {
+	return tree.IsDefined() && tree.Get().color.Get() == treeMapRed.Get()
 }
 
-//line collection_immutable/treemap.gala:225
+//line collection_immutable/treemap.gala:223
 
 // Contains checks if the map contains the given key. O(log n).
 func (m TreeMap[K, V]) Contains(key K) bool {
-//line collection_immutable/treemap.gala:228
-	return treeMapContainsKey[K, V](m.root.Get(), key)
+//line collection_immutable/treemap.gala:226
+	return treeMapContainsKey[K, V](m.root, key)
 }
 
-//line collection_immutable/treemap.gala:230
+//line collection_immutable/treemap.gala:228
 
 // treeMapContainsKey searches for a key in the tree.
-func treeMapContainsKey[K comparable, V any](node *treeMapNode[K, V], key K) bool {
-//line collection_immutable/treemap.gala:233
-	if node == nil {
-//line collection_immutable/treemap.gala:234
+func treeMapContainsKey[K comparable, V any](tree OptionPtr[treeMapNode[K, V]], key K) bool {
+//line collection_immutable/treemap.gala:231
+	if tree.IsEmpty() {
+//line collection_immutable/treemap.gala:232
 		return false
 	}
+//line collection_immutable/treemap.gala:234
+	var node = tree.Get()
+//line collection_immutable/treemap.gala:235
+	var cmp = treeMapCompare[K](key, node.key.Get())
 //line collection_immutable/treemap.gala:236
-	var cmp = NewImmutable(treeMapCompare[K](key, node.key.Get()))
+	if cmp < 0 {
 //line collection_immutable/treemap.gala:237
-	if cmp.Get() < 0 {
-//line collection_immutable/treemap.gala:238
-		return treeMapContainsKey[K, V](node.left.Get(), key)
+		return treeMapContainsKey[K, V](node.left, key)
 	}
+//line collection_immutable/treemap.gala:239
+	if cmp > 0 {
 //line collection_immutable/treemap.gala:240
-	if cmp.Get() > 0 {
-//line collection_immutable/treemap.gala:241
-		return treeMapContainsKey[K, V](node.right.Get(), key)
+		return treeMapContainsKey[K, V](node.right, key)
 	}
-//line collection_immutable/treemap.gala:243
+//line collection_immutable/treemap.gala:242
 	return true
 }
 
-//line collection_immutable/treemap.gala:245
+//line collection_immutable/treemap.gala:244
 
 // Get returns the value for a key wrapped in Option. O(log n).
 func (m TreeMap[K, V]) Get(key K) Option[V] {
-//line collection_immutable/treemap.gala:248
-	return treeMapGetValue[K, V](m.root.Get(), key)
+//line collection_immutable/treemap.gala:247
+	return treeMapGetValue[K, V](m.root, key)
 }
 
-//line collection_immutable/treemap.gala:250
+//line collection_immutable/treemap.gala:249
 
 // treeMapGetValue searches for a key and returns its value.
-func treeMapGetValue[K comparable, V any](node *treeMapNode[K, V], key K) Option[V] {
+func treeMapGetValue[K comparable, V any](tree OptionPtr[treeMapNode[K, V]], key K) Option[V] {
+//line collection_immutable/treemap.gala:252
+	if tree.IsEmpty() {
 //line collection_immutable/treemap.gala:253
-	if node == nil {
-//line collection_immutable/treemap.gala:254
 		return None[V]{}.Apply()
 	}
+//line collection_immutable/treemap.gala:255
+	var node = tree.Get()
 //line collection_immutable/treemap.gala:256
-	var cmp = NewImmutable(treeMapCompare[K](key, node.key.Get()))
+	var cmp = treeMapCompare[K](key, node.key.Get())
 //line collection_immutable/treemap.gala:257
-	if cmp.Get() < 0 {
+	if cmp < 0 {
 //line collection_immutable/treemap.gala:258
-		return treeMapGetValue[K, V](node.left.Get(), key)
+		return treeMapGetValue[K, V](node.left, key)
 	}
 //line collection_immutable/treemap.gala:260
-	if cmp.Get() > 0 {
+	if cmp > 0 {
 //line collection_immutable/treemap.gala:261
-		return treeMapGetValue[K, V](node.right.Get(), key)
+		return treeMapGetValue[K, V](node.right, key)
 	}
 //line collection_immutable/treemap.gala:263
 	return Some[V]{}.Apply(node.value.Get())
@@ -717,778 +716,948 @@ func (m TreeMap[K, V]) Apply(key K) V {
 // Put adds or updates a key-value pair. Returns a new map. O(log n).
 func (m TreeMap[K, V]) Put(key K, value V) TreeMap[K, V] {
 //line collection_immutable/treemap.gala:283
-	var existed = NewImmutable(treeMapContainsKey[K, V](m.root.Get(), key))
+	var existed = treeMapContainsKey[K, V](m.root, key)
 //line collection_immutable/treemap.gala:284
-	var newRoot = NewImmutable(treeMapInsert[K, V](m.root.Get(), key, value))
+	var newRoot = treeMapInsert[K, V](m.root, key, value)
 //line collection_immutable/treemap.gala:286
-	var blackRoot = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(newRoot.Get().key.Get()), value: NewImmutable(newRoot.Get().value.Get()), left: NewImmutable(newRoot.Get().left.Get()), right: NewImmutable(newRoot.Get().right.Get()), color: NewImmutable(treeMapBlack.Get())})
+	var blackRoot = &treeMapNode[K, V]{key: NewImmutable(newRoot.key.Get()), value: NewImmutable(newRoot.value.Get()), left: newRoot.left, right: newRoot.right, color: NewImmutable(treeMapBlack.Get())}
 //line collection_immutable/treemap.gala:287
-	if existed.Get() {
+	if existed {
 //line collection_immutable/treemap.gala:288
-		return TreeMap[K, V]{root: NewImmutable(blackRoot.Get()), size: NewImmutable(m.size.Get())}
+		return TreeMap[K, V]{root: SomePtr(blackRoot), size: NewImmutable(m.size.Get())}
 	}
 //line collection_immutable/treemap.gala:290
-	return TreeMap[K, V]{root: NewImmutable(blackRoot.Get()), size: NewImmutable(m.size.Get() + 1)}
+	return TreeMap[K, V]{root: SomePtr(blackRoot), size: NewImmutable(m.size.Get() + 1)}
 }
 
 //line collection_immutable/treemap.gala:292
 
 // treeMapInsert inserts or updates a key-value pair and rebalances.
-func treeMapInsert[K comparable, V any](node *treeMapNode[K, V], key K, value V) *treeMapNode[K, V] {
+func treeMapInsert[K comparable, V any](tree OptionPtr[treeMapNode[K, V]], key K, value V) *treeMapNode[K, V] {
 //line collection_immutable/treemap.gala:295
-	if node == nil {
+	if tree.IsEmpty() {
 //line collection_immutable/treemap.gala:296
 		return &treeMapNode[K, V]{key: NewImmutable(key), value: NewImmutable(value), color: NewImmutable(treeMapRed.Get())}
 	}
-//line collection_immutable/treemap.gala:299
-	var cmp = NewImmutable(treeMapCompare[K](key, node.key.Get()))
+//line collection_immutable/treemap.gala:298
+	var node = tree.Get()
 //line collection_immutable/treemap.gala:300
-	var newNode *treeMapNode[K, V]
+	var cmp = treeMapCompare[K](key, node.key.Get())
 //line collection_immutable/treemap.gala:301
-	if cmp.Get() < 0 {
+	if cmp < 0 {
 //line collection_immutable/treemap.gala:302
-		var newLeft = NewImmutable(treeMapInsert[K, V](node.left.Get(), key, value))
+		var newLeft = treeMapInsert[K, V](node.left, key, value)
 //line collection_immutable/treemap.gala:303
-		newNode = &treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: NewImmutable(newLeft.Get()), right: NewImmutable(node.right.Get()), color: NewImmutable(node.color.Get())}
-	} else if cmp.Get() > 0 {
-//line collection_immutable/treemap.gala:305
-		var newRight = NewImmutable(treeMapInsert[K, V](node.right.Get(), key, value))
-//line collection_immutable/treemap.gala:306
-		newNode = &treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: NewImmutable(node.left.Get()), right: NewImmutable(newRight.Get()), color: NewImmutable(node.color.Get())}
-	} else {
-//line collection_immutable/treemap.gala:309
-		return &treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(value), left: NewImmutable(node.left.Get()), right: NewImmutable(node.right.Get()), color: NewImmutable(node.color.Get())}
+		return treeMapBalance[K, V](&treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: SomePtr(newLeft), right: node.right, color: NewImmutable(node.color.Get())})
 	}
-//line collection_immutable/treemap.gala:312
-	return treeMapBalance[K, V](newNode)
+//line collection_immutable/treemap.gala:305
+	if cmp > 0 {
+//line collection_immutable/treemap.gala:306
+		var newRight = treeMapInsert[K, V](node.right, key, value)
+//line collection_immutable/treemap.gala:307
+		return treeMapBalance[K, V](&treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: node.left, right: SomePtr(newRight), color: NewImmutable(node.color.Get())})
+	}
+//line collection_immutable/treemap.gala:310
+	return &treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(value), left: node.left, right: node.right, color: NewImmutable(node.color.Get())}
 }
 
-//line collection_immutable/treemap.gala:314
+//line collection_immutable/treemap.gala:312
 
 // treeMapBalance rebalances the tree after insertion (Okasaki's balance function).
+// A red child is never empty, so each case reads the red nodes it tested.
 func treeMapBalance[K comparable, V any](node *treeMapNode[K, V]) *treeMapNode[K, V] {
+//line collection_immutable/treemap.gala:317
+	if isRedTreeMapNode[K, V](node.left) && isRedTreeMapNode[K, V](node.left.Get().left) {
 //line collection_immutable/treemap.gala:318
-	if isRedTreeMapNode[K, V](node.left.Get()) && isRedTreeMapNode[K, V](node.left.Get().left.Get()) {
+		var l = node.left.Get()
 //line collection_immutable/treemap.gala:319
-		var newLeft = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(node.left.Get().left.Get().key.Get()), value: NewImmutable(node.left.Get().left.Get().value.Get()), left: NewImmutable(node.left.Get().left.Get().left.Get()), right: NewImmutable(node.left.Get().left.Get().right.Get()), color: NewImmutable(treeMapBlack.Get())})
+		var ll = l.left.Get()
 //line collection_immutable/treemap.gala:320
-		var newRight = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: NewImmutable(node.left.Get().right.Get()), right: NewImmutable(node.right.Get()), color: NewImmutable(treeMapBlack.Get())})
+		var newLeft = &treeMapNode[K, V]{key: NewImmutable(ll.key.Get()), value: NewImmutable(ll.value.Get()), left: ll.left, right: ll.right, color: NewImmutable(treeMapBlack.Get())}
 //line collection_immutable/treemap.gala:321
-		return &treeMapNode[K, V]{key: NewImmutable(node.left.Get().key.Get()), value: NewImmutable(node.left.Get().value.Get()), left: NewImmutable(newLeft.Get()), right: NewImmutable(newRight.Get()), color: NewImmutable(treeMapRed.Get())}
+		var newRight = &treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: l.right, right: node.right, color: NewImmutable(treeMapBlack.Get())}
+//line collection_immutable/treemap.gala:322
+		return &treeMapNode[K, V]{key: NewImmutable(l.key.Get()), value: NewImmutable(l.value.Get()), left: SomePtr(newLeft), right: SomePtr(newRight), color: NewImmutable(treeMapRed.Get())}
 	}
-//line collection_immutable/treemap.gala:324
-	if isRedTreeMapNode[K, V](node.left.Get()) && isRedTreeMapNode[K, V](node.left.Get().right.Get()) {
 //line collection_immutable/treemap.gala:325
-		var newLeft = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(node.left.Get().key.Get()), value: NewImmutable(node.left.Get().value.Get()), left: NewImmutable(node.left.Get().left.Get()), right: NewImmutable(node.left.Get().right.Get().left.Get()), color: NewImmutable(treeMapBlack.Get())})
+	if isRedTreeMapNode[K, V](node.left) && isRedTreeMapNode[K, V](node.left.Get().right) {
 //line collection_immutable/treemap.gala:326
-		var newRight = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: NewImmutable(node.left.Get().right.Get().right.Get()), right: NewImmutable(node.right.Get()), color: NewImmutable(treeMapBlack.Get())})
+		var l = node.left.Get()
 //line collection_immutable/treemap.gala:327
-		return &treeMapNode[K, V]{key: NewImmutable(node.left.Get().right.Get().key.Get()), value: NewImmutable(node.left.Get().right.Get().value.Get()), left: NewImmutable(newLeft.Get()), right: NewImmutable(newRight.Get()), color: NewImmutable(treeMapRed.Get())}
-	}
+		var lr = l.right.Get()
+//line collection_immutable/treemap.gala:328
+		var newLeft = &treeMapNode[K, V]{key: NewImmutable(l.key.Get()), value: NewImmutable(l.value.Get()), left: l.left, right: lr.left, color: NewImmutable(treeMapBlack.Get())}
+//line collection_immutable/treemap.gala:329
+		var newRight = &treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: lr.right, right: node.right, color: NewImmutable(treeMapBlack.Get())}
 //line collection_immutable/treemap.gala:330
-	if isRedTreeMapNode[K, V](node.right.Get()) && isRedTreeMapNode[K, V](node.right.Get().left.Get()) {
-//line collection_immutable/treemap.gala:331
-		var newLeft = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: NewImmutable(node.left.Get()), right: NewImmutable(node.right.Get().left.Get().left.Get()), color: NewImmutable(treeMapBlack.Get())})
-//line collection_immutable/treemap.gala:332
-		var newRight = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(node.right.Get().key.Get()), value: NewImmutable(node.right.Get().value.Get()), left: NewImmutable(node.right.Get().left.Get().right.Get()), right: NewImmutable(node.right.Get().right.Get()), color: NewImmutable(treeMapBlack.Get())})
-//line collection_immutable/treemap.gala:333
-		return &treeMapNode[K, V]{key: NewImmutable(node.right.Get().left.Get().key.Get()), value: NewImmutable(node.right.Get().left.Get().value.Get()), left: NewImmutable(newLeft.Get()), right: NewImmutable(newRight.Get()), color: NewImmutable(treeMapRed.Get())}
+		return &treeMapNode[K, V]{key: NewImmutable(lr.key.Get()), value: NewImmutable(lr.value.Get()), left: SomePtr(newLeft), right: SomePtr(newRight), color: NewImmutable(treeMapRed.Get())}
 	}
+//line collection_immutable/treemap.gala:333
+	if isRedTreeMapNode[K, V](node.right) && isRedTreeMapNode[K, V](node.right.Get().left) {
+//line collection_immutable/treemap.gala:334
+		var r = node.right.Get()
+//line collection_immutable/treemap.gala:335
+		var rl = r.left.Get()
 //line collection_immutable/treemap.gala:336
-	if isRedTreeMapNode[K, V](node.right.Get()) && isRedTreeMapNode[K, V](node.right.Get().right.Get()) {
+		var newLeft = &treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: node.left, right: rl.left, color: NewImmutable(treeMapBlack.Get())}
 //line collection_immutable/treemap.gala:337
-		var newLeft = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: NewImmutable(node.left.Get()), right: NewImmutable(node.right.Get().left.Get()), color: NewImmutable(treeMapBlack.Get())})
+		var newRight = &treeMapNode[K, V]{key: NewImmutable(r.key.Get()), value: NewImmutable(r.value.Get()), left: rl.right, right: r.right, color: NewImmutable(treeMapBlack.Get())}
 //line collection_immutable/treemap.gala:338
-		var newRight = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(node.right.Get().right.Get().key.Get()), value: NewImmutable(node.right.Get().right.Get().value.Get()), left: NewImmutable(node.right.Get().right.Get().left.Get()), right: NewImmutable(node.right.Get().right.Get().right.Get()), color: NewImmutable(treeMapBlack.Get())})
-//line collection_immutable/treemap.gala:339
-		return &treeMapNode[K, V]{key: NewImmutable(node.right.Get().key.Get()), value: NewImmutable(node.right.Get().value.Get()), left: NewImmutable(newLeft.Get()), right: NewImmutable(newRight.Get()), color: NewImmutable(treeMapRed.Get())}
+		return &treeMapNode[K, V]{key: NewImmutable(rl.key.Get()), value: NewImmutable(rl.value.Get()), left: SomePtr(newLeft), right: SomePtr(newRight), color: NewImmutable(treeMapRed.Get())}
 	}
 //line collection_immutable/treemap.gala:341
+	if isRedTreeMapNode[K, V](node.right) && isRedTreeMapNode[K, V](node.right.Get().right) {
+//line collection_immutable/treemap.gala:342
+		var r = node.right.Get()
+//line collection_immutable/treemap.gala:343
+		var rr = r.right.Get()
+//line collection_immutable/treemap.gala:344
+		var newLeft = &treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: node.left, right: r.left, color: NewImmutable(treeMapBlack.Get())}
+//line collection_immutable/treemap.gala:345
+		var newRight = &treeMapNode[K, V]{key: NewImmutable(rr.key.Get()), value: NewImmutable(rr.value.Get()), left: rr.left, right: rr.right, color: NewImmutable(treeMapBlack.Get())}
+//line collection_immutable/treemap.gala:346
+		return &treeMapNode[K, V]{key: NewImmutable(r.key.Get()), value: NewImmutable(r.value.Get()), left: SomePtr(newLeft), right: SomePtr(newRight), color: NewImmutable(treeMapRed.Get())}
+	}
+//line collection_immutable/treemap.gala:348
 	return node
 }
 
-//line collection_immutable/treemap.gala:343
+//line collection_immutable/treemap.gala:350
 
 // Updated is an alias for Put.
 func (m TreeMap[K, V]) Updated(key K, value V) TreeMap[K, V] {
 	return m.Put(key, value)
 }
 
-//line collection_immutable/treemap.gala:346
+//line collection_immutable/treemap.gala:353
 
 // Remove removes a key from the map. Returns a new map. O(log n).
 func (m TreeMap[K, V]) Remove(key K) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:349
+//line collection_immutable/treemap.gala:356
 	if !m.Contains(key) {
-//line collection_immutable/treemap.gala:350
+//line collection_immutable/treemap.gala:357
 		return m
 	}
-//line collection_immutable/treemap.gala:352
-	if m.size.Get() == 1 {
-//line collection_immutable/treemap.gala:353
-		return EmptyTreeMap[K, V]()
-	}
-//line collection_immutable/treemap.gala:355
-	var newRoot = NewImmutable(treeMapRemove[K, V](m.root.Get(), key))
-//line collection_immutable/treemap.gala:356
-	if newRoot.Get() == nil {
-//line collection_immutable/treemap.gala:357
-		return EmptyTreeMap[K, V]()
-	}
 //line collection_immutable/treemap.gala:360
-	var blackRoot = NewImmutable(&treeMapNode[K, V]{key: NewImmutable(newRoot.Get().key.Get()), value: NewImmutable(newRoot.Get().value.Get()), left: NewImmutable(newRoot.Get().left.Get()), right: NewImmutable(newRoot.Get().right.Get()), color: NewImmutable(treeMapBlack.Get())})
+	var (
+		__tuple_32 = treeMapRemove(m.root, key)
+		root       = __tuple_32.V1.Get()
+	)
 //line collection_immutable/treemap.gala:361
-	return TreeMap[K, V]{root: NewImmutable(blackRoot.Get()), size: NewImmutable(m.size.Get() - 1)}
+	return TreeMap[K, V]{root: root, size: NewImmutable(m.size.Get() - 1)}
 }
 
 //line collection_immutable/treemap.gala:363
 
-// treeMapRemove removes a key from the tree.
-func treeMapRemove[K comparable, V any](node *treeMapNode[K, V], key K) *treeMapNode[K, V] {
-//line collection_immutable/treemap.gala:366
-	if node == nil {
-//line collection_immutable/treemap.gala:367
-		return nil
-	}
-//line collection_immutable/treemap.gala:370
-	var cmp = NewImmutable(treeMapCompare[K](key, node.key.Get()))
-//line collection_immutable/treemap.gala:371
-	if cmp.Get() < 0 {
-//line collection_immutable/treemap.gala:372
-		var newLeft = NewImmutable(treeMapRemove[K, V](node.left.Get(), key))
-//line collection_immutable/treemap.gala:373
-		return treeMapBalanceRemove[K, V](&treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: NewImmutable(newLeft.Get()), right: NewImmutable(node.right.Get()), color: NewImmutable(node.color.Get())})
-	}
+// treeMapRemove removes key from a subtree. Removal copies only the search
+// path and keeps the red-black invariants, except that the subtree may come
+// back one black node short on every path; the bool reports that, and the
+// parent rebalances with treeMapFixLeft / treeMapFixRight. A subtree without
+// the key comes back with the same entries, but its search path is still
+// copied, so Remove checks Contains first to hand back the map itself.
+func treeMapRemove[K comparable, V any](tree OptionPtr[treeMapNode[K, V]], key K) Tuple[OptionPtr[treeMapNode[K, V]], bool] {
+//line collection_immutable/treemap.gala:374
+	if tree.IsEmpty() {
 //line collection_immutable/treemap.gala:375
-	if cmp.Get() > 0 {
-//line collection_immutable/treemap.gala:376
-		var newRight = NewImmutable(treeMapRemove[K, V](node.right.Get(), key))
+		return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(tree), V2: NewImmutable(false)}
+	}
 //line collection_immutable/treemap.gala:377
-		return treeMapBalanceRemove[K, V](&treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: NewImmutable(node.left.Get()), right: NewImmutable(newRight.Get()), color: NewImmutable(node.color.Get())})
-	}
+	var node = tree.Get()
+//line collection_immutable/treemap.gala:378
+	var cmp = treeMapCompare(key, node.key.Get())
+//line collection_immutable/treemap.gala:379
+	if cmp < 0 {
+//line collection_immutable/treemap.gala:380
+		var (
+			__tuple_33 = treeMapRemove(node.left, key)
+			left       = __tuple_33.V1.Get()
+			shorter    = __tuple_33.V2.Get()
+		)
 //line collection_immutable/treemap.gala:381
-	if node.left.Get() == nil {
-//line collection_immutable/treemap.gala:382
-		return node.right.Get()
+		return treeMapFixLeft(node, node.color.Get(), left, node.right, shorter)
 	}
+//line collection_immutable/treemap.gala:383
+	if cmp > 0 {
 //line collection_immutable/treemap.gala:384
-	if node.right.Get() == nil {
+		var (
+			__tuple_34 = treeMapRemove(node.right, key)
+			right      = __tuple_34.V1.Get()
+			shorter    = __tuple_34.V2.Get()
+		)
 //line collection_immutable/treemap.gala:385
-		return node.left.Get()
+		return treeMapFixRight(node, node.color.Get(), node.left, right, shorter)
 	}
-//line collection_immutable/treemap.gala:389
-	var succKey = NewImmutable(treeMapFindMinKey[K, V](node.right.Get()))
+//line collection_immutable/treemap.gala:387
+	if node.left.IsEmpty() {
+//line collection_immutable/treemap.gala:388
+		return treeMapSplice(node, node.right)
+	}
 //line collection_immutable/treemap.gala:390
-	var succValue = NewImmutable(treeMapGetValue[K, V](node.right.Get(), succKey.Get()).Get())
+	if node.right.IsEmpty() {
 //line collection_immutable/treemap.gala:391
-	var newRight = NewImmutable(treeMapRemoveMin[K, V](node.right.Get()))
-//line collection_immutable/treemap.gala:392
-	return treeMapBalanceRemove[K, V](&treeMapNode[K, V]{key: NewImmutable(succKey.Get()), value: NewImmutable(succValue.Get()), left: NewImmutable(node.left.Get()), right: NewImmutable(newRight.Get()), color: NewImmutable(node.color.Get())})
-}
-
+		return treeMapSplice(node, node.left)
+	}
 //line collection_immutable/treemap.gala:394
+	var right = node.right.Get()
+//line collection_immutable/treemap.gala:395
+	var (
+		__tuple_35 = treeMapRemoveMin(right)
+		newRight   = __tuple_35.V1.Get()
+		shorter    = __tuple_35.V2.Get()
+	)
+//line collection_immutable/treemap.gala:396
+	return treeMapFixRight(treeMapMinNode(right), node.color.Get(), node.left, newRight, shorter)
+}
 
-// treeMapFindMinKey finds the minimum key in a subtree.
-func treeMapFindMinKey[K comparable, V any](node *treeMapNode[K, V]) K {
-//line collection_immutable/treemap.gala:397
-	if node.left.Get() == nil {
 //line collection_immutable/treemap.gala:398
-		return node.key.Get()
-	}
-//line collection_immutable/treemap.gala:400
-	return treeMapFindMinKey[K, V](node.left.Get())
-}
 
+// treeMapRemoveMin removes the minimum key from a subtree, reporting whether
+// the subtree's black-height dropped, like treeMapRemove.
+func treeMapRemoveMin[K comparable, V any](node *treeMapNode[K, V]) Tuple[OptionPtr[treeMapNode[K, V]], bool] {
 //line collection_immutable/treemap.gala:402
-
-// treeMapFindMaxKey finds the maximum key in a subtree.
-func treeMapFindMaxKey[K comparable, V any](node *treeMapNode[K, V]) K {
-//line collection_immutable/treemap.gala:405
-	if node.right.Get() == nil {
-//line collection_immutable/treemap.gala:406
-		return node.key.Get()
+	if node.left.IsEmpty() {
+//line collection_immutable/treemap.gala:403
+		return treeMapSplice(node, node.right)
 	}
-//line collection_immutable/treemap.gala:408
-	return treeMapFindMaxKey[K, V](node.right.Get())
+//line collection_immutable/treemap.gala:405
+	var (
+		__tuple_36 = treeMapRemoveMin(node.left.Get())
+		left       = __tuple_36.V1.Get()
+		shorter    = __tuple_36.V2.Get()
+	)
+//line collection_immutable/treemap.gala:406
+	return treeMapFixLeft(node, node.color.Get(), left, node.right, shorter)
 }
 
-//line collection_immutable/treemap.gala:410
+//line collection_immutable/treemap.gala:408
 
-// treeMapRemoveMin removes the minimum key from a subtree.
-func treeMapRemoveMin[K comparable, V any](node *treeMapNode[K, V]) *treeMapNode[K, V] {
-//line collection_immutable/treemap.gala:413
-	if node.left.Get() == nil {
-//line collection_immutable/treemap.gala:414
-		return node.right.Get()
+// treeMapSplice replaces a node that has at most one child with that child.
+// A red node's paths lose no black node. A black node's only child, if any, is
+// a red leaf, which turns black to keep the count; otherwise the paths through
+// the node are now one black node short.
+func treeMapSplice[K comparable, V any](node *treeMapNode[K, V], child OptionPtr[treeMapNode[K, V]]) Tuple[OptionPtr[treeMapNode[K, V]], bool] {
+	{
+		if isRedTreeMapNode(child) {
+			return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapBlacken(child)), V2: NewImmutable(false)}
+		} else {
+			return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(child), V2: NewImmutable(node.color.Get() == treeMapBlack.Get())}
+		}
 	}
-//line collection_immutable/treemap.gala:416
-	return treeMapBalanceRemove[K, V](&treeMapNode[K, V]{key: NewImmutable(node.key.Get()), value: NewImmutable(node.value.Get()), left: NewImmutable(treeMapRemoveMin[K, V](node.left.Get())), right: NewImmutable(node.right.Get()), color: NewImmutable(node.color.Get())})
 }
 
 //line collection_immutable/treemap.gala:418
 
-// treeMapBalanceRemove rebalances after removal.
-func treeMapBalanceRemove[K comparable, V any](node *treeMapNode[K, V]) *treeMapNode[K, V] {
-//line collection_immutable/treemap.gala:421
-	if node == nil {
-//line collection_immutable/treemap.gala:422
-		return nil
+// treeMapFixLeft builds a node holding entry's key and value with the given
+// color and children, where left may be one black node short (shorter). It
+// restores equal black-height by recoloring and at most two rotations, and
+// reports whether the whole subtree is now one black node short.
+func treeMapFixLeft[K comparable, V any](entry *treeMapNode[K, V], color int, left OptionPtr[treeMapNode[K, V]], right OptionPtr[treeMapNode[K, V]], shorter bool) Tuple[OptionPtr[treeMapNode[K, V]], bool] {
+//line collection_immutable/treemap.gala:430
+	if !shorter {
+//line collection_immutable/treemap.gala:431
+		return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(entry, color, left, right)), V2: NewImmutable(false)}
 	}
-//line collection_immutable/treemap.gala:424
-	return treeMapBalance[K, V](node)
+//line collection_immutable/treemap.gala:435
+	var sib = right.Get()
+//line collection_immutable/treemap.gala:436
+	if sib.color.Get() == treeMapRed.Get() {
+//line collection_immutable/treemap.gala:439
+		var (
+			__tuple_37 = treeMapFixLeft(entry, treeMapRed.Get(), left, sib.left, true)
+			inner      = __tuple_37.V1.Get()
+		)
+//line collection_immutable/treemap.gala:440
+		return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(sib, treeMapBlack.Get(), inner, sib.right)), V2: NewImmutable(false)}
+	}
+//line collection_immutable/treemap.gala:442
+	if isRedTreeMapNode(sib.right) {
+//line collection_immutable/treemap.gala:443
+		var lower = treeMapMk(entry, treeMapBlack.Get(), left, sib.left)
+//line collection_immutable/treemap.gala:444
+		return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(sib, color, lower, treeMapBlacken(sib.right))), V2: NewImmutable(false)}
+	}
+//line collection_immutable/treemap.gala:446
+	if isRedTreeMapNode(sib.left) {
+//line collection_immutable/treemap.gala:447
+		var sl = sib.left.Get()
+//line collection_immutable/treemap.gala:448
+		var lower = treeMapMk(entry, treeMapBlack.Get(), left, sl.left)
+//line collection_immutable/treemap.gala:449
+		var upper = treeMapMk(sib, treeMapBlack.Get(), sl.right, sib.right)
+//line collection_immutable/treemap.gala:450
+		return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(sl, color, lower, upper)), V2: NewImmutable(false)}
+	}
+//line collection_immutable/treemap.gala:454
+	var redSib = treeMapMk(sib, treeMapRed.Get(), sib.left, sib.right)
+//line collection_immutable/treemap.gala:455
+	return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(entry, treeMapBlack.Get(), left, redSib)), V2: NewImmutable(color == treeMapBlack.Get())}
 }
 
-//line collection_immutable/treemap.gala:428
+//line collection_immutable/treemap.gala:457
+
+// treeMapFixRight is the mirror of treeMapFixLeft for a right child that may be
+// one black node short.
+func treeMapFixRight[K comparable, V any](entry *treeMapNode[K, V], color int, left OptionPtr[treeMapNode[K, V]], right OptionPtr[treeMapNode[K, V]], shorter bool) Tuple[OptionPtr[treeMapNode[K, V]], bool] {
+//line collection_immutable/treemap.gala:467
+	if !shorter {
+//line collection_immutable/treemap.gala:468
+		return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(entry, color, left, right)), V2: NewImmutable(false)}
+	}
+//line collection_immutable/treemap.gala:470
+	var sib = left.Get()
+//line collection_immutable/treemap.gala:471
+	if sib.color.Get() == treeMapRed.Get() {
+//line collection_immutable/treemap.gala:472
+		var (
+			__tuple_38 = treeMapFixRight(entry, treeMapRed.Get(), sib.right, right, true)
+			inner      = __tuple_38.V1.Get()
+		)
+//line collection_immutable/treemap.gala:473
+		return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(sib, treeMapBlack.Get(), sib.left, inner)), V2: NewImmutable(false)}
+	}
+//line collection_immutable/treemap.gala:475
+	if isRedTreeMapNode(sib.left) {
+//line collection_immutable/treemap.gala:476
+		var lower = treeMapMk(entry, treeMapBlack.Get(), sib.right, right)
+//line collection_immutable/treemap.gala:477
+		return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(sib, color, treeMapBlacken(sib.left), lower)), V2: NewImmutable(false)}
+	}
+//line collection_immutable/treemap.gala:479
+	if isRedTreeMapNode(sib.right) {
+//line collection_immutable/treemap.gala:480
+		var sr = sib.right.Get()
+//line collection_immutable/treemap.gala:481
+		var upper = treeMapMk(sib, treeMapBlack.Get(), sib.left, sr.left)
+//line collection_immutable/treemap.gala:482
+		var lower = treeMapMk(entry, treeMapBlack.Get(), sr.right, right)
+//line collection_immutable/treemap.gala:483
+		return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(sr, color, upper, lower)), V2: NewImmutable(false)}
+	}
+//line collection_immutable/treemap.gala:485
+	var redSib = treeMapMk(sib, treeMapRed.Get(), sib.left, sib.right)
+//line collection_immutable/treemap.gala:486
+	return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapMk(entry, treeMapBlack.Get(), redSib, right)), V2: NewImmutable(color == treeMapBlack.Get())}
+}
+
+//line collection_immutable/treemap.gala:488
+
+// treeMapMk builds a node holding entry's key and value with the given color
+// and children.
+func treeMapMk[K comparable, V any](entry *treeMapNode[K, V], color int, left OptionPtr[treeMapNode[K, V]], right OptionPtr[treeMapNode[K, V]]) OptionPtr[treeMapNode[K, V]] {
+	return SomePtr(&treeMapNode[K, V]{key: NewImmutable(entry.key.Get()), value: NewImmutable(entry.value.Get()), left: left, right: right, color: NewImmutable(color)})
+}
+
+//line collection_immutable/treemap.gala:498
+
+// treeMapBlacken returns a red node recolored black, and any other tree as is.
+func treeMapBlacken[K comparable, V any](tree OptionPtr[treeMapNode[K, V]]) OptionPtr[treeMapNode[K, V]] {
+	return func(obj Option[*treeMapNode[K, V]]) OptionPtr[treeMapNode[K, V]] {
+		{
+			_tmp_39 := Some[*treeMapNode[K, V]]{}.Unapply(obj)
+			_tmp_40 := _tmp_39.IsDefined()
+			var _tmp_41 *treeMapNode[K, V]
+			if _tmp_40 {
+				_tmp_41 = _tmp_39.Get()
+			}
+			_ = _tmp_41
+			node := _tmp_41
+			if _tmp_40 && node.color.Get() == treeMapRed.Get() {
+				return treeMapMk(node, treeMapBlack.Get(), node.left, node.right)
+			} else {
+				return tree
+			}
+		}
+	}(tree.MatchView())
+}
+
+//line collection_immutable/treemap.gala:504
+
+// treeMapMinNode finds the node with the minimum key in a subtree.
+func treeMapMinNode[K comparable, V any](node *treeMapNode[K, V]) *treeMapNode[K, V] {
+//line collection_immutable/treemap.gala:507
+	var current = node
+//line collection_immutable/treemap.gala:508
+	for current.left.IsDefined() {
+//line collection_immutable/treemap.gala:509
+		current = current.left.Get()
+	}
+//line collection_immutable/treemap.gala:511
+	return current
+}
+
+//line collection_immutable/treemap.gala:513
+
+// treeMapMaxNode finds the node with the maximum key in a subtree.
+func treeMapMaxNode[K comparable, V any](node *treeMapNode[K, V]) *treeMapNode[K, V] {
+//line collection_immutable/treemap.gala:516
+	var current = node
+//line collection_immutable/treemap.gala:517
+	for current.right.IsDefined() {
+//line collection_immutable/treemap.gala:518
+		current = current.right.Get()
+	}
+//line collection_immutable/treemap.gala:520
+	return current
+}
+
+//line collection_immutable/treemap.gala:524
 
 // MinKey returns the minimum key in the map. O(log n).
 // Panics if the map is empty.
 func (m TreeMap[K, V]) MinKey() K {
-//line collection_immutable/treemap.gala:432
+//line collection_immutable/treemap.gala:528
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:433
+//line collection_immutable/treemap.gala:529
 		panic("TreeMap.MinKey on empty map")
 	}
-//line collection_immutable/treemap.gala:435
-	return treeMapFindMinKey[K, V](m.root.Get())
+//line collection_immutable/treemap.gala:531
+	return treeMapMinNode[K, V](m.root.Get()).key.Get()
 }
 
-//line collection_immutable/treemap.gala:437
+//line collection_immutable/treemap.gala:533
 
 // MinKeyOption returns the minimum key wrapped in Option. O(log n).
 func (m TreeMap[K, V]) MinKeyOption() Option[K] {
-//line collection_immutable/treemap.gala:440
+//line collection_immutable/treemap.gala:536
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:441
+//line collection_immutable/treemap.gala:537
 		return None[K]{}.Apply()
 	}
-//line collection_immutable/treemap.gala:443
+//line collection_immutable/treemap.gala:539
 	return Some[K]{}.Apply(m.MinKey())
 }
 
-//line collection_immutable/treemap.gala:445
+//line collection_immutable/treemap.gala:541
 
 // MaxKey returns the maximum key in the map. O(log n).
 // Panics if the map is empty.
 func (m TreeMap[K, V]) MaxKey() K {
-//line collection_immutable/treemap.gala:449
+//line collection_immutable/treemap.gala:545
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:450
+//line collection_immutable/treemap.gala:546
 		panic("TreeMap.MaxKey on empty map")
 	}
-//line collection_immutable/treemap.gala:452
-	return treeMapFindMaxKey[K, V](m.root.Get())
+//line collection_immutable/treemap.gala:548
+	return treeMapMaxNode[K, V](m.root.Get()).key.Get()
 }
 
-//line collection_immutable/treemap.gala:454
+//line collection_immutable/treemap.gala:550
 
 // MaxKeyOption returns the maximum key wrapped in Option. O(log n).
 func (m TreeMap[K, V]) MaxKeyOption() Option[K] {
-//line collection_immutable/treemap.gala:457
+//line collection_immutable/treemap.gala:553
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:458
+//line collection_immutable/treemap.gala:554
 		return None[K]{}.Apply()
 	}
-//line collection_immutable/treemap.gala:460
+//line collection_immutable/treemap.gala:556
 	return Some[K]{}.Apply(m.MaxKey())
 }
 
-//line collection_immutable/treemap.gala:462
+//line collection_immutable/treemap.gala:558
 
 // MinEntry returns the entry with the minimum key. O(log n).
 // Panics if the map is empty.
 func (m TreeMap[K, V]) MinEntry() Tuple[K, V] {
-//line collection_immutable/treemap.gala:466
+//line collection_immutable/treemap.gala:562
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:467
+//line collection_immutable/treemap.gala:563
 		panic("TreeMap.MinEntry on empty map")
 	}
-//line collection_immutable/treemap.gala:469
-	var key = NewImmutable(treeMapFindMinKey[K, V](m.root.Get()))
-//line collection_immutable/treemap.gala:470
-	return Tuple[K, V]{V1: NewImmutable(key.Get()), V2: NewImmutable(m.Apply(key.Get()))}
+//line collection_immutable/treemap.gala:565
+	var node = treeMapMinNode[K, V](m.root.Get())
+//line collection_immutable/treemap.gala:566
+	return Tuple[K, V]{V1: NewImmutable(node.key.Get()), V2: NewImmutable(node.value.Get())}
 }
 
-//line collection_immutable/treemap.gala:472
+//line collection_immutable/treemap.gala:568
 
 // MinEntryOption returns the entry with the minimum key wrapped in Option. O(log n).
 func (m TreeMap[K, V]) MinEntryOption() Option[Tuple[K, V]] {
-//line collection_immutable/treemap.gala:475
+//line collection_immutable/treemap.gala:571
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:476
+//line collection_immutable/treemap.gala:572
 		return None[Tuple[K, V]]{}.Apply()
 	}
-//line collection_immutable/treemap.gala:478
+//line collection_immutable/treemap.gala:574
 	return Some[Tuple[K, V]]{}.Apply(m.MinEntry())
 }
 
-//line collection_immutable/treemap.gala:480
+//line collection_immutable/treemap.gala:576
 
 // MaxEntry returns the entry with the maximum key. O(log n).
 // Panics if the map is empty.
 func (m TreeMap[K, V]) MaxEntry() Tuple[K, V] {
-//line collection_immutable/treemap.gala:484
+//line collection_immutable/treemap.gala:580
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:485
+//line collection_immutable/treemap.gala:581
 		panic("TreeMap.MaxEntry on empty map")
 	}
-//line collection_immutable/treemap.gala:487
-	var key = NewImmutable(treeMapFindMaxKey[K, V](m.root.Get()))
-//line collection_immutable/treemap.gala:488
-	return Tuple[K, V]{V1: NewImmutable(key.Get()), V2: NewImmutable(m.Apply(key.Get()))}
+//line collection_immutable/treemap.gala:583
+	var node = treeMapMaxNode[K, V](m.root.Get())
+//line collection_immutable/treemap.gala:584
+	return Tuple[K, V]{V1: NewImmutable(node.key.Get()), V2: NewImmutable(node.value.Get())}
 }
 
-//line collection_immutable/treemap.gala:490
+//line collection_immutable/treemap.gala:586
 
 // MaxEntryOption returns the entry with the maximum key wrapped in Option. O(log n).
 func (m TreeMap[K, V]) MaxEntryOption() Option[Tuple[K, V]] {
-//line collection_immutable/treemap.gala:493
+//line collection_immutable/treemap.gala:589
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:494
+//line collection_immutable/treemap.gala:590
 		return None[Tuple[K, V]]{}.Apply()
 	}
-//line collection_immutable/treemap.gala:496
+//line collection_immutable/treemap.gala:592
 	return Some[Tuple[K, V]]{}.Apply(m.MaxEntry())
 }
 
-//line collection_immutable/treemap.gala:500
+//line collection_immutable/treemap.gala:596
 
 // Range returns entries with keys in [from, to] inclusive as a new TreeMap.
 func (m TreeMap[K, V]) Range(from K, to K) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:503
+//line collection_immutable/treemap.gala:599
 	var result = EmptyTreeMap[K, V]()
-//line collection_immutable/treemap.gala:504
-	treeMapRangeInOrder[K, V](m.root.Get(), from, to, func(k K, v V) {
-//line collection_immutable/treemap.gala:505
+//line collection_immutable/treemap.gala:600
+	treeMapRangeInOrder[K, V](m.root, from, to, func(k K, v V) {
+//line collection_immutable/treemap.gala:601
 		result = result.Put(k, v)
 	})
-//line collection_immutable/treemap.gala:507
+//line collection_immutable/treemap.gala:603
 	return result
 }
 
-//line collection_immutable/treemap.gala:509
+//line collection_immutable/treemap.gala:605
 
 // treeMapRangeInOrder traverses nodes with keys in [from, to].
-func treeMapRangeInOrder[K comparable, V any](node *treeMapNode[K, V], from K, to K, f func(K, V)) {
-//line collection_immutable/treemap.gala:512
-	if node == nil {
-//line collection_immutable/treemap.gala:513
+func treeMapRangeInOrder[K comparable, V any](tree OptionPtr[treeMapNode[K, V]], from K, to K, f func(K, V)) {
+//line collection_immutable/treemap.gala:608
+	if tree.IsEmpty() {
+//line collection_immutable/treemap.gala:609
 		return
 	}
-//line collection_immutable/treemap.gala:515
-	var cmpFrom = NewImmutable(treeMapCompare[K](node.key.Get(), from))
-//line collection_immutable/treemap.gala:516
-	var cmpTo = NewImmutable(treeMapCompare[K](node.key.Get(), to))
-//line collection_immutable/treemap.gala:518
-	if cmpFrom.Get() > 0 {
-//line collection_immutable/treemap.gala:519
-		treeMapRangeInOrder[K, V](node.left.Get(), from, to, f)
+//line collection_immutable/treemap.gala:611
+	var node = tree.Get()
+//line collection_immutable/treemap.gala:612
+	var cmpFrom = treeMapCompare[K](node.key.Get(), from)
+//line collection_immutable/treemap.gala:613
+	var cmpTo = treeMapCompare[K](node.key.Get(), to)
+//line collection_immutable/treemap.gala:615
+	if cmpFrom > 0 {
+//line collection_immutable/treemap.gala:616
+		treeMapRangeInOrder[K, V](node.left, from, to, f)
 	}
-//line collection_immutable/treemap.gala:521
-	if cmpFrom.Get() >= 0 && cmpTo.Get() <= 0 {
-//line collection_immutable/treemap.gala:522
+//line collection_immutable/treemap.gala:618
+	if cmpFrom >= 0 && cmpTo <= 0 {
+//line collection_immutable/treemap.gala:619
 		f(node.key.Get(), node.value.Get())
 	}
-//line collection_immutable/treemap.gala:524
-	if cmpTo.Get() < 0 {
-//line collection_immutable/treemap.gala:525
-		treeMapRangeInOrder[K, V](node.right.Get(), from, to, f)
+//line collection_immutable/treemap.gala:621
+	if cmpTo < 0 {
+//line collection_immutable/treemap.gala:622
+		treeMapRangeInOrder[K, V](node.right, from, to, f)
 	}
 }
 
-//line collection_immutable/treemap.gala:528
+//line collection_immutable/treemap.gala:625
 
 // RangeFrom returns all entries with keys >= from.
 func (m TreeMap[K, V]) RangeFrom(from K) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:531
+//line collection_immutable/treemap.gala:628
 	var result = EmptyTreeMap[K, V]()
-//line collection_immutable/treemap.gala:532
-	treeMapRangeFromInOrder[K, V](m.root.Get(), from, func(k K, v V) {
-//line collection_immutable/treemap.gala:533
+//line collection_immutable/treemap.gala:629
+	treeMapRangeFromInOrder[K, V](m.root, from, func(k K, v V) {
+//line collection_immutable/treemap.gala:630
 		result = result.Put(k, v)
 	})
-//line collection_immutable/treemap.gala:535
+//line collection_immutable/treemap.gala:632
 	return result
 }
 
-//line collection_immutable/treemap.gala:537
+//line collection_immutable/treemap.gala:634
 
 // treeMapRangeFromInOrder traverses nodes with keys >= from.
-func treeMapRangeFromInOrder[K comparable, V any](node *treeMapNode[K, V], from K, f func(K, V)) {
-//line collection_immutable/treemap.gala:540
-	if node == nil {
-//line collection_immutable/treemap.gala:541
+func treeMapRangeFromInOrder[K comparable, V any](tree OptionPtr[treeMapNode[K, V]], from K, f func(K, V)) {
+//line collection_immutable/treemap.gala:637
+	if tree.IsEmpty() {
+//line collection_immutable/treemap.gala:638
 		return
 	}
-//line collection_immutable/treemap.gala:543
-	var cmp = NewImmutable(treeMapCompare[K](node.key.Get(), from))
-//line collection_immutable/treemap.gala:544
-	if cmp.Get() > 0 {
-//line collection_immutable/treemap.gala:545
-		treeMapRangeFromInOrder[K, V](node.left.Get(), from, f)
+//line collection_immutable/treemap.gala:640
+	var node = tree.Get()
+//line collection_immutable/treemap.gala:641
+	var cmp = treeMapCompare[K](node.key.Get(), from)
+//line collection_immutable/treemap.gala:642
+	if cmp > 0 {
+//line collection_immutable/treemap.gala:643
+		treeMapRangeFromInOrder[K, V](node.left, from, f)
 	}
-//line collection_immutable/treemap.gala:547
-	if cmp.Get() >= 0 {
-//line collection_immutable/treemap.gala:548
+//line collection_immutable/treemap.gala:645
+	if cmp >= 0 {
+//line collection_immutable/treemap.gala:646
 		f(node.key.Get(), node.value.Get())
 	}
-//line collection_immutable/treemap.gala:550
-	treeMapRangeFromInOrder[K, V](node.right.Get(), from, f)
+//line collection_immutable/treemap.gala:648
+	treeMapRangeFromInOrder[K, V](node.right, from, f)
 }
 
-//line collection_immutable/treemap.gala:552
+//line collection_immutable/treemap.gala:650
 
 // RangeTo returns all entries with keys <= to.
 func (m TreeMap[K, V]) RangeTo(to K) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:555
+//line collection_immutable/treemap.gala:653
 	var result = EmptyTreeMap[K, V]()
-//line collection_immutable/treemap.gala:556
-	treeMapRangeToInOrder[K, V](m.root.Get(), to, func(k K, v V) {
-//line collection_immutable/treemap.gala:557
+//line collection_immutable/treemap.gala:654
+	treeMapRangeToInOrder[K, V](m.root, to, func(k K, v V) {
+//line collection_immutable/treemap.gala:655
 		result = result.Put(k, v)
 	})
-//line collection_immutable/treemap.gala:559
+//line collection_immutable/treemap.gala:657
 	return result
 }
 
-//line collection_immutable/treemap.gala:561
+//line collection_immutable/treemap.gala:659
 
 // treeMapRangeToInOrder traverses nodes with keys <= to.
-func treeMapRangeToInOrder[K comparable, V any](node *treeMapNode[K, V], to K, f func(K, V)) {
-//line collection_immutable/treemap.gala:564
-	if node == nil {
-//line collection_immutable/treemap.gala:565
+func treeMapRangeToInOrder[K comparable, V any](tree OptionPtr[treeMapNode[K, V]], to K, f func(K, V)) {
+//line collection_immutable/treemap.gala:662
+	if tree.IsEmpty() {
+//line collection_immutable/treemap.gala:663
 		return
 	}
-//line collection_immutable/treemap.gala:567
-	var cmp = NewImmutable(treeMapCompare[K](node.key.Get(), to))
-//line collection_immutable/treemap.gala:568
-	treeMapRangeToInOrder[K, V](node.left.Get(), to, f)
-//line collection_immutable/treemap.gala:569
-	if cmp.Get() <= 0 {
-//line collection_immutable/treemap.gala:570
+//line collection_immutable/treemap.gala:665
+	var node = tree.Get()
+//line collection_immutable/treemap.gala:666
+	var cmp = treeMapCompare[K](node.key.Get(), to)
+//line collection_immutable/treemap.gala:667
+	treeMapRangeToInOrder[K, V](node.left, to, f)
+//line collection_immutable/treemap.gala:668
+	if cmp <= 0 {
+//line collection_immutable/treemap.gala:669
 		f(node.key.Get(), node.value.Get())
 	}
-//line collection_immutable/treemap.gala:572
-	if cmp.Get() < 0 {
-//line collection_immutable/treemap.gala:573
-		treeMapRangeToInOrder[K, V](node.right.Get(), to, f)
+//line collection_immutable/treemap.gala:671
+	if cmp < 0 {
+//line collection_immutable/treemap.gala:672
+		treeMapRangeToInOrder[K, V](node.right, to, f)
 	}
 }
 
-//line collection_immutable/treemap.gala:578
+//line collection_immutable/treemap.gala:677
 
 // ForEachKV applies a function to each key-value pair in sorted key order.
 func (m TreeMap[K, V]) ForEachKV(f func(K, V)) {
-//line collection_immutable/treemap.gala:581
-	if m.root.Get() != nil {
-//line collection_immutable/treemap.gala:582
-		treeMapForEachKV[K, V](m.root.Get(), f)
-	}
+//line collection_immutable/treemap.gala:680
+	treeMapForEachKV[K, V](m.root, f)
 }
 
-//line collection_immutable/treemap.gala:585
+//line collection_immutable/treemap.gala:682
 
 // treeMapForEachKV traverses the tree in-order and applies f.
-func treeMapForEachKV[K comparable, V any](node *treeMapNode[K, V], f func(K, V)) {
-//line collection_immutable/treemap.gala:588
-	if node == nil {
-//line collection_immutable/treemap.gala:589
+func treeMapForEachKV[K comparable, V any](tree OptionPtr[treeMapNode[K, V]], f func(K, V)) {
+//line collection_immutable/treemap.gala:685
+	if tree.IsEmpty() {
+//line collection_immutable/treemap.gala:686
 		return
 	}
-//line collection_immutable/treemap.gala:591
-	treeMapForEachKV[K, V](node.left.Get(), f)
-//line collection_immutable/treemap.gala:592
+//line collection_immutable/treemap.gala:688
+	var node = tree.Get()
+//line collection_immutable/treemap.gala:689
+	treeMapForEachKV[K, V](node.left, f)
+//line collection_immutable/treemap.gala:690
 	f(node.key.Get(), node.value.Get())
-//line collection_immutable/treemap.gala:593
-	treeMapForEachKV[K, V](node.right.Get(), f)
+//line collection_immutable/treemap.gala:691
+	treeMapForEachKV[K, V](node.right, f)
 }
 
-//line collection_immutable/treemap.gala:595
+//line collection_immutable/treemap.gala:693
 
 // ForEachKey applies a function to each key in sorted order.
 func (m TreeMap[K, V]) ForEachKey(f func(K)) {
-//line collection_immutable/treemap.gala:598
+//line collection_immutable/treemap.gala:696
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/treemap.gala:599
+//line collection_immutable/treemap.gala:697
 		f(k)
 	})
 }
 
-//line collection_immutable/treemap.gala:602
+//line collection_immutable/treemap.gala:700
 
 // ForEachValue applies a function to each value in key-sorted order.
 func (m TreeMap[K, V]) ForEachValue(f func(V)) {
-//line collection_immutable/treemap.gala:605
+//line collection_immutable/treemap.gala:703
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/treemap.gala:606
+//line collection_immutable/treemap.gala:704
 		f(v)
 	})
 }
 
-//line collection_immutable/treemap.gala:611
+//line collection_immutable/treemap.gala:709
 
 // MapValues applies a function to each value and returns a new map.
 func TreeMap_MapValues[U any, K comparable, V any](m TreeMap[K, V], f func(V) U) TreeMap[K, U] {
-//line collection_immutable/treemap.gala:614
+//line collection_immutable/treemap.gala:712
 	return TreeMap_FoldLeftKV[TreeMap[K, U], K, V](m, EmptyTreeMap[K, U](), func(acc TreeMap[K, U], k K, v V) TreeMap[K, U] {
 		return acc.Put(k, f(v))
 	})
 }
 
-//line collection_immutable/treemap.gala:616
+//line collection_immutable/treemap.gala:714
 
 // Filter returns a new map with only entries that satisfy the predicate.
 func (m TreeMap[K, V]) Filter(p func(K, V) bool) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:619
+//line collection_immutable/treemap.gala:717
 	return TreeMap_FoldLeftKV[TreeMap[K, V], K, V](m, EmptyTreeMap[K, V](), func(acc TreeMap[K, V], k K, v V) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:620
+//line collection_immutable/treemap.gala:718
 		if p(k, v) {
-//line collection_immutable/treemap.gala:621
+//line collection_immutable/treemap.gala:719
 			return acc.Put(k, v)
 		}
-//line collection_immutable/treemap.gala:623
+//line collection_immutable/treemap.gala:721
 		return acc
 	})
 }
 
-//line collection_immutable/treemap.gala:626
+//line collection_immutable/treemap.gala:724
 
 // FilterKeys returns a new map with only entries whose keys satisfy the predicate.
 func (m TreeMap[K, V]) FilterKeys(p func(K) bool) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:629
+//line collection_immutable/treemap.gala:727
 	return TreeMap_FoldLeftKV[TreeMap[K, V], K, V](m, EmptyTreeMap[K, V](), func(acc TreeMap[K, V], k K, v V) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:630
+//line collection_immutable/treemap.gala:728
 		if p(k) {
-//line collection_immutable/treemap.gala:631
+//line collection_immutable/treemap.gala:729
 			return acc.Put(k, v)
 		}
-//line collection_immutable/treemap.gala:633
+//line collection_immutable/treemap.gala:731
 		return acc
 	})
 }
 
-//line collection_immutable/treemap.gala:636
+//line collection_immutable/treemap.gala:734
 
 // FilterValues returns a new map with only entries whose values satisfy the predicate.
 func (m TreeMap[K, V]) FilterValues(p func(V) bool) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:639
+//line collection_immutable/treemap.gala:737
 	return TreeMap_FoldLeftKV[TreeMap[K, V], K, V](m, EmptyTreeMap[K, V](), func(acc TreeMap[K, V], k K, v V) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:640
+//line collection_immutable/treemap.gala:738
 		if p(v) {
-//line collection_immutable/treemap.gala:641
+//line collection_immutable/treemap.gala:739
 			return acc.Put(k, v)
 		}
-//line collection_immutable/treemap.gala:643
+//line collection_immutable/treemap.gala:741
 		return acc
 	})
 }
 
-//line collection_immutable/treemap.gala:646
+//line collection_immutable/treemap.gala:744
 
 // FilterNot returns a new map with entries that do not satisfy the predicate.
 func (m TreeMap[K, V]) FilterNot(p func(K, V) bool) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:649
+//line collection_immutable/treemap.gala:747
 	return TreeMap_FoldLeftKV[TreeMap[K, V], K, V](m, EmptyTreeMap[K, V](), func(acc TreeMap[K, V], k K, v V) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:650
+//line collection_immutable/treemap.gala:748
 		if !p(k, v) {
-//line collection_immutable/treemap.gala:651
+//line collection_immutable/treemap.gala:749
 			return acc.Put(k, v)
 		}
-//line collection_immutable/treemap.gala:653
+//line collection_immutable/treemap.gala:751
 		return acc
 	})
 }
 
-//line collection_immutable/treemap.gala:656
+//line collection_immutable/treemap.gala:754
 
 // Collect applies a partial function to each key-value pair and collects the results.
 // Entries for which the function returns None are filtered out.
 // Returns an Array since the result type may not be suitable for a TreeMap.
 func TreeMap_Collect[U any, K comparable, V any](m TreeMap[K, V], pf func(K, V) Option[U]) Array[U] {
-//line collection_immutable/treemap.gala:661
+//line collection_immutable/treemap.gala:759
 	var builder = newArrayBuilder[U]()
-//line collection_immutable/treemap.gala:662
+//line collection_immutable/treemap.gala:760
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/treemap.gala:663
-		var opt = NewImmutable(pf(k, v))
-//line collection_immutable/treemap.gala:664
-		if opt.Get().IsDefined() {
-//line collection_immutable/treemap.gala:665
-			builder.Add(opt.Get().Get())
+//line collection_immutable/treemap.gala:761
+		var opt = pf(k, v)
+//line collection_immutable/treemap.gala:762
+		if opt.IsDefined() {
+//line collection_immutable/treemap.gala:763
+			builder.Add(opt.Get())
 		}
 	})
-//line collection_immutable/treemap.gala:668
+//line collection_immutable/treemap.gala:766
 	return builder.Result()
 }
 
-//line collection_immutable/treemap.gala:672
+//line collection_immutable/treemap.gala:770
 
 // FoldLeftKV applies a binary operator from left to right with key-value pairs (in sorted key order).
 func TreeMap_FoldLeftKV[U any, K comparable, V any](m TreeMap[K, V], initial U, f func(U, K, V) U) U {
-//line collection_immutable/treemap.gala:675
+//line collection_immutable/treemap.gala:773
 	var acc = initial
-//line collection_immutable/treemap.gala:676
+//line collection_immutable/treemap.gala:774
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/treemap.gala:677
+//line collection_immutable/treemap.gala:775
 		acc = f(acc, k, v)
 	})
-//line collection_immutable/treemap.gala:679
+//line collection_immutable/treemap.gala:777
 	return acc
 }
 
-//line collection_immutable/treemap.gala:683
+//line collection_immutable/treemap.gala:781
 
 // Exists returns true if any entry satisfies the predicate.
 func (m TreeMap[K, V]) Exists(p func(K, V) bool) bool {
-//line collection_immutable/treemap.gala:686
+//line collection_immutable/treemap.gala:784
 	return TreeMap_FoldLeftKV[bool, K, V](m, false, func(acc bool, k K, v V) bool {
 		return acc || p(k, v)
 	})
 }
 
-//line collection_immutable/treemap.gala:688
+//line collection_immutable/treemap.gala:786
 
 // ForAll returns true if all entries satisfy the predicate.
 func (m TreeMap[K, V]) ForAll(p func(K, V) bool) bool {
-//line collection_immutable/treemap.gala:691
+//line collection_immutable/treemap.gala:789
 	return TreeMap_FoldLeftKV[bool, K, V](m, true, func(acc bool, k K, v V) bool {
 		return acc && p(k, v)
 	})
 }
 
-//line collection_immutable/treemap.gala:693
+//line collection_immutable/treemap.gala:791
 
 // Count returns the number of entries satisfying the predicate.
 func (m TreeMap[K, V]) Count(p func(K, V) bool) int {
-//line collection_immutable/treemap.gala:696
+//line collection_immutable/treemap.gala:794
 	return TreeMap_FoldLeftKV[int, K, V](m, 0, func(acc int, k K, v V) int {
-//line collection_immutable/treemap.gala:697
+//line collection_immutable/treemap.gala:795
 		if p(k, v) {
-//line collection_immutable/treemap.gala:698
+//line collection_immutable/treemap.gala:796
 			return acc + 1
 		}
-//line collection_immutable/treemap.gala:700
+//line collection_immutable/treemap.gala:798
 		return acc
 	})
 }
 
-//line collection_immutable/treemap.gala:703
+//line collection_immutable/treemap.gala:801
 
 // Find returns the first entry (in sorted key order) satisfying the predicate.
 func (m TreeMap[K, V]) Find(p func(K, V) bool) Option[Tuple[K, V]] {
-//line collection_immutable/treemap.gala:706
+//line collection_immutable/treemap.gala:804
 	return TreeMap_FoldLeftKV[Option[Tuple[K, V]], K, V](m, None[Tuple[K, V]]{}.Apply(), func(acc Option[Tuple[K, V]], k K, v V) Option[Tuple[K, V]] {
-//line collection_immutable/treemap.gala:707
+//line collection_immutable/treemap.gala:805
 		if acc.IsEmpty() && p(k, v) {
-//line collection_immutable/treemap.gala:708
+//line collection_immutable/treemap.gala:806
 			return Some[Tuple[K, V]]{}.Apply(Tuple[K, V]{V1: NewImmutable(k), V2: NewImmutable(v)})
 		}
-//line collection_immutable/treemap.gala:710
+//line collection_immutable/treemap.gala:808
 		return acc
 	})
 }
 
-//line collection_immutable/treemap.gala:715
+//line collection_immutable/treemap.gala:813
 
 // Keys returns a TreeSet of all keys (maintains sorted order).
 func (m TreeMap[K, V]) Keys() TreeSet[K] {
-//line collection_immutable/treemap.gala:718
+//line collection_immutable/treemap.gala:816
 	return TreeMap_FoldLeftKV[TreeSet[K], K, V](m, EmptyTreeSet[K](), func(acc TreeSet[K], k K, v V) TreeSet[K] {
 		return acc.Add(k)
 	})
 }
 
-//line collection_immutable/treemap.gala:720
+//line collection_immutable/treemap.gala:818
 
 // KeySet returns a TreeSet of all keys.
 func (m TreeMap[K, V]) KeySet() TreeSet[K] {
 	return m.Keys()
 }
 
-//line collection_immutable/treemap.gala:723
+//line collection_immutable/treemap.gala:821
 
 // Values returns a List of all values in key-sorted order.
 func (m TreeMap[K, V]) Values() List[V] {
-//line collection_immutable/treemap.gala:727
+//line collection_immutable/treemap.gala:825
 	var result = emptyList[V]()
-//line collection_immutable/treemap.gala:728
-	treeMapForEachKVReverse[K, V](m.root.Get(), func(k K, v V) {
-//line collection_immutable/treemap.gala:729
+//line collection_immutable/treemap.gala:826
+	treeMapForEachKVReverse[K, V](m.root, func(k K, v V) {
+//line collection_immutable/treemap.gala:827
 		result = consList[V](v, result)
 	})
-//line collection_immutable/treemap.gala:731
+//line collection_immutable/treemap.gala:829
 	return result
 }
 
-//line collection_immutable/treemap.gala:733
+//line collection_immutable/treemap.gala:831
 
 // treeMapForEachKVReverse traverses the tree in reverse order.
-func treeMapForEachKVReverse[K comparable, V any](node *treeMapNode[K, V], f func(K, V)) {
-//line collection_immutable/treemap.gala:736
-	if node == nil {
-//line collection_immutable/treemap.gala:737
+func treeMapForEachKVReverse[K comparable, V any](tree OptionPtr[treeMapNode[K, V]], f func(K, V)) {
+//line collection_immutable/treemap.gala:834
+	if tree.IsEmpty() {
+//line collection_immutable/treemap.gala:835
 		return
 	}
-//line collection_immutable/treemap.gala:739
-	treeMapForEachKVReverse[K, V](node.right.Get(), f)
-//line collection_immutable/treemap.gala:740
+//line collection_immutable/treemap.gala:837
+	var node = tree.Get()
+//line collection_immutable/treemap.gala:838
+	treeMapForEachKVReverse[K, V](node.right, f)
+//line collection_immutable/treemap.gala:839
 	f(node.key.Get(), node.value.Get())
-//line collection_immutable/treemap.gala:741
-	treeMapForEachKVReverse[K, V](node.left.Get(), f)
+//line collection_immutable/treemap.gala:840
+	treeMapForEachKVReverse[K, V](node.left, f)
 }
 
-//line collection_immutable/treemap.gala:743
+//line collection_immutable/treemap.gala:842
 
 // KeyArray returns an Array of all keys in sorted order.
 func (m TreeMap[K, V]) KeyArray() Array[K] {
-//line collection_immutable/treemap.gala:746
+//line collection_immutable/treemap.gala:845
 	return TreeMap_FoldLeftKV[Array[K], K, V](m, EmptyArray[K](), func(acc Array[K], k K, v V) Array[K] {
 		return acc.Append(k)
 	})
 }
 
-//line collection_immutable/treemap.gala:748
+//line collection_immutable/treemap.gala:847
 
 // ValueArray returns an Array of all values in key-sorted order.
 func (m TreeMap[K, V]) ValueArray() Array[V] {
-//line collection_immutable/treemap.gala:751
+//line collection_immutable/treemap.gala:850
 	return TreeMap_FoldLeftKV[Array[V], K, V](m, EmptyArray[V](), func(acc Array[V], k K, v V) Array[V] {
 		return acc.Append(v)
 	})
 }
 
-//line collection_immutable/treemap.gala:755
+//line collection_immutable/treemap.gala:854
 
 // PutAll adds all entries from another TreeMap. Returns a new map.
 func (m TreeMap[K, V]) PutAll(other TreeMap[K, V]) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:758
+//line collection_immutable/treemap.gala:857
 	return TreeMap_FoldLeftKV[TreeMap[K, V], K, V](other, m, func(acc TreeMap[K, V], k K, v V) TreeMap[K, V] {
 		return acc.Put(k, v)
 	})
 }
 
-//line collection_immutable/treemap.gala:760
+//line collection_immutable/treemap.gala:859
 
 // Merge merges another map with a combining function for duplicate keys.
 func (m TreeMap[K, V]) Merge(other TreeMap[K, V], f func(V, V) V) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:763
+//line collection_immutable/treemap.gala:862
 	return TreeMap_FoldLeftKV[TreeMap[K, V], K, V](other, m, func(acc TreeMap[K, V], k K, v V) TreeMap[K, V] {
-//line collection_immutable/treemap.gala:764
+//line collection_immutable/treemap.gala:863
 		return func(obj Option[V]) TreeMap[K, V] {
 			{
-				_tmp_32 := Some[V]{}.Unapply(obj)
-				_tmp_33 := _tmp_32.IsDefined()
-				var _tmp_34 V
-				if _tmp_33 {
-					_tmp_34 = _tmp_32.Get()
+				_tmp_42 := Some[V]{}.Unapply(obj)
+				_tmp_43 := _tmp_42.IsDefined()
+				var _tmp_44 V
+				if _tmp_43 {
+					_tmp_44 = _tmp_42.Get()
 				}
-				_ = _tmp_34
-				existing := _tmp_34
-				if _tmp_33 {
+				_ = _tmp_44
+				existing := _tmp_44
+				if _tmp_43 {
 					return acc.Put(k, f(existing, v))
 				} else {
-					_tmp_35 := None[V]{}.Unapply(obj)
-					if _tmp_35 {
+					_tmp_45 := None[V]{}.Unapply(obj)
+					if _tmp_45 {
 						return acc.Put(k, v)
 					} else {
 						panic("unreachable")
@@ -1499,175 +1668,175 @@ func (m TreeMap[K, V]) Merge(other TreeMap[K, V], f func(V, V) V) TreeMap[K, V] 
 	})
 }
 
-//line collection_immutable/treemap.gala:772
+//line collection_immutable/treemap.gala:871
 
 // ToGoMap converts the map to a Go map.
 func (m TreeMap[K, V]) ToGoMap() map[K]V {
-//line collection_immutable/treemap.gala:775
+//line collection_immutable/treemap.gala:874
 	var result = go_interop.MapEmpty[K, V]()
-//line collection_immutable/treemap.gala:776
+//line collection_immutable/treemap.gala:875
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/treemap.gala:777
+//line collection_immutable/treemap.gala:876
 		go_interop.MapPut[K, V](result, k, v)
 	})
-//line collection_immutable/treemap.gala:779
+//line collection_immutable/treemap.gala:878
 	return result
 }
 
-//line collection_immutable/treemap.gala:781
+//line collection_immutable/treemap.gala:880
 
 // ToArray returns an immutable Array of key-value tuples in sorted key order.
 func (m TreeMap[K, V]) ToArray() Array[Tuple[K, V]] {
-//line collection_immutable/treemap.gala:784
+//line collection_immutable/treemap.gala:883
 	return TreeMap_FoldLeftKV[Array[Tuple[K, V]], K, V](m, EmptyArray[Tuple[K, V]](), func(acc Array[Tuple[K, V]], k K, v V) Array[Tuple[K, V]] {
 		return acc.Append(Tuple[K, V]{V1: NewImmutable(k), V2: NewImmutable(v)})
 	})
 }
 
-//line collection_immutable/treemap.gala:786
+//line collection_immutable/treemap.gala:885
 
 // ToList converts the map to a List of tuples in sorted key order.
 func (m TreeMap[K, V]) ToList() List[Tuple[K, V]] {
-//line collection_immutable/treemap.gala:790
+//line collection_immutable/treemap.gala:889
 	var result = emptyList[Tuple[K, V]]()
-//line collection_immutable/treemap.gala:791
-	treeMapForEachKVReverse[K, V](m.root.Get(), func(k K, v V) {
-//line collection_immutable/treemap.gala:792
+//line collection_immutable/treemap.gala:890
+	treeMapForEachKVReverse[K, V](m.root, func(k K, v V) {
+//line collection_immutable/treemap.gala:891
 		result = consList[Tuple[K, V]](Tuple[K, V]{V1: NewImmutable(k), V2: NewImmutable(v)}, result)
 	})
-//line collection_immutable/treemap.gala:794
+//line collection_immutable/treemap.gala:893
 	return result
 }
 
-//line collection_immutable/treemap.gala:796
+//line collection_immutable/treemap.gala:895
 
 // ToHashMap converts the map to a HashMap (loses ordering but gains O(eC) lookup).
 func (m TreeMap[K, V]) ToHashMap() HashMap[K, V] {
-//line collection_immutable/treemap.gala:799
+//line collection_immutable/treemap.gala:898
 	return TreeMap_FoldLeftKV[HashMap[K, V], K, V](m, EmptyHashMap[K, V](), func(acc HashMap[K, V], k K, v V) HashMap[K, V] {
 		return acc.Put(k, v)
 	})
 }
 
-//line collection_immutable/treemap.gala:803
+//line collection_immutable/treemap.gala:902
 
 // String returns a string representation of the map in sorted key order.
 func (m TreeMap[K, V]) String() string {
-//line collection_immutable/treemap.gala:806
+//line collection_immutable/treemap.gala:905
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:807
+//line collection_immutable/treemap.gala:906
 		return "TreeMap()"
 	}
-//line collection_immutable/treemap.gala:809
+//line collection_immutable/treemap.gala:908
 	var result = "TreeMap("
-//line collection_immutable/treemap.gala:810
+//line collection_immutable/treemap.gala:909
 	var first = true
-//line collection_immutable/treemap.gala:811
+//line collection_immutable/treemap.gala:910
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/treemap.gala:812
+//line collection_immutable/treemap.gala:911
 		if !first {
-//line collection_immutable/treemap.gala:813
+//line collection_immutable/treemap.gala:912
 			result = result + ", "
 		}
-//line collection_immutable/treemap.gala:815
+//line collection_immutable/treemap.gala:914
 		result = result + fmt.Sprintf("%v -> %v", k, v)
-//line collection_immutable/treemap.gala:816
+//line collection_immutable/treemap.gala:915
 		first = false
 	})
-//line collection_immutable/treemap.gala:818
+//line collection_immutable/treemap.gala:917
 	return result + ")"
 }
 
-//line collection_immutable/treemap.gala:820
+//line collection_immutable/treemap.gala:919
 
 // MkString joins entries into a string with separator.
 func (m TreeMap[K, V]) MkString(sep string) string {
-//line collection_immutable/treemap.gala:823
+//line collection_immutable/treemap.gala:922
 	if m.size.Get() == 0 {
-//line collection_immutable/treemap.gala:824
+//line collection_immutable/treemap.gala:923
 		return ""
 	}
-//line collection_immutable/treemap.gala:826
+//line collection_immutable/treemap.gala:925
 	var result = ""
-//line collection_immutable/treemap.gala:827
+//line collection_immutable/treemap.gala:926
 	var first = true
-//line collection_immutable/treemap.gala:828
+//line collection_immutable/treemap.gala:927
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/treemap.gala:829
+//line collection_immutable/treemap.gala:928
 		if !first {
-//line collection_immutable/treemap.gala:830
+//line collection_immutable/treemap.gala:929
 			result = result + sep
 		}
-//line collection_immutable/treemap.gala:832
+//line collection_immutable/treemap.gala:931
 		result = result + fmt.Sprintf("%v -> %v", k, v)
-//line collection_immutable/treemap.gala:833
+//line collection_immutable/treemap.gala:932
 		first = false
 	})
-//line collection_immutable/treemap.gala:835
+//line collection_immutable/treemap.gala:934
 	return result
 }
 
-//line collection_immutable/treemap.gala:839
+//line collection_immutable/treemap.gala:938
 
 // Head returns the entry with the minimum key. Panics if empty.
 func (m TreeMap[K, V]) Head() Tuple[K, V] {
 	return m.MinEntry()
 }
 
-//line collection_immutable/treemap.gala:842
+//line collection_immutable/treemap.gala:941
 
 // HeadOption returns the entry with the minimum key wrapped in Option.
 func (m TreeMap[K, V]) HeadOption() Option[Tuple[K, V]] {
 	return m.MinEntryOption()
 }
 
-//line collection_immutable/treemap.gala:845
+//line collection_immutable/treemap.gala:944
 
 // Last returns the entry with the maximum key. Panics if empty.
 func (m TreeMap[K, V]) Last() Tuple[K, V] {
 	return m.MaxEntry()
 }
 
-//line collection_immutable/treemap.gala:848
+//line collection_immutable/treemap.gala:947
 
 // LastOption returns the entry with the maximum key wrapped in Option.
 func (m TreeMap[K, V]) LastOption() Option[Tuple[K, V]] {
 	return m.MaxEntryOption()
 }
 
-//line collection_immutable/treemap.gala:851
+//line collection_immutable/treemap.gala:950
 
 // Partition partitions the map into two maps based on predicate.
 func (m TreeMap[K, V]) Partition(p func(K, V) bool) Tuple[TreeMap[K, V], TreeMap[K, V]] {
-//line collection_immutable/treemap.gala:854
-	var initial = NewImmutable(Tuple[TreeMap[K, V], TreeMap[K, V]]{V1: NewImmutable(EmptyTreeMap[K, V]()), V2: NewImmutable(EmptyTreeMap[K, V]())})
-//line collection_immutable/treemap.gala:855
-	return TreeMap_FoldLeftKV[Tuple[TreeMap[K, V], TreeMap[K, V]], K, V](m, initial.Get(), func(acc Tuple[TreeMap[K, V], TreeMap[K, V]], k K, v V) Tuple[TreeMap[K, V], TreeMap[K, V]] {
-//line collection_immutable/treemap.gala:856
+//line collection_immutable/treemap.gala:953
+	var initial = Tuple[TreeMap[K, V], TreeMap[K, V]]{V1: NewImmutable(EmptyTreeMap[K, V]()), V2: NewImmutable(EmptyTreeMap[K, V]())}
+//line collection_immutable/treemap.gala:954
+	return TreeMap_FoldLeftKV[Tuple[TreeMap[K, V], TreeMap[K, V]], K, V](m, initial, func(acc Tuple[TreeMap[K, V], TreeMap[K, V]], k K, v V) Tuple[TreeMap[K, V], TreeMap[K, V]] {
+//line collection_immutable/treemap.gala:955
 		if p(k, v) {
-//line collection_immutable/treemap.gala:857
+//line collection_immutable/treemap.gala:956
 			return Tuple[TreeMap[K, V], TreeMap[K, V]]{V1: NewImmutable(acc.V1.Get().Put(k, v)), V2: NewImmutable(acc.V2.Get())}
 		}
-//line collection_immutable/treemap.gala:859
+//line collection_immutable/treemap.gala:958
 		return Tuple[TreeMap[K, V], TreeMap[K, V]]{V1: NewImmutable(acc.V1.Get()), V2: NewImmutable(acc.V2.Get().Put(k, v))}
 	})
 }
 
-//line collection_immutable/treemap.gala:864
+//line collection_immutable/treemap.gala:963
 
 // Sorted returns an array of key-value tuples in natural sorted key order (already sorted).
 func (m TreeMap[K, V]) Sorted() Array[Tuple[K, V]] {
 	return m.ToArray()
 }
 
-//line collection_immutable/treemap.gala:867
+//line collection_immutable/treemap.gala:966
 
 // SortWith returns an array of key-value tuples sorted using the given comparison function.
 func (m TreeMap[K, V]) SortWith(less func(Tuple[K, V], Tuple[K, V]) bool) Array[Tuple[K, V]] {
 	return m.ToArray().SortWith(less)
 }
 
-//line collection_immutable/treemap.gala:870
+//line collection_immutable/treemap.gala:969
 
 // SortBy returns an array of key-value tuples sorted by a key extracted from each entry.
 func TreeMap_SortBy[S comparable, K comparable, V any](m TreeMap[K, V], f func(Tuple[K, V]) S) Array[Tuple[K, V]] {

@@ -116,18 +116,14 @@ func Walk(root string) Try[Array[WalkEntry]] {
 			return err
 		}
 //line fs/dir_ops.gala:58
-		var (
-			_tmp_1, _tmp_2 = d.Info()
-			info           = NewImmutable(_tmp_1)
-			infoErr        = NewImmutable(_tmp_2)
-		)
+		var info, infoErr = d.Info()
 //line fs/dir_ops.gala:59
-		if infoErr.Get() != nil {
+		if infoErr != nil {
 //line fs/dir_ops.gala:59
-			return infoErr.Get()
+			return infoErr
 		}
 //line fs/dir_ops.gala:60
-		entries = entries.Append(WalkEntry{Path: NewImmutable(path), Info: NewImmutable[FileInfo](fromGoFileInfo(info.Get()))})
+		entries = entries.Append(WalkEntry{Path: NewImmutable(path), Info: NewImmutable[FileInfo](fromGoFileInfo(info))})
 //line fs/dir_ops.gala:61
 		return nil
 	})), func(_ Void) Array[WalkEntry] {

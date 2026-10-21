@@ -57,9 +57,9 @@ func RunBenchmarks(benchmarks ...BenchFunc) {
 //line test/bench.gala:29
 	for i := 0; i < len(benchmarks); i++ {
 //line test/bench.gala:30
-		var bench = std.NewImmutable(benchmarks[i])
+		var bench = benchmarks[i]
 //line test/bench.gala:31
-		runBenchmark(bench.Get())
+		runBenchmark(bench)
 	}
 //line test/bench.gala:33
 	fmt.Println("=== BENCHMARKS DONE ===")
@@ -74,15 +74,15 @@ func runBenchmark(bench BenchFunc) {
 //line test/bench.gala:41
 	for {
 //line test/bench.gala:42
-		var b = std.NewImmutable(B{N: std.NewImmutable(n), name: std.NewImmutable(bench.Name.Get())})
+		var b = B{N: std.NewImmutable(n), name: std.NewImmutable(bench.Name.Get())}
 //line test/bench.gala:43
-		var start = std.NewImmutable(time.Now())
+		var start = time.Now()
 //line test/bench.gala:44
-		bench.Func.Get()(b.Get())
+		bench.Func.Get()(b)
 //line test/bench.gala:45
-		var elapsed = std.NewImmutable(time.Since(start.Get()))
+		var elapsed = time.Since(start)
 //line test/bench.gala:46
-		nsTotal = elapsed.Get().Nanoseconds()
+		nsTotal = elapsed.Nanoseconds()
 //line test/bench.gala:47
 		if nsTotal >= 1000000000 {
 //line test/bench.gala:48
@@ -92,9 +92,9 @@ func runBenchmark(bench BenchFunc) {
 		n = n * 2
 	}
 //line test/bench.gala:53
-	var nsPerOp = std.NewImmutable(nsTotal / int64(n))
+	var nsPerOp = nsTotal / int64(n)
 //line test/bench.gala:54
-	fmt.Println(fmt.Sprintf("%-40s %10d %15d ns/op", bench.Name.Get(), n, nsPerOp.Get()))
+	fmt.Println(fmt.Sprintf("%-40s %10d %15d ns/op", bench.Name.Get(), n, nsPerOp))
 }
 
 type StructMeta_B struct {

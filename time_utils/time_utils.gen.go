@@ -132,26 +132,26 @@ func (d Duration) Multiply(factor int64) Duration {
 
 // Divide divides by a divisor.
 func (d Duration) Divide(divisor int64) Duration {
-	return func() Duration {
+	{
 		if divisor == 0 {
 			return d
 		} else {
 			return Duration{nanos: NewImmutable(d.nanos.Get() / divisor)}
 		}
-	}()
+	}
 }
 
 //line time_utils/time_utils.gala:66
 
 // Abs returns the absolute value.
 func (d Duration) Abs() Duration {
-	return func() Duration {
+	{
 		if d.nanos.Get() < 0 {
 			return Duration{nanos: NewImmutable(-d.nanos.Get())}
 		} else {
 			return d
 		}
-	}()
+	}
 }
 
 //line time_utils/time_utils.gala:70
@@ -318,13 +318,9 @@ func UnixEpoch() Instant {
 // Parse parses a time string with the given layout.
 func Parse(layout string, value string) Option[Instant] {
 //line time_utils/time_utils.gala:149
-	var (
-		_tmp_1, _tmp_2 = time.Parse(layout, value)
-		result         = NewImmutable(_tmp_1)
-		err            = NewImmutable(_tmp_2)
-	)
+	var result, err = time.Parse(layout, value)
 //line time_utils/time_utils.gala:150
-	return When(err.Get() == nil, FromGoTime(result.Get()))
+	return When(err == nil, FromGoTime(result))
 }
 
 //line time_utils/time_utils.gala:152
@@ -420,26 +416,26 @@ func (i Instant) Compare(other Instant) int {
 
 // Min returns the earlier of two instants.
 func (i Instant) Min(other Instant) Instant {
-	return func() Instant {
+	{
 		if i.nanos.Get() < other.nanos.Get() {
 			return i
 		} else {
 			return other
 		}
-	}()
+	}
 }
 
 //line time_utils/time_utils.gala:199
 
 // Max returns the later of two instants.
 func (i Instant) Max(other Instant) Instant {
-	return func() Instant {
+	{
 		if i.nanos.Get() > other.nanos.Get() {
 			return i
 		} else {
 			return other
 		}
-	}()
+	}
 }
 
 //line time_utils/time_utils.gala:204
@@ -573,18 +569,14 @@ func (i Instant) YearDay() int {
 // InTimezone returns the Instant formatted in a specific timezone.
 func (i Instant) InTimezone(tz string) Option[time.Time] {
 //line time_utils/time_utils.gala:263
-	var (
-		_tmp_3, _tmp_4 = time.LoadLocation(tz)
-		loc            = NewImmutable(_tmp_3)
-		err            = NewImmutable(_tmp_4)
-	)
+	var loc, err = time.LoadLocation(tz)
 //line time_utils/time_utils.gala:264
-	if err.Get() != nil {
+	if err != nil {
 //line time_utils/time_utils.gala:265
 		return None[time.Time]{}.Apply()
 	}
 //line time_utils/time_utils.gala:267
-	return Some[time.Time]{}.Apply(i.ToGoTime().In(loc.Get()))
+	return Some[time.Time]{}.Apply(i.ToGoTime().In(loc))
 }
 
 //line time_utils/time_utils.gala:271
@@ -592,9 +584,9 @@ func (i Instant) InTimezone(tz string) Option[time.Time] {
 // TruncateToSecond truncates to the start of the current second.
 func (i Instant) TruncateToSecond() Instant {
 //line time_utils/time_utils.gala:274
-	var t = NewImmutable(i.ToGoTime().Truncate(time.Second))
+	var t = i.ToGoTime().Truncate(time.Second)
 //line time_utils/time_utils.gala:275
-	return FromGoTime(t.Get())
+	return FromGoTime(t)
 }
 
 //line time_utils/time_utils.gala:277
@@ -602,9 +594,9 @@ func (i Instant) TruncateToSecond() Instant {
 // TruncateToMinute truncates to the start of the current minute.
 func (i Instant) TruncateToMinute() Instant {
 //line time_utils/time_utils.gala:280
-	var t = NewImmutable(i.ToGoTime().Truncate(time.Minute))
+	var t = i.ToGoTime().Truncate(time.Minute)
 //line time_utils/time_utils.gala:281
-	return FromGoTime(t.Get())
+	return FromGoTime(t)
 }
 
 //line time_utils/time_utils.gala:283
@@ -612,9 +604,9 @@ func (i Instant) TruncateToMinute() Instant {
 // TruncateToHour truncates to the start of the current hour.
 func (i Instant) TruncateToHour() Instant {
 //line time_utils/time_utils.gala:286
-	var t = NewImmutable(i.ToGoTime().Truncate(time.Hour))
+	var t = i.ToGoTime().Truncate(time.Hour)
 //line time_utils/time_utils.gala:287
-	return FromGoTime(t.Get())
+	return FromGoTime(t)
 }
 
 //line time_utils/time_utils.gala:289
@@ -622,11 +614,11 @@ func (i Instant) TruncateToHour() Instant {
 // TruncateToDay truncates to the start of the current day (UTC).
 func (i Instant) TruncateToDay() Instant {
 //line time_utils/time_utils.gala:292
-	var t = NewImmutable(i.ToGoTime())
+	var t = i.ToGoTime()
 //line time_utils/time_utils.gala:293
-	var truncated = NewImmutable(time.Date(t.Get().Year(), t.Get().Month(), t.Get().Day(), 0, 0, 0, 0, time.UTC))
+	var truncated = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 //line time_utils/time_utils.gala:294
-	return FromGoTime(truncated.Get())
+	return FromGoTime(truncated)
 }
 
 //line time_utils/time_utils.gala:298

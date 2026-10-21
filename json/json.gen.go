@@ -73,9 +73,9 @@ func (s Codec[T]) Unapply(v any) bool {
 // when the user calls Codec[T](naming).
 func (c Codec[T]) Apply(meta StructMeta[T], naming Naming) JsonEncoder[T] {
 //line json/json.gala:43
-	var config = NewImmutable(NewKeyConfig().WithNaming(naming))
+	var config = NewKeyConfig().WithNaming(naming)
 //line json/json.gala:44
-	return JsonEncoder[T]{Meta: NewImmutable[StructMeta[T]](meta), Config: NewImmutable(config.Get()), Keys: NewImmutable(BuildKeysSimple(meta.NumFields(), meta.FieldName, naming))}
+	return JsonEncoder[T]{Meta: NewImmutable[StructMeta[T]](meta), Config: NewImmutable(config), Keys: NewImmutable(BuildKeysSimple(meta.NumFields(), meta.FieldName, naming))}
 }
 
 //line json/json.gala:50
@@ -179,30 +179,30 @@ func namingFn(n Naming) func(string) string {
 // it is tested per value written.
 func (c JsonEncoder[T]) writer() func(FieldEncoder, T) {
 //line json/json.gala:106
-	var nameFn = NewImmutable(nameFnFromKeys(c.Keys.Get().Keys.Get()))
+	var nameFn = nameFnFromKeys(c.Keys.Get().Keys.Get())
 //line json/json.gala:107
-	var omitFn = NewImmutable(omitFnFromKeys(c.Keys.Get().Keys.Get()))
+	var omitFn = omitFnFromKeys(c.Keys.Get().Keys.Get())
 //line json/json.gala:108
-	var naming = NewImmutable(namingFn(c.Config.Get().NamingStrategy.Get()))
+	var naming = namingFn(c.Config.Get().NamingStrategy.Get())
 //line json/json.gala:109
-	var omitIfEmpty = NewImmutable(c.Keys.Get().OmitIfEmpty.Get())
+	var omitIfEmpty = c.Keys.Get().OmitIfEmpty.Get()
 //line json/json.gala:110
-	if !omitIfEmpty.Get().Exists(func(b bool) bool {
+	if !omitIfEmpty.Exists(func(b bool) bool {
 		return b
 	}) {
 //line json/json.gala:111
 		return func(w FieldEncoder, v T) {
-			c.Meta.Get().EncodeFields(w, v, nameFn.Get(), omitFn.Get(), naming.Get())
+			c.Meta.Get().EncodeFields(w, v, nameFn, omitFn, naming)
 		}
 	}
 //line json/json.gala:113
 	return func(w FieldEncoder, v T) {
 //line json/json.gala:114
-		var omitValueFn = NewImmutable(func(i int) bool {
-			return omitFn.Get()(i) || (omitIfEmpty.Get().Get(i) && c.Meta.Get().FieldIsEmpty(v, i))
-		})
+		var omitValueFn = func(i int) bool {
+			return omitFn(i) || (omitIfEmpty.Get(i) && c.Meta.Get().FieldIsEmpty(v, i))
+		}
 //line json/json.gala:115
-		c.Meta.Get().EncodeFields(w, v, nameFn.Get(), omitValueFn.Get(), naming.Get())
+		c.Meta.Get().EncodeFields(w, v, nameFn, omitValueFn, naming)
 	}
 }
 
@@ -212,12 +212,12 @@ func (c JsonEncoder[T]) writer() func(FieldEncoder, T) {
 // lookup is built once, so decoding an array of T pays for it once.
 func (c JsonEncoder[T]) reader() func(FieldDecoder) T {
 //line json/json.gala:122
-	var lookup = NewImmutable(buildLookup(c.Keys.Get().ReverseKeys.Get(), c.Meta.Get().NumFields(), c.Meta.Get().FieldName))
+	var lookup = buildLookup(c.Keys.Get().ReverseKeys.Get(), c.Meta.Get().NumFields(), c.Meta.Get().FieldName)
 //line json/json.gala:123
-	var naming = NewImmutable(namingFn(c.Config.Get().NamingStrategy.Get()))
+	var naming = namingFn(c.Config.Get().NamingStrategy.Get())
 //line json/json.gala:124
 	return func(r FieldDecoder) T {
-		return c.Meta.Get().DecodeFields(r, lookup.Get(), naming.Get())
+		return c.Meta.Get().DecodeFields(r, lookup, naming)
 	}
 }
 
@@ -228,11 +228,11 @@ func (c JsonEncoder[T]) reader() func(FieldDecoder) T {
 func encodeJson(write func(FieldEncoder)) Try[string] {
 	return Try[string]{}.Apply(func() string {
 //line json/json.gala:130
-		var w = NewImmutable(NewJsonEncoder())
+		var w = NewJsonEncoder()
 //line json/json.gala:131
-		write(w.Get())
+		write(w)
 //line json/json.gala:132
-		return w.Get().String()
+		return w.String()
 	})
 }
 
@@ -244,13 +244,13 @@ func encodeJson(write func(FieldEncoder)) Try[string] {
 func decodeJson[V any](s string, read func(FieldDecoder) V) Try[V] {
 	return Try[V]{}.Apply(func() V {
 //line json/json.gala:139
-		var r = NewImmutable(NewJsonDecoder(s))
+		var r = NewJsonDecoder(s)
 //line json/json.gala:140
-		var v = NewImmutable(read(r.Get()))
+		var v = read(r)
 //line json/json.gala:141
-		r.Get().End()
+		r.End()
 //line json/json.gala:142
-		return v.Get()
+		return v
 	})
 }
 
@@ -259,10 +259,10 @@ func decodeJson[V any](s string, read func(FieldDecoder) V) Try[V] {
 // Encode serializes a value to a compact JSON string (zero-reflection).
 func (c JsonEncoder[T]) Encode(v T) Try[string] {
 //line json/json.gala:147
-	var write = NewImmutable(c.writer())
+	var write = c.writer()
 //line json/json.gala:148
 	return encodeJson(func(w FieldEncoder) {
-		write.Get()(w, v)
+		write(w, v)
 	})
 }
 
@@ -283,9 +283,9 @@ func (c JsonEncoder[T]) EncodePretty(v T) Try[string] {
 func (c JsonEncoder[T]) Decode(s string) Try[T] {
 	return decodeJson(s, func(r FieldDecoder) T {
 //line json/json.gala:160
-		var read = NewImmutable(c.reader())
+		var read = c.reader()
 //line json/json.gala:161
-		return read.Get()(r)
+		return read(r)
 	})
 }
 
@@ -341,14 +341,14 @@ func (_ JsonArrayEncoder[T]) IsJsonArrayEncoder() bool {
 // encodeElems writes the elements as a JSON array.
 func (c JsonEncoder[T]) encodeElems(vs Traversable[T]) Try[string] {
 //line json/json.gala:184
-	var write = NewImmutable(c.writer())
+	var write = c.writer()
 //line json/json.gala:185
 	return encodeJson(func(w FieldEncoder) {
 //line json/json.gala:186
 		w.WriteStartArray()
 //line json/json.gala:187
 		vs.ForEach(func(v T) {
-			write.Get()(w, v)
+			write(w, v)
 		})
 //line json/json.gala:188
 		w.WriteEndArray()

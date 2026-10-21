@@ -53,17 +53,17 @@ func ReadLines(path string) Try[Array[string]] {
 // N strings). Kept as a named helper so the return type is explicit.
 func splitLines(data []byte) Array[string] {
 //line fs/streaming.gala:41
-	var parts = NewImmutable(strings.Split(string(data), "\n"))
+	var parts = strings.Split(string(data), "\n")
 //line fs/streaming.gala:42
-	var n = NewImmutable(func() int {
-		if len(parts.Get()) > 0 && parts.Get()[len(parts.Get())-1] == "" {
-			return len(parts.Get()) - 1
+	var n = func() int {
+		if len(parts) > 0 && parts[len(parts)-1] == "" {
+			return len(parts) - 1
 		} else {
-			return len(parts.Get())
+			return len(parts)
 		}
-	}())
+	}()
 //line fs/streaming.gala:43
-	return ArrayFromSlice(SliceTake(parts.Get(), n.Get()))
+	return ArrayFromSlice(SliceTake(parts, n))
 }
 
 //line fs/streaming.gala:45
@@ -88,19 +88,19 @@ func ForEachLine(path string, fn func(string) bool) Try[bool] {
 	}), func(f *os.File) Try[bool] {
 		return Using(f, func(file *os.File) Try[bool] {
 //line fs/streaming.gala:59
-			var scanner = NewImmutable(bufio.NewScanner(file))
+			var scanner = bufio.NewScanner(file)
 //line fs/streaming.gala:60
-			scanner.Get().Buffer(SliceWithCapacity[byte](scannerInitialBufBytes.Get()), scannerMaxLineBytes.Get())
+			scanner.Buffer(SliceWithCapacity[byte](scannerInitialBufBytes.Get()), scannerMaxLineBytes.Get())
 //line fs/streaming.gala:61
-			for scanner.Get().Scan() {
+			for scanner.Scan() {
 //line fs/streaming.gala:62
-				if !fn(scanner.Get().Text()) {
+				if !fn(scanner.Text()) {
 //line fs/streaming.gala:63
 					return Success[bool]{}.Apply(false)
 				}
 			}
 //line fs/streaming.gala:66
-			return Try_Map(FromError(scanner.Get().Err()), func(_ Void) bool {
+			return Try_Map(FromError(scanner.Err()), func(_ Void) bool {
 				return true
 			})
 		})
@@ -115,9 +115,9 @@ func ForEachLine(path string, fn func(string) bool) Try[bool] {
 // applied if the file is newly created.
 func WriteLines(path string, lines Array[string], mode int) Try[Void] {
 //line fs/streaming.gala:74
-	var joined = NewImmutable(strings.Join(lines.ToGoSlice(), "\n") + "\n")
+	var joined = strings.Join(lines.ToGoSlice(), "\n") + "\n"
 //line fs/streaming.gala:75
-	return FromError(os.WriteFile(path, ToBytes(joined.Get()), os.FileMode(mode)))
+	return FromError(os.WriteFile(path, ToBytes(joined), os.FileMode(mode)))
 }
 
 //line fs/streaming.gala:77
@@ -136,18 +136,18 @@ func AppendString(path string, contents string, mode int) Try[Void] {
 		return _v0
 	}), func(f *os.File) Try[Void] {
 //line fs/streaming.gala:89
-		var writeResult = NewImmutable(Try[int]{}.Apply(func() int {
+		var writeResult = Try[int]{}.Apply(func() int {
 			_v0, _err := f.WriteString(contents)
 			if _err != nil {
 				panic(_err)
 			}
 			return _v0
-		}))
+		})
 //line fs/streaming.gala:90
-		var closeResult = NewImmutable(FromError(f.Close()))
+		var closeResult = FromError(f.Close())
 //line fs/streaming.gala:91
-		return Try_FlatMap(writeResult.Get(), func(_ int) Try[Void] {
-			return closeResult.Get()
+		return Try_FlatMap(writeResult, func(_ int) Try[Void] {
+			return closeResult
 		})
 	})
 }
@@ -165,18 +165,18 @@ func Append(path string, data Array[byte], mode int) Try[Void] {
 		return _v0
 	}), func(f *os.File) Try[Void] {
 //line fs/streaming.gala:101
-		var writeResult = NewImmutable(Try[int]{}.Apply(func() int {
+		var writeResult = Try[int]{}.Apply(func() int {
 			_v0, _err := f.Write(data.ToGoSlice())
 			if _err != nil {
 				panic(_err)
 			}
 			return _v0
-		}))
+		})
 //line fs/streaming.gala:102
-		var closeResult = NewImmutable(FromError(f.Close()))
+		var closeResult = FromError(f.Close())
 //line fs/streaming.gala:103
-		return Try_FlatMap(writeResult.Get(), func(_ int) Try[Void] {
-			return closeResult.Get()
+		return Try_FlatMap(writeResult, func(_ int) Try[Void] {
+			return closeResult
 		})
 	})
 }

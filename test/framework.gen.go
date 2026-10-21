@@ -106,29 +106,29 @@ func (t T) Fatal(msg string) {
 // Panics in subtests are recovered and reported as failures.
 func (t T) Run(name string, f func(T) T) T {
 //line test/framework.gala:61
-	var subT = std.NewImmutable(newT(t.name.Get() + "/" + name))
+	var subT = newT(t.name.Get() + "/" + name)
 //line test/framework.gala:62
-	fmt.Println(fmt.Sprintf("=== RUN   %s", subT.Get().name.Get()))
+	fmt.Println(fmt.Sprintf("=== RUN   %s", subT.name.Get()))
 //line test/framework.gala:64
-	var start = std.NewImmutable(time.Now())
+	var start = time.Now()
 //line test/framework.gala:65
-	var result = std.NewImmutable(runTest(subT.Get(), f))
+	var result = runTest(subT, f)
 //line test/framework.gala:66
-	var elapsed = std.NewImmutable(time.Since(start.Get()))
+	var elapsed = time.Since(start)
 //line test/framework.gala:68
-	if result.Get().failed.Get() {
+	if result.failed.Get() {
 //line test/framework.gala:69
-		fmt.Println(fmt.Sprintf("--- FAIL: %s (%.3fs)", subT.Get().name.Get(), elapsed.Get().Seconds()))
+		fmt.Println(fmt.Sprintf("--- FAIL: %s (%.3fs)", subT.name.Get(), elapsed.Seconds()))
 //line test/framework.gala:70
 		return T{name: std.NewImmutable(t.name.Get()), failed: std.NewImmutable(true), skipped: std.NewImmutable(t.skipped.Get())}
-	} else if result.Get().skipped.Get() {
+	} else if result.skipped.Get() {
 //line test/framework.gala:72
-		fmt.Println(fmt.Sprintf("--- SKIP: %s (%.3fs)", subT.Get().name.Get(), elapsed.Get().Seconds()))
+		fmt.Println(fmt.Sprintf("--- SKIP: %s (%.3fs)", subT.name.Get(), elapsed.Seconds()))
 //line test/framework.gala:73
 		return t
 	} else {
 //line test/framework.gala:75
-		fmt.Println(fmt.Sprintf("--- PASS: %s (%.3fs)", subT.Get().name.Get(), elapsed.Get().Seconds()))
+		fmt.Println(fmt.Sprintf("--- PASS: %s (%.3fs)", subT.name.Get(), elapsed.Seconds()))
 //line test/framework.gala:76
 		return t
 	}
@@ -140,9 +140,9 @@ func (t T) Run(name string, f func(T) T) T {
 // If the function panics, the panic is caught and reported as a test failure.
 func runTest(t T, f func(T) T) T {
 //line test/framework.gala:83
-	var result = std.NewImmutable(std.Try[T]{}.Apply(func() T {
+	var result = std.Try[T]{}.Apply(func() T {
 		return f(t)
-	}))
+	})
 //line test/framework.gala:84
 	return func(obj std.Try[T]) T {
 		{
@@ -172,7 +172,7 @@ func runTest(t T, f func(T) T) T {
 				}
 			}
 		}
-	}(result.Get())
+	}(result)
 }
 
 //line test/framework.gala:93
@@ -204,28 +204,28 @@ func (s TestFunc) Unapply(v any) (std.Immutable[string], std.Immutable[func(T) T
 // Run executes the test function and returns the result.
 func (tf TestFunc) Run() T {
 //line test/framework.gala:102
-	var t = std.NewImmutable(newT(tf.Name.Get()))
+	var t = newT(tf.Name.Get())
 //line test/framework.gala:103
-	fmt.Println(fmt.Sprintf("=== RUN   %s", t.Get().name.Get()))
+	fmt.Println(fmt.Sprintf("=== RUN   %s", t.name.Get()))
 //line test/framework.gala:105
-	var start = std.NewImmutable(time.Now())
+	var start = time.Now()
 //line test/framework.gala:106
-	var result = std.NewImmutable(runTest(t.Get(), tf.F.Get()))
+	var result = runTest(t, tf.F.Get())
 //line test/framework.gala:107
-	var elapsed = std.NewImmutable(time.Since(start.Get()))
+	var elapsed = time.Since(start)
 //line test/framework.gala:110
-	if result.Get().failed.Get() {
+	if result.failed.Get() {
 //line test/framework.gala:111
-		fmt.Println(fmt.Sprintf("--- FAIL: %s (%.3fs)", t.Get().name.Get(), elapsed.Get().Seconds()))
-	} else if result.Get().skipped.Get() {
+		fmt.Println(fmt.Sprintf("--- FAIL: %s (%.3fs)", t.name.Get(), elapsed.Seconds()))
+	} else if result.skipped.Get() {
 //line test/framework.gala:113
-		fmt.Println(fmt.Sprintf("--- SKIP: %s (%.3fs)", t.Get().name.Get(), elapsed.Get().Seconds()))
+		fmt.Println(fmt.Sprintf("--- SKIP: %s (%.3fs)", t.name.Get(), elapsed.Seconds()))
 	} else {
 //line test/framework.gala:115
-		fmt.Println(fmt.Sprintf("--- PASS: %s (%.3fs)", t.Get().name.Get(), elapsed.Get().Seconds()))
+		fmt.Println(fmt.Sprintf("--- PASS: %s (%.3fs)", t.name.Get(), elapsed.Seconds()))
 	}
 //line test/framework.gala:117
-	return result.Get()
+	return result
 }
 
 //line test/framework.gala:119
@@ -244,14 +244,14 @@ func RunTests(tests ...TestFunc) {
 //line test/framework.gala:128
 	for i := 0; i < len(tests); i++ {
 //line test/framework.gala:129
-		var test = std.NewImmutable(tests[i])
+		var test = tests[i]
 //line test/framework.gala:130
-		var result = std.NewImmutable(test.Get().Run())
+		var result = test.Run()
 //line test/framework.gala:131
-		if result.Get().failed.Get() {
+		if result.failed.Get() {
 //line test/framework.gala:132
 			failed++
-		} else if result.Get().skipped.Get() {
+		} else if result.skipped.Get() {
 //line test/framework.gala:134
 			skipped++
 		} else {

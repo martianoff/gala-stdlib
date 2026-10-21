@@ -182,18 +182,14 @@ func ReadDir(path string) Try[Array[FileInfo]] {
 //line fs/fs.gala:100
 		for i := 0; i < len(entries); i++ {
 //line fs/fs.gala:101
-			var (
-				_tmp_1, _tmp_2 = entries[i].Info()
-				info           = NewImmutable(_tmp_1)
-				err            = NewImmutable(_tmp_2)
-			)
+			var info, err = entries[i].Info()
 //line fs/fs.gala:102
-			if err.Get() != nil {
+			if err != nil {
 //line fs/fs.gala:103
-				return Failure[Array[FileInfo]]{}.Apply(err.Get())
+				return Failure[Array[FileInfo]]{}.Apply(err)
 			}
 //line fs/fs.gala:105
-			out = out.Append(fromGoFileInfo(info.Get()))
+			out = out.Append(fromGoFileInfo(info))
 		}
 //line fs/fs.gala:107
 		return Success[Array[FileInfo]]{}.Apply(out)

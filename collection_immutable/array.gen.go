@@ -49,8 +49,10 @@ func (_ arrayNode[T]) IsarrayNode() bool {
 
 // Array represents an immutable indexed sequence.
 // Uses a prefix buffer for amortized O(1) prepend (Scala-inspired).
+//
+// root is never reassigned; it is `var` for the reason List's tail is.
 type Array[T any] struct {
-	root   Immutable[*arrayNode[T]]
+	root   OptionPtr[arrayNode[T]]
 	length Immutable[int]
 	depth  Immutable[int]
 	prefix Immutable[[]T]
@@ -71,19 +73,17 @@ func (_ Array[T]) IsArray() bool {
 	return true
 }
 
-//line collection_immutable/array.gala:45
+//line collection_immutable/array.gala:47
 
 // EmptyArray returns an empty Array.
 func EmptyArray[T any]() Array[T] {
-//line collection_immutable/array.gala:48
-	var nilRoot *arrayNode[T] = nil
-//line collection_immutable/array.gala:49
-	var emptyPrefix []T
 //line collection_immutable/array.gala:50
-	return Array[T]{root: NewImmutable(nilRoot), length: NewImmutable(0), depth: NewImmutable(0), prefix: NewImmutable(emptyPrefix)}
+	var emptyPrefix []T
+//line collection_immutable/array.gala:51
+	return Array[T]{root: EmptyOptionPtr[arrayNode[T]](), length: NewImmutable(0), depth: NewImmutable(0), prefix: NewImmutable(emptyPrefix)}
 }
 
-//line collection_immutable/array.gala:52
+//line collection_immutable/array.gala:53
 
 // ArrayOf creates an Array from variadic arguments.
 // Example: ArrayOf[int](1, 2, 3) creates Array(1, 2, 3)
@@ -91,41 +91,41 @@ func ArrayOf[T any](elements ...T) Array[T] {
 	return ArrayFromSlice(elements)
 }
 
-//line collection_immutable/array.gala:56
+//line collection_immutable/array.gala:57
 
 // ArrayTabulate creates an Array of size n where each element is computed by f(index).
 // Uses arrayBuilder internally for O(n) construction.
 // Example: ArrayTabulate(5, (i) => i * 2) creates Array(0, 2, 4, 6, 8)
 func ArrayTabulate[T any](n int, f func(int) T) Array[T] {
-//line collection_immutable/array.gala:61
-	var builder = newArrayBuilder[T]()
 //line collection_immutable/array.gala:62
-	for i := 0; i < n; i++ {
+	var builder = newArrayBuilder[T]()
 //line collection_immutable/array.gala:63
+	for i := 0; i < n; i++ {
+//line collection_immutable/array.gala:64
 		builder.Add(f(i))
 	}
-//line collection_immutable/array.gala:65
+//line collection_immutable/array.gala:66
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:67
+//line collection_immutable/array.gala:68
 
 // ArrayFill creates an Array of size n where every element is the same value.
 // Uses arrayBuilder internally for O(n) construction.
 // Example: ArrayFill(3, "x") creates Array("x", "x", "x")
 func ArrayFill[T any](n int, value T) Array[T] {
-//line collection_immutable/array.gala:72
-	var builder = newArrayBuilder[T]()
 //line collection_immutable/array.gala:73
-	for i := 0; i < n; i++ {
+	var builder = newArrayBuilder[T]()
 //line collection_immutable/array.gala:74
+	for i := 0; i < n; i++ {
+//line collection_immutable/array.gala:75
 		builder.Add(value)
 	}
-//line collection_immutable/array.gala:76
+//line collection_immutable/array.gala:77
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:78
+//line collection_immutable/array.gala:79
 
 // ArrayFromSlice creates an Array from a slice. The elements are copied once, so
 // later changes to the slice do not affect the Array.
@@ -133,95 +133,95 @@ func ArrayFromSlice[T any](elements []T) Array[T] {
 	return arrayFromOwnedSlice(go_interop.SliceCopy(elements))
 }
 
-//line collection_immutable/array.gala:82
+//line collection_immutable/array.gala:83
 
 // arrayFromOwnedSlice builds an Array on top of elements without copying them:
 // each leaf is a window of the slice with its capacity clipped, so appending to
 // a leaf can never write into its neighbour. Every operation that changes a leaf
 // copies it first. Only pass a slice nothing else holds or changes afterwards.
 func arrayFromOwnedSlice[T any](elements []T) Array[T] {
-//line collection_immutable/array.gala:88
-	var n = NewImmutable(len(elements))
 //line collection_immutable/array.gala:89
-	if n.Get() == 0 {
+	var n = len(elements)
 //line collection_immutable/array.gala:90
+	if n == 0 {
+//line collection_immutable/array.gala:91
 		return EmptyArray[T]()
 	}
-//line collection_immutable/array.gala:92
-	var leaves = go_interop.SliceWithCapacity[*arrayNode[T]](chunkCount(n.Get()))
 //line collection_immutable/array.gala:93
-	for i := 0; i < n.Get(); i += branchingFactor.Get() {
+	var leaves = go_interop.SliceWithCapacity[*arrayNode[T]](chunkCount(n))
 //line collection_immutable/array.gala:94
-		var values = NewImmutable(go_interop.SliceClip(go_interop.Slice(elements, i, chunkEnd(i, n.Get()))))
+	for i := 0; i < n; i += branchingFactor.Get() {
 //line collection_immutable/array.gala:95
-		leaves = go_interop.SliceAppend(leaves, &arrayNode[T]{values: values.Get(), isLeaf: NewImmutable(true)})
+		var values = go_interop.SliceClip(go_interop.Slice(elements, i, chunkEnd(i, n)))
+//line collection_immutable/array.gala:96
+		leaves = go_interop.SliceAppend(leaves, &arrayNode[T]{values: values, isLeaf: NewImmutable(true)})
 	}
-//line collection_immutable/array.gala:97
-	return arrayFromLeaves(leaves, n.Get())
+//line collection_immutable/array.gala:98
+	return arrayFromLeaves(leaves, n)
 }
 
-//line collection_immutable/array.gala:99
+//line collection_immutable/array.gala:100
 
 // arrayFromLeaves builds the tree above leaves, which hold the elements in index
 // order with every leaf full except possibly the last, and returns the Array.
 // depth counts the levels from the leaves up, so a lone leaf is depth 1.
 func arrayFromLeaves[T any](leaves []*arrayNode[T], length int) Array[T] {
-//line collection_immutable/array.gala:104
-	var level = leaves
 //line collection_immutable/array.gala:105
-	var depth = 1
+	var level = leaves
 //line collection_immutable/array.gala:106
-	for len(level) > 1 {
+	var depth = 1
 //line collection_immutable/array.gala:107
-		level = groupNodes(level)
+	for len(level) > 1 {
 //line collection_immutable/array.gala:108
+		level = groupNodes(level)
+//line collection_immutable/array.gala:109
 		depth++
 	}
-//line collection_immutable/array.gala:110
-	var emptyPrefix []T
 //line collection_immutable/array.gala:111
-	return Array[T]{root: NewImmutable(level[0]), length: NewImmutable(length), depth: NewImmutable(depth), prefix: NewImmutable(emptyPrefix)}
+	var emptyPrefix []T
+//line collection_immutable/array.gala:112
+	return Array[T]{root: SomePtr(level[0]), length: NewImmutable(length), depth: NewImmutable(depth), prefix: NewImmutable(emptyPrefix)}
 }
 
-//line collection_immutable/array.gala:113
+//line collection_immutable/array.gala:114
 
 // chunkCount is the number of branchingFactor-sized chunks needed to hold n items.
 func chunkCount(n int) int {
 	return (n + branchingMask.Get()) / branchingFactor.Get()
 }
 
-//line collection_immutable/array.gala:116
+//line collection_immutable/array.gala:117
 
 // chunkEnd is the exclusive end of the chunk that starts at i, given n items.
 func chunkEnd(i int, n int) int {
-	return func() int {
+	{
 		if i+branchingFactor.Get() < n {
 			return i + branchingFactor.Get()
 		} else {
 			return n
 		}
-	}()
+	}
 }
 
-//line collection_immutable/array.gala:119
+//line collection_immutable/array.gala:120
 
 // groupNodes builds the next tree level up: one parent per branchingFactor nodes,
 // each holding a capacity-clipped window of level, like the leaves.
 func groupNodes[T any](level []*arrayNode[T]) []*arrayNode[T] {
-//line collection_immutable/array.gala:123
-	var parents = go_interop.SliceWithCapacity[*arrayNode[T]](chunkCount(len(level)))
 //line collection_immutable/array.gala:124
-	for i := 0; i < len(level); i += branchingFactor.Get() {
+	var parents = go_interop.SliceWithCapacity[*arrayNode[T]](chunkCount(len(level)))
 //line collection_immutable/array.gala:125
-		var children = NewImmutable(go_interop.SliceClip(go_interop.Slice(level, i, chunkEnd(i, len(level)))))
+	for i := 0; i < len(level); i += branchingFactor.Get() {
 //line collection_immutable/array.gala:126
-		parents = go_interop.SliceAppend(parents, &arrayNode[T]{children: children.Get(), isLeaf: NewImmutable(false)})
+		var children = go_interop.SliceClip(go_interop.Slice(level, i, chunkEnd(i, len(level))))
+//line collection_immutable/array.gala:127
+		parents = go_interop.SliceAppend(parents, &arrayNode[T]{children: children, isLeaf: NewImmutable(false)})
 	}
-//line collection_immutable/array.gala:128
+//line collection_immutable/array.gala:129
 	return parents
 }
 
-//line collection_immutable/array.gala:130
+//line collection_immutable/array.gala:131
 
 // arrayBuilder builds an Array incrementally without intermediate slice conversion.
 // Uses Scala-inspired display arrays for O(1) amortized append.
@@ -247,937 +247,913 @@ func (_ arrayBuilder[T]) IsarrayBuilder() bool {
 	return true
 }
 
-//line collection_immutable/array.gala:139
+//line collection_immutable/array.gala:140
 
 // newArrayBuilder creates a new arrayBuilder.
 func newArrayBuilder[T any]() *arrayBuilder[T] {
-//line collection_immutable/array.gala:142
-	var d0 []T
 //line collection_immutable/array.gala:143
-	var d1 []*arrayNode[T]
+	var d0 []T
 //line collection_immutable/array.gala:144
-	var d2 [][]*arrayNode[T]
+	var d1 []*arrayNode[T]
 //line collection_immutable/array.gala:145
+	var d2 [][]*arrayNode[T]
+//line collection_immutable/array.gala:146
 	return &arrayBuilder[T]{display0: d0, display1: d1, display2: d2, length: 0}
 }
 
-//line collection_immutable/array.gala:147
+//line collection_immutable/array.gala:148
 
 // Add appends an element to the builder. O(1) amortized.
 func (b *arrayBuilder[T]) Add(elem T) {
-//line collection_immutable/array.gala:150
-	b.display0 = go_interop.SliceAppend(b.display0, elem)
+	if b == nil {
+		panic("arrayBuilder.Add: receiver b is a Ptr[collection_immutable.arrayBuilder[T]], but the caller passed nil")
+	}
 //line collection_immutable/array.gala:151
+	b.display0 = go_interop.SliceAppend(b.display0, elem)
+//line collection_immutable/array.gala:152
 	b.length++
-//line collection_immutable/array.gala:154
-	if len(b.display0) >= branchingFactor.Get() {
 //line collection_immutable/array.gala:155
+	if len(b.display0) >= branchingFactor.Get() {
+//line collection_immutable/array.gala:156
 		b.flushDisplay0()
 	}
 }
 
-//line collection_immutable/array.gala:158
+//line collection_immutable/array.gala:159
 
 // flushDisplay0 creates a leaf node from display0 and adds to display1.
 func (b *arrayBuilder[T]) flushDisplay0() {
-//line collection_immutable/array.gala:161
-	if len(b.display0) == 0 {
 //line collection_immutable/array.gala:162
+	if len(b.display0) == 0 {
+//line collection_immutable/array.gala:163
 		return
 	}
-//line collection_immutable/array.gala:164
-	var leaf = &arrayNode[T]{values: b.display0, isLeaf: NewImmutable(true)}
 //line collection_immutable/array.gala:165
-	b.display1 = go_interop.SliceAppend(b.display1, leaf)
+	var leaf = &arrayNode[T]{values: b.display0, isLeaf: NewImmutable(true)}
 //line collection_immutable/array.gala:166
-	var newD0 []T
+	b.display1 = go_interop.SliceAppend(b.display1, leaf)
 //line collection_immutable/array.gala:167
+	var newD0 []T
+//line collection_immutable/array.gala:168
 	b.display0 = newD0
-//line collection_immutable/array.gala:170
-	if len(b.display1) >= branchingFactor.Get() {
 //line collection_immutable/array.gala:171
+	if len(b.display1) >= branchingFactor.Get() {
+//line collection_immutable/array.gala:172
 		b.flushDisplay1()
 	}
 }
 
-//line collection_immutable/array.gala:174
+//line collection_immutable/array.gala:175
 
 // flushDisplay1 groups display1 nodes and adds to display2.
 func (b *arrayBuilder[T]) flushDisplay1() {
-//line collection_immutable/array.gala:177
-	if len(b.display1) == 0 {
 //line collection_immutable/array.gala:178
+	if len(b.display1) == 0 {
+//line collection_immutable/array.gala:179
 		return
 	}
-//line collection_immutable/array.gala:180
-	b.display2 = go_interop.SliceAppend(b.display2, b.display1)
 //line collection_immutable/array.gala:181
-	var newD1 []*arrayNode[T]
+	b.display2 = go_interop.SliceAppend(b.display2, b.display1)
 //line collection_immutable/array.gala:182
+	var newD1 []*arrayNode[T]
+//line collection_immutable/array.gala:183
 	b.display1 = newD1
 }
 
-//line collection_immutable/array.gala:184
+//line collection_immutable/array.gala:185
 
 // Result builds and returns the final Array.
 func (b *arrayBuilder[T]) Result() Array[T] {
-//line collection_immutable/array.gala:187
-	if b.length == 0 {
+	if b == nil {
+		panic("arrayBuilder.Result: receiver b is a Ptr[collection_immutable.arrayBuilder[T]], but the caller passed nil")
+	}
 //line collection_immutable/array.gala:188
+	if b.length == 0 {
+//line collection_immutable/array.gala:189
 		return EmptyArray[T]()
 	}
-//line collection_immutable/array.gala:192
-	if len(b.display0) > 0 {
 //line collection_immutable/array.gala:193
-		var leaf = &arrayNode[T]{values: b.display0, isLeaf: NewImmutable(true)}
+	if len(b.display0) > 0 {
 //line collection_immutable/array.gala:194
+		var leaf = &arrayNode[T]{values: b.display0, isLeaf: NewImmutable(true)}
+//line collection_immutable/array.gala:195
 		b.display1 = go_interop.SliceAppend(b.display1, leaf)
 	}
-//line collection_immutable/array.gala:198
-	if len(b.display2) == 0 {
 //line collection_immutable/array.gala:199
+	if len(b.display2) == 0 {
+//line collection_immutable/array.gala:200
 		if len(b.display1) == 1 {
-//line collection_immutable/array.gala:201
-			var emptyPrefix []T
 //line collection_immutable/array.gala:202
-			return Array[T]{root: NewImmutable(b.display1[0]), length: NewImmutable(b.length), depth: NewImmutable(1), prefix: NewImmutable(emptyPrefix)}
+			var emptyPrefix []T
+//line collection_immutable/array.gala:203
+			return Array[T]{root: SomePtr(b.display1[0]), length: NewImmutable(b.length), depth: NewImmutable(1), prefix: NewImmutable(emptyPrefix)}
 		}
-//line collection_immutable/array.gala:205
-		var root = &arrayNode[T]{children: b.display1, isLeaf: NewImmutable(false)}
 //line collection_immutable/array.gala:206
-		var emptyPrefix []T
+		var root = &arrayNode[T]{children: b.display1, isLeaf: NewImmutable(false)}
 //line collection_immutable/array.gala:207
-		return Array[T]{root: NewImmutable(root), length: NewImmutable(b.length), depth: NewImmutable(2), prefix: NewImmutable(emptyPrefix)}
+		var emptyPrefix []T
+//line collection_immutable/array.gala:208
+		return Array[T]{root: SomePtr(root), length: NewImmutable(b.length), depth: NewImmutable(2), prefix: NewImmutable(emptyPrefix)}
 	}
-//line collection_immutable/array.gala:212
-	if len(b.display1) > 0 {
 //line collection_immutable/array.gala:213
+	if len(b.display1) > 0 {
+//line collection_immutable/array.gala:214
 		b.display2 = go_interop.SliceAppend(b.display2, b.display1)
 	}
-//line collection_immutable/array.gala:217
-	var level2Nodes []*arrayNode[T]
 //line collection_immutable/array.gala:218
-	for i := 0; i < len(b.display2); i++ {
+	var level2Nodes []*arrayNode[T]
 //line collection_immutable/array.gala:219
-		var node = &arrayNode[T]{children: b.display2[i], isLeaf: NewImmutable(false)}
+	for i := 0; i < len(b.display2); i++ {
 //line collection_immutable/array.gala:220
+		var node = &arrayNode[T]{children: b.display2[i], isLeaf: NewImmutable(false)}
+//line collection_immutable/array.gala:221
 		level2Nodes = go_interop.SliceAppend(level2Nodes, node)
 	}
-//line collection_immutable/array.gala:225
-	var currentLevel = level2Nodes
 //line collection_immutable/array.gala:226
+	var currentLevel = level2Nodes
+//line collection_immutable/array.gala:227
 	var depth = 2
-//line collection_immutable/array.gala:228
-	for len(currentLevel) > 1 {
 //line collection_immutable/array.gala:229
-		var nextLevel []*arrayNode[T]
+	for len(currentLevel) > 1 {
 //line collection_immutable/array.gala:230
-		for i := 0; i < len(currentLevel); i += branchingFactor.Get() {
+		var nextLevel []*arrayNode[T]
 //line collection_immutable/array.gala:231
-			var end = i + branchingFactor.Get()
+		for i := 0; i < len(currentLevel); i += branchingFactor.Get() {
 //line collection_immutable/array.gala:232
-			if end > len(currentLevel) {
+			var end = i + branchingFactor.Get()
 //line collection_immutable/array.gala:233
+			if end > len(currentLevel) {
+//line collection_immutable/array.gala:234
 				end = len(currentLevel)
 			}
-//line collection_immutable/array.gala:235
-			var children []*arrayNode[T]
 //line collection_immutable/array.gala:236
-			for j := i; j < end; j++ {
+			var children []*arrayNode[T]
 //line collection_immutable/array.gala:237
+			for j := i; j < end; j++ {
+//line collection_immutable/array.gala:238
 				children = go_interop.SliceAppend(children, currentLevel[j])
 			}
-//line collection_immutable/array.gala:239
-			var node = &arrayNode[T]{children: children, isLeaf: NewImmutable(false)}
 //line collection_immutable/array.gala:240
+			var node = &arrayNode[T]{children: children, isLeaf: NewImmutable(false)}
+//line collection_immutable/array.gala:241
 			nextLevel = go_interop.SliceAppend(nextLevel, node)
 		}
-//line collection_immutable/array.gala:242
-		currentLevel = nextLevel
 //line collection_immutable/array.gala:243
+		currentLevel = nextLevel
+//line collection_immutable/array.gala:244
 		depth++
 	}
-//line collection_immutable/array.gala:246
-	var emptyPrefix []T
 //line collection_immutable/array.gala:247
-	return Array[T]{root: NewImmutable(currentLevel[0]), length: NewImmutable(b.length), depth: NewImmutable(depth), prefix: NewImmutable(emptyPrefix)}
+	var emptyPrefix []T
+//line collection_immutable/array.gala:248
+	return Array[T]{root: SomePtr(currentLevel[0]), length: NewImmutable(b.length), depth: NewImmutable(depth), prefix: NewImmutable(emptyPrefix)}
 }
 
-//line collection_immutable/array.gala:249
+//line collection_immutable/array.gala:250
 
 // IsEmpty returns true if the array is empty.
 func (a Array[T]) IsEmpty() bool {
 	return a.length.Get() == 0
 }
 
-//line collection_immutable/array.gala:252
+//line collection_immutable/array.gala:253
 
 // NonEmpty returns true if the array is not empty.
 func (a Array[T]) NonEmpty() bool {
 	return a.length.Get() > 0
 }
 
-//line collection_immutable/array.gala:255
+//line collection_immutable/array.gala:256
 
 // Length returns the number of elements. O(1) - cached.
 func (a Array[T]) Length() int {
 	return a.length.Get()
 }
 
-//line collection_immutable/array.gala:258
+//line collection_immutable/array.gala:259
 
 // Size is an alias for Length.
 func (a Array[T]) Size() int {
 	return a.length.Get()
 }
 
-//line collection_immutable/array.gala:261
+//line collection_immutable/array.gala:262
 
 // Helper function to calculate required depth for a given size.
 func requiredDepth(size int) int {
-//line collection_immutable/array.gala:264
-	if size <= branchingFactor.Get() {
 //line collection_immutable/array.gala:265
+	if size <= branchingFactor.Get() {
+//line collection_immutable/array.gala:266
 		return 1
 	}
-//line collection_immutable/array.gala:267
-	var d = 1
 //line collection_immutable/array.gala:268
-	for capacity := branchingFactor.Get(); capacity < size; d++ {
+	var d = 1
 //line collection_immutable/array.gala:269
+	for capacity := branchingFactor.Get(); capacity < size; d++ {
+//line collection_immutable/array.gala:270
 		capacity = capacity * branchingFactor.Get()
 	}
-//line collection_immutable/array.gala:271
+//line collection_immutable/array.gala:272
 	return d
 }
 
-//line collection_immutable/array.gala:273
+//line collection_immutable/array.gala:274
 
 // Helper to copy a node.
 func copyNode[T any](node *arrayNode[T]) *arrayNode[T] {
-//line collection_immutable/array.gala:276
-	if node == nil {
 //line collection_immutable/array.gala:277
-		return nil
-	}
-//line collection_immutable/array.gala:279
 	var newNode = &arrayNode[T]{isLeaf: NewImmutable(node.isLeaf.Get())}
-//line collection_immutable/array.gala:280
+//line collection_immutable/array.gala:278
 	if node.isLeaf.Get() {
-//line collection_immutable/array.gala:281
+//line collection_immutable/array.gala:279
 		newNode.values = copySlice[T](node.values)
 	} else {
-//line collection_immutable/array.gala:283
+//line collection_immutable/array.gala:281
 		newNode.children = copyNodeSlice[T](node.children)
 	}
-//line collection_immutable/array.gala:285
+//line collection_immutable/array.gala:283
 	return newNode
 }
 
-//line collection_immutable/array.gala:287
+//line collection_immutable/array.gala:285
 
 // Helper to copy a slice.
 func copySlice[T any](src []T) []T {
-//line collection_immutable/array.gala:290
+//line collection_immutable/array.gala:288
 	var dst []T
-//line collection_immutable/array.gala:291
+//line collection_immutable/array.gala:289
 	for i := 0; i < len(src); i++ {
-//line collection_immutable/array.gala:292
+//line collection_immutable/array.gala:290
 		dst = go_interop.SliceAppend(dst, src[i])
 	}
-//line collection_immutable/array.gala:294
+//line collection_immutable/array.gala:292
 	return dst
 }
 
-//line collection_immutable/array.gala:296
+//line collection_immutable/array.gala:294
 
 // Helper to copy a node slice.
 func copyNodeSlice[T any](src []*arrayNode[T]) []*arrayNode[T] {
-//line collection_immutable/array.gala:299
+//line collection_immutable/array.gala:297
 	var dst []*arrayNode[T]
-//line collection_immutable/array.gala:300
+//line collection_immutable/array.gala:298
 	for i := 0; i < len(src); i++ {
-//line collection_immutable/array.gala:301
+//line collection_immutable/array.gala:299
 		dst = go_interop.SliceAppend(dst, src[i])
 	}
-//line collection_immutable/array.gala:303
+//line collection_immutable/array.gala:301
 	return dst
 }
 
-//line collection_immutable/array.gala:305
+//line collection_immutable/array.gala:303
 
-// Helper to get value at index from tree.
-func getFromNode[T any](node *arrayNode[T], index int, depth int) T {
+// Helper to get value at index from tree. A loop rather than recursion: this is
+// the descent behind every Get, so it avoids a call per level.
+func getFromNode[T any](root *arrayNode[T], index int, depth int) T {
+//line collection_immutable/array.gala:307
+	var node = root
 //line collection_immutable/array.gala:308
-	if node.isLeaf.Get() {
+	var level = depth
 //line collection_immutable/array.gala:309
-		return node.values[index&branchingMask.Get()]
-	}
+	for !node.isLeaf.Get() {
+//line collection_immutable/array.gala:310
+		node = node.children[(index>>(branchingBits.Get()*(level-1)))&branchingMask.Get()]
 //line collection_immutable/array.gala:311
-	var childIndex = (index >> (branchingBits.Get() * (depth - 1))) & branchingMask.Get()
-//line collection_immutable/array.gala:312
-	return getFromNode[T](node.children[childIndex], index, depth-1)
+		level--
+	}
+//line collection_immutable/array.gala:313
+	return node.values[index&branchingMask.Get()]
 }
 
-//line collection_immutable/array.gala:314
+//line collection_immutable/array.gala:315
 
 // Get returns the element at the given index. O(log32 n) = effectively constant.
 // Panics if index is out of bounds.
 func (a Array[T]) Get(index int) T {
-//line collection_immutable/array.gala:318
-	if (index < 0) || (index >= a.length.Get()) {
 //line collection_immutable/array.gala:319
+	if (index < 0) || (index >= a.length.Get()) {
+//line collection_immutable/array.gala:320
 		panic(fmt.Sprintf("Array.Get: index %d out of bounds [0, %d)", index, a.length.Get()))
 	}
-//line collection_immutable/array.gala:323
-	var prefixLen = len(a.prefix.Get())
 //line collection_immutable/array.gala:324
+	var prefixLen = len(a.prefix.Get())
+//line collection_immutable/array.gala:325
 	if index < prefixLen {
-//line collection_immutable/array.gala:326
+//line collection_immutable/array.gala:327
 		return a.prefix.Get()[index]
 	}
-//line collection_immutable/array.gala:330
-	var treeIndex = index - prefixLen
 //line collection_immutable/array.gala:331
+	var treeIndex = index - prefixLen
+//line collection_immutable/array.gala:332
 	return getFromNode[T](a.root.Get(), treeIndex, a.depth.Get())
 }
 
-//line collection_immutable/array.gala:333
+//line collection_immutable/array.gala:334
 
 // GetOption returns the element at index wrapped in Option.
 func (a Array[T]) GetOption(index int) Option[T] {
-//line collection_immutable/array.gala:336
-	if (index < 0) || (index >= a.length.Get()) {
 //line collection_immutable/array.gala:337
+	if (index < 0) || (index >= a.length.Get()) {
+//line collection_immutable/array.gala:338
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/array.gala:339
+//line collection_immutable/array.gala:340
 	return Some[T]{}.Apply(a.Get(index))
 }
 
-//line collection_immutable/array.gala:341
+//line collection_immutable/array.gala:342
 
 // Head returns the first element. O(log32 n) = effectively constant.
 // Panics if the array is empty.
 func (a Array[T]) Head() T {
-//line collection_immutable/array.gala:345
-	if a.length.Get() == 0 {
 //line collection_immutable/array.gala:346
+	if a.length.Get() == 0 {
+//line collection_immutable/array.gala:347
 		panic("Array.Head on empty array")
 	}
-//line collection_immutable/array.gala:348
+//line collection_immutable/array.gala:349
 	return a.Get(0)
 }
 
-//line collection_immutable/array.gala:350
+//line collection_immutable/array.gala:351
 
 // HeadOption returns the first element wrapped in Option.
 func (a Array[T]) HeadOption() Option[T] {
-//line collection_immutable/array.gala:353
-	if a.length.Get() == 0 {
 //line collection_immutable/array.gala:354
+	if a.length.Get() == 0 {
+//line collection_immutable/array.gala:355
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/array.gala:356
+//line collection_immutable/array.gala:357
 	return Some[T]{}.Apply(a.Get(0))
 }
 
-//line collection_immutable/array.gala:358
+//line collection_immutable/array.gala:359
 
 // Last returns the last element. O(log32 n) = effectively constant.
 // Panics if the array is empty.
 func (a Array[T]) Last() T {
-//line collection_immutable/array.gala:362
-	if a.length.Get() == 0 {
 //line collection_immutable/array.gala:363
+	if a.length.Get() == 0 {
+//line collection_immutable/array.gala:364
 		panic("Array.Last on empty array")
 	}
-//line collection_immutable/array.gala:365
+//line collection_immutable/array.gala:366
 	return a.Get(a.length.Get() - 1)
 }
 
-//line collection_immutable/array.gala:367
+//line collection_immutable/array.gala:368
 
 // LastOption returns the last element wrapped in Option.
 func (a Array[T]) LastOption() Option[T] {
-//line collection_immutable/array.gala:370
-	if a.length.Get() == 0 {
 //line collection_immutable/array.gala:371
+	if a.length.Get() == 0 {
+//line collection_immutable/array.gala:372
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/array.gala:373
+//line collection_immutable/array.gala:374
 	return Some[T]{}.Apply(a.Get(a.length.Get() - 1))
 }
 
-//line collection_immutable/array.gala:375
+//line collection_immutable/array.gala:376
 
 // Helper to update a value in the tree, returning new tree.
 func updateInNode[T any](node *arrayNode[T], index int, value T, depth int) *arrayNode[T] {
-//line collection_immutable/array.gala:378
-	var newNode = copyNode[T](node)
 //line collection_immutable/array.gala:379
-	var isNodeLeaf = newNode.isLeaf.Get()
+	var newNode = copyNode[T](node)
 //line collection_immutable/array.gala:380
-	if isNodeLeaf {
+	var isNodeLeaf = newNode.isLeaf.Get()
 //line collection_immutable/array.gala:381
-		newNode.values[index&branchingMask.Get()] = value
+	if isNodeLeaf {
 //line collection_immutable/array.gala:382
+		newNode.values[index&branchingMask.Get()] = value
+//line collection_immutable/array.gala:383
 		return newNode
 	}
-//line collection_immutable/array.gala:384
-	var childIndex = (index >> (branchingBits.Get() * (depth - 1))) & branchingMask.Get()
 //line collection_immutable/array.gala:385
-	newNode.children[childIndex] = updateInNode[T](node.children[childIndex], index, value, depth-1)
+	var childIndex = (index >> (branchingBits.Get() * (depth - 1))) & branchingMask.Get()
 //line collection_immutable/array.gala:386
+	newNode.children[childIndex] = updateInNode[T](node.children[childIndex], index, value, depth-1)
+//line collection_immutable/array.gala:387
 	return newNode
 }
 
-//line collection_immutable/array.gala:388
+//line collection_immutable/array.gala:389
 
 // Updated returns a new array with the element at index replaced. O(log32 n).
 func (a Array[T]) Updated(index int, value T) Array[T] {
-//line collection_immutable/array.gala:391
-	if (index < 0) || (index >= a.length.Get()) {
 //line collection_immutable/array.gala:392
+	if (index < 0) || (index >= a.length.Get()) {
+//line collection_immutable/array.gala:393
 		panic(fmt.Sprintf("Array.Updated: index %d out of bounds [0, %d)", index, a.length.Get()))
 	}
-//line collection_immutable/array.gala:395
-	var prefixLen = len(a.prefix.Get())
 //line collection_immutable/array.gala:396
+	var prefixLen = len(a.prefix.Get())
+//line collection_immutable/array.gala:397
 	if index < prefixLen {
-//line collection_immutable/array.gala:398
-		var newPrefix []T
 //line collection_immutable/array.gala:399
-		for i := 0; i < prefixLen; i++ {
+		var newPrefix []T
 //line collection_immutable/array.gala:400
-			if i == index {
+		for i := 0; i < prefixLen; i++ {
 //line collection_immutable/array.gala:401
+			if i == index {
+//line collection_immutable/array.gala:402
 				newPrefix = go_interop.SliceAppend(newPrefix, value)
 			} else {
-//line collection_immutable/array.gala:403
+//line collection_immutable/array.gala:404
 				newPrefix = go_interop.SliceAppend(newPrefix, a.prefix.Get()[i])
 			}
 		}
-//line collection_immutable/array.gala:406
-		return Array[T]{root: NewImmutable(a.root.Get()), length: NewImmutable(a.length.Get()), depth: NewImmutable(a.depth.Get()), prefix: NewImmutable(newPrefix)}
+//line collection_immutable/array.gala:407
+		return Array[T]{root: a.root, length: NewImmutable(a.length.Get()), depth: NewImmutable(a.depth.Get()), prefix: NewImmutable(newPrefix)}
 	}
-//line collection_immutable/array.gala:410
-	var treeIndex = index - prefixLen
 //line collection_immutable/array.gala:411
-	var newRoot = updateInNode[T](a.root.Get(), treeIndex, value, a.depth.Get())
+	var treeIndex = index - prefixLen
 //line collection_immutable/array.gala:412
-	return Array[T]{root: NewImmutable(newRoot), length: NewImmutable(a.length.Get()), depth: NewImmutable(a.depth.Get()), prefix: NewImmutable(a.prefix.Get())}
+	var newRoot = updateInNode[T](a.root.Get(), treeIndex, value, a.depth.Get())
+//line collection_immutable/array.gala:413
+	return Array[T]{root: SomePtr(newRoot), length: NewImmutable(a.length.Get()), depth: NewImmutable(a.depth.Get()), prefix: NewImmutable(a.prefix.Get())}
 }
 
-//line collection_immutable/array.gala:414
+//line collection_immutable/array.gala:415
 
 // Helper to append to tree, potentially growing it.
 func appendToTree[T any](root *arrayNode[T], index int, value T, depth int) Tuple[*arrayNode[T], int] {
-//line collection_immutable/array.gala:417
-	var newDepth = depth
-//line collection_immutable/array.gala:418
-	var newRoot = root
-//line collection_immutable/array.gala:421
+//line collection_immutable/array.gala:419
 	var maxCapacity = 1
-//line collection_immutable/array.gala:422
+//line collection_immutable/array.gala:420
 	for i := 0; i < depth; i++ {
-//line collection_immutable/array.gala:423
+//line collection_immutable/array.gala:421
 		maxCapacity = maxCapacity * branchingFactor.Get()
 	}
-//line collection_immutable/array.gala:426
+//line collection_immutable/array.gala:424
 	if index >= maxCapacity {
-//line collection_immutable/array.gala:428
-		var children []*arrayNode[T]
-//line collection_immutable/array.gala:429
-		children = go_interop.SliceAppend(children, root)
-//line collection_immutable/array.gala:430
-		newRoot = &arrayNode[T]{children: children, isLeaf: NewImmutable(false)}
-//line collection_immutable/array.gala:431
-		newDepth = depth + 1
-//line collection_immutable/array.gala:432
-		return appendToTree[T](newRoot, index, value, newDepth)
+//line collection_immutable/array.gala:426
+		var newRoot = &arrayNode[T]{children: go_interop.SliceOf(root), isLeaf: NewImmutable(false)}
+//line collection_immutable/array.gala:427
+		return appendToTree[T](newRoot, index, value, depth+1)
 	}
-//line collection_immutable/array.gala:435
+//line collection_immutable/array.gala:430
 	return Tuple[*arrayNode[T], int]{V1: NewImmutable(appendToNode[T](root, index, value, depth)), V2: NewImmutable(depth)}
 }
 
-//line collection_immutable/array.gala:437
+//line collection_immutable/array.gala:432
 
 // Helper to append to a node at specific depth.
 func appendToNode[T any](node *arrayNode[T], index int, value T, depth int) *arrayNode[T] {
-//line collection_immutable/array.gala:440
-	if depth == 1 {
-//line collection_immutable/array.gala:442
-		if node == nil {
-//line collection_immutable/array.gala:443
-			var values []T
-//line collection_immutable/array.gala:444
-			values = go_interop.SliceAppend(values, value)
-//line collection_immutable/array.gala:445
-			var newNode = &arrayNode[T]{values: values, isLeaf: NewImmutable(true)}
-//line collection_immutable/array.gala:446
-			return newNode
-		}
-//line collection_immutable/array.gala:448
-		var newNode = copyNode[T](node)
-//line collection_immutable/array.gala:449
-		newNode.values = go_interop.SliceAppend(newNode.values, value)
-//line collection_immutable/array.gala:450
-		return newNode
-	}
-//line collection_immutable/array.gala:454
-	var childIndex = (index >> (branchingBits.Get() * (depth - 1))) & branchingMask.Get()
-//line collection_immutable/array.gala:456
-	if node == nil {
-//line collection_immutable/array.gala:457
-		var children []*arrayNode[T]
-//line collection_immutable/array.gala:458
-		for j := 0; j <= childIndex; j++ {
-//line collection_immutable/array.gala:459
-			children = go_interop.SliceAppend(children, nil)
-		}
-//line collection_immutable/array.gala:461
-		var newNode = &arrayNode[T]{children: children, isLeaf: NewImmutable(false)}
-//line collection_immutable/array.gala:462
-		newNode.children[childIndex] = appendToNode[T](nil, index, value, depth-1)
-//line collection_immutable/array.gala:463
-		return newNode
-	}
-//line collection_immutable/array.gala:466
+//line collection_immutable/array.gala:435
 	var newNode = copyNode[T](node)
-//line collection_immutable/array.gala:469
-	for len(newNode.children) <= childIndex {
-//line collection_immutable/array.gala:470
-		newNode.children = go_interop.SliceAppend(newNode.children, nil)
+//line collection_immutable/array.gala:436
+	if depth == 1 {
+//line collection_immutable/array.gala:438
+		newNode.values = go_interop.SliceAppend(newNode.values, value)
+//line collection_immutable/array.gala:439
+		return newNode
 	}
-//line collection_immutable/array.gala:474
-	var existingChild *arrayNode[T] = nil
-//line collection_immutable/array.gala:475
+//line collection_immutable/array.gala:443
+	var childIndex = (index >> (branchingBits.Get() * (depth - 1))) & branchingMask.Get()
+//line collection_immutable/array.gala:444
 	if childIndex < len(node.children) {
-//line collection_immutable/array.gala:476
-		existingChild = node.children[childIndex]
+//line collection_immutable/array.gala:445
+		newNode.children[childIndex] = appendToNode[T](node.children[childIndex], index, value, depth-1)
+	} else if childIndex == len(node.children) {
+//line collection_immutable/array.gala:448
+		newNode.children = go_interop.SliceAppend(newNode.children, newSubtree[T](value, depth-1))
+	} else {
+//line collection_immutable/array.gala:450
+		panic(fmt.Sprintf("Array: append at index %d skips child slot %d", index, len(node.children)))
 	}
-//line collection_immutable/array.gala:478
-	newNode.children[childIndex] = appendToNode[T](existingChild, index, value, depth-1)
-//line collection_immutable/array.gala:479
+//line collection_immutable/array.gala:452
 	return newNode
 }
 
-//line collection_immutable/array.gala:481
+//line collection_immutable/array.gala:454
+
+// newSubtree builds the fresh path of nodes, depth levels down to a leaf, for
+// an element that starts a new subtree. The tree fills left to right, so the
+// element is the subtree's first and each node on the path has one child.
+func newSubtree[T any](value T, depth int) *arrayNode[T] {
+	{
+		if depth == 1 {
+			return &arrayNode[T]{values: go_interop.SliceOf(value), isLeaf: NewImmutable(true)}
+		} else {
+			return &arrayNode[T]{children: go_interop.SliceOf(newSubtree[T](value, depth-1)), isLeaf: NewImmutable(false)}
+		}
+	}
+}
+
+//line collection_immutable/array.gala:461
 
 // Append adds an element to the end. O(log32 n) = effectively constant.
 func (a Array[T]) Append(value T) Array[T] {
-//line collection_immutable/array.gala:485
+//line collection_immutable/array.gala:465
 	var treeLen = a.length.Get() - len(a.prefix.Get())
-//line collection_immutable/array.gala:487
+//line collection_immutable/array.gala:467
 	if treeLen == 0 {
-//line collection_immutable/array.gala:488
-		var values []T
-//line collection_immutable/array.gala:489
-		values = go_interop.SliceAppend(values, value)
-//line collection_immutable/array.gala:490
-		var leaf = &arrayNode[T]{values: values, isLeaf: NewImmutable(true)}
-//line collection_immutable/array.gala:491
-		return Array[T]{root: NewImmutable(leaf), length: NewImmutable(a.length.Get() + 1), depth: NewImmutable(1), prefix: NewImmutable(a.prefix.Get())}
+//line collection_immutable/array.gala:468
+		return Array[T]{root: SomePtr(newSubtree[T](value, 1)), length: NewImmutable(a.length.Get() + 1), depth: NewImmutable(1), prefix: NewImmutable(a.prefix.Get())}
 	}
-//line collection_immutable/array.gala:494
+//line collection_immutable/array.gala:471
 	var result = appendToTree[T](a.root.Get(), treeLen, value, a.depth.Get())
-//line collection_immutable/array.gala:495
+//line collection_immutable/array.gala:472
 	var newRoot = result.V1.Get()
-//line collection_immutable/array.gala:496
+//line collection_immutable/array.gala:473
 	var newDepth = result.V2.Get()
-//line collection_immutable/array.gala:497
-	return Array[T]{root: NewImmutable(newRoot), length: NewImmutable(a.length.Get() + 1), depth: NewImmutable(newDepth), prefix: NewImmutable(a.prefix.Get())}
+//line collection_immutable/array.gala:474
+	return Array[T]{root: SomePtr(newRoot), length: NewImmutable(a.length.Get() + 1), depth: NewImmutable(newDepth), prefix: NewImmutable(a.prefix.Get())}
 }
 
-//line collection_immutable/array.gala:499
+//line collection_immutable/array.gala:476
 
 // AppendAll appends all elements from another array.
 func (a Array[T]) AppendAll(other Array[T]) Array[T] {
-//line collection_immutable/array.gala:502
+//line collection_immutable/array.gala:479
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:503
+//line collection_immutable/array.gala:480
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:504
+//line collection_immutable/array.gala:481
 		builder.Add(a.Get(i))
 	}
-//line collection_immutable/array.gala:506
+//line collection_immutable/array.gala:483
 	for i := 0; i < other.length.Get(); i++ {
-//line collection_immutable/array.gala:507
+//line collection_immutable/array.gala:484
 		builder.Add(other.Get(i))
 	}
-//line collection_immutable/array.gala:509
+//line collection_immutable/array.gala:486
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:511
+//line collection_immutable/array.gala:488
 
 // Prepend adds an element to the front. O(1) amortized - uses prefix buffer.
 // The prefix buffer is consolidated into the tree when it reaches 32 elements.
 func (a Array[T]) Prepend(value T) Array[T] {
-//line collection_immutable/array.gala:516
+//line collection_immutable/array.gala:493
 	var newPrefix []T
-//line collection_immutable/array.gala:517
+//line collection_immutable/array.gala:494
 	newPrefix = go_interop.SliceAppend(newPrefix, value)
-//line collection_immutable/array.gala:518
+//line collection_immutable/array.gala:495
 	for i := 0; i < len(a.prefix.Get()); i++ {
-//line collection_immutable/array.gala:519
+//line collection_immutable/array.gala:496
 		newPrefix = go_interop.SliceAppend(newPrefix, a.prefix.Get()[i])
 	}
-//line collection_immutable/array.gala:523
+//line collection_immutable/array.gala:500
 	if len(newPrefix) >= branchingFactor.Get() {
-//line collection_immutable/array.gala:524
+//line collection_immutable/array.gala:501
 		return a.consolidateWithPrefix(newPrefix)
 	}
-//line collection_immutable/array.gala:528
-	return Array[T]{root: NewImmutable(a.root.Get()), length: NewImmutable(a.length.Get() + 1), depth: NewImmutable(a.depth.Get()), prefix: NewImmutable(newPrefix)}
+//line collection_immutable/array.gala:505
+	return Array[T]{root: a.root, length: NewImmutable(a.length.Get() + 1), depth: NewImmutable(a.depth.Get()), prefix: NewImmutable(newPrefix)}
 }
 
-//line collection_immutable/array.gala:530
+//line collection_immutable/array.gala:507
 
 // consolidateWithPrefix merges the prefix buffer into a new tree.
 // Uses arrayBuilder to avoid intermediate slice conversion.
 func (a Array[T]) consolidateWithPrefix(newPrefix []T) Array[T] {
-//line collection_immutable/array.gala:534
+//line collection_immutable/array.gala:511
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:537
+//line collection_immutable/array.gala:514
 	for i := 0; i < len(newPrefix); i++ {
-//line collection_immutable/array.gala:538
+//line collection_immutable/array.gala:515
 		builder.Add(newPrefix[i])
 	}
-//line collection_immutable/array.gala:542
+//line collection_immutable/array.gala:519
 	var treeLen = a.length.Get() - len(a.prefix.Get())
-//line collection_immutable/array.gala:543
-	for i := 0; i < treeLen; i++ {
-//line collection_immutable/array.gala:544
-		builder.Add(getFromNode[T](a.root.Get(), i, a.depth.Get()))
-	}
-//line collection_immutable/array.gala:547
+//line collection_immutable/array.gala:520
+	a.root.ForEach(func(root *arrayNode[T]) {
+//line collection_immutable/array.gala:521
+		for i := 0; i < treeLen; i++ {
+//line collection_immutable/array.gala:522
+			builder.Add(getFromNode[T](root, i, a.depth.Get()))
+		}
+	})
+//line collection_immutable/array.gala:526
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:549
+//line collection_immutable/array.gala:528
 
 // PrependAll prepends all elements from another array.
 func (a Array[T]) PrependAll(other Array[T]) Array[T] {
 	return other.AppendAll(a)
 }
 
-//line collection_immutable/array.gala:552
+//line collection_immutable/array.gala:531
 
 // Tail returns all elements except the first. O(n) for rebuilding.
 func (a Array[T]) Tail() Array[T] {
-//line collection_immutable/array.gala:555
+//line collection_immutable/array.gala:534
 	if a.length.Get() == 0 {
-//line collection_immutable/array.gala:556
+//line collection_immutable/array.gala:535
 		panic("Array.Tail on empty array")
 	}
-//line collection_immutable/array.gala:558
+//line collection_immutable/array.gala:537
 	return a.Drop(1)
 }
 
-//line collection_immutable/array.gala:560
+//line collection_immutable/array.gala:539
 
 // TailOption returns the tail wrapped in Option.
 func (a Array[T]) TailOption() Option[Array[T]] {
-//line collection_immutable/array.gala:563
+//line collection_immutable/array.gala:542
 	if a.length.Get() == 0 {
-//line collection_immutable/array.gala:564
+//line collection_immutable/array.gala:543
 		return None[Array[T]]{}.Apply()
 	}
-//line collection_immutable/array.gala:566
+//line collection_immutable/array.gala:545
 	return Some[Array[T]]{}.Apply(a.Tail())
 }
 
-//line collection_immutable/array.gala:568
+//line collection_immutable/array.gala:547
 
 // Init returns all elements except the last. O(n) for rebuilding.
 func (a Array[T]) Init() Array[T] {
-//line collection_immutable/array.gala:571
+//line collection_immutable/array.gala:550
 	if a.length.Get() == 0 {
-//line collection_immutable/array.gala:572
+//line collection_immutable/array.gala:551
 		panic("Array.Init on empty array")
 	}
-//line collection_immutable/array.gala:574
+//line collection_immutable/array.gala:553
 	return a.Take(a.length.Get() - 1)
 }
 
-//line collection_immutable/array.gala:576
+//line collection_immutable/array.gala:555
 
 // Take returns the first n elements. Uses arrayBuilder.
 func (a Array[T]) Take(n int) Array[T] {
-//line collection_immutable/array.gala:579
+//line collection_immutable/array.gala:558
 	if n <= 0 {
-//line collection_immutable/array.gala:580
+//line collection_immutable/array.gala:559
 		return EmptyArray[T]()
 	}
-//line collection_immutable/array.gala:582
+//line collection_immutable/array.gala:561
 	if n >= a.length.Get() {
-//line collection_immutable/array.gala:583
+//line collection_immutable/array.gala:562
 		return a
 	}
-//line collection_immutable/array.gala:585
+//line collection_immutable/array.gala:564
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:586
+//line collection_immutable/array.gala:565
 	for i := 0; i < n; i++ {
-//line collection_immutable/array.gala:587
+//line collection_immutable/array.gala:566
 		builder.Add(a.Get(i))
 	}
-//line collection_immutable/array.gala:589
+//line collection_immutable/array.gala:568
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:591
+//line collection_immutable/array.gala:570
 
 // Drop returns all elements except the first n. Uses arrayBuilder.
 func (a Array[T]) Drop(n int) Array[T] {
-//line collection_immutable/array.gala:594
+//line collection_immutable/array.gala:573
 	if n <= 0 {
-//line collection_immutable/array.gala:595
+//line collection_immutable/array.gala:574
 		return a
 	}
-//line collection_immutable/array.gala:597
+//line collection_immutable/array.gala:576
 	if n >= a.length.Get() {
-//line collection_immutable/array.gala:598
+//line collection_immutable/array.gala:577
 		return EmptyArray[T]()
 	}
-//line collection_immutable/array.gala:600
+//line collection_immutable/array.gala:579
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:601
+//line collection_immutable/array.gala:580
 	for i := n; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:602
+//line collection_immutable/array.gala:581
 		builder.Add(a.Get(i))
 	}
-//line collection_immutable/array.gala:604
+//line collection_immutable/array.gala:583
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:606
+//line collection_immutable/array.gala:585
 
 // TakeWhile returns the longest prefix of elements that satisfy the predicate.
 // Uses arrayBuilder.
 func (a Array[T]) TakeWhile(p func(T) bool) Array[T] {
-//line collection_immutable/array.gala:610
+//line collection_immutable/array.gala:589
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:611
+//line collection_immutable/array.gala:590
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:612
+//line collection_immutable/array.gala:591
 		var elem = a.Get(i)
-//line collection_immutable/array.gala:613
+//line collection_immutable/array.gala:592
 		if !p(elem) {
-//line collection_immutable/array.gala:614
+//line collection_immutable/array.gala:593
 			return builder.Result()
 		}
-//line collection_immutable/array.gala:616
+//line collection_immutable/array.gala:595
 		builder.Add(elem)
 	}
-//line collection_immutable/array.gala:618
+//line collection_immutable/array.gala:597
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:620
+//line collection_immutable/array.gala:599
 
 // DropWhile drops the longest prefix of elements that satisfy the predicate.
 func (a Array[T]) DropWhile(p func(T) bool) Array[T] {
-//line collection_immutable/array.gala:623
+//line collection_immutable/array.gala:602
 	var start = 0
-//line collection_immutable/array.gala:624
+//line collection_immutable/array.gala:603
 	for start < a.length.Get() && p(a.Get(start)) {
-//line collection_immutable/array.gala:625
+//line collection_immutable/array.gala:604
 		start++
 	}
-//line collection_immutable/array.gala:627
+//line collection_immutable/array.gala:606
 	return a.Drop(start)
 }
 
-//line collection_immutable/array.gala:629
+//line collection_immutable/array.gala:608
 
 // Slice returns a subarray from start (inclusive) to end (exclusive).
 func (a Array[T]) Slice(start int, end int) Array[T] {
-//line collection_immutable/array.gala:632
+//line collection_immutable/array.gala:611
 	if start < 0 {
-//line collection_immutable/array.gala:633
+//line collection_immutable/array.gala:612
 		start = 0
 	}
-//line collection_immutable/array.gala:635
+//line collection_immutable/array.gala:614
 	if end > a.length.Get() {
-//line collection_immutable/array.gala:636
+//line collection_immutable/array.gala:615
 		end = a.length.Get()
 	}
-//line collection_immutable/array.gala:638
+//line collection_immutable/array.gala:617
 	if start >= end {
-//line collection_immutable/array.gala:639
+//line collection_immutable/array.gala:618
 		return EmptyArray[T]()
 	}
-//line collection_immutable/array.gala:641
+//line collection_immutable/array.gala:620
 	return a.Drop(start).Take(end - start)
 }
 
-//line collection_immutable/array.gala:643
+//line collection_immutable/array.gala:622
 
 // Contains checks if the array contains the given element. O(n).
 func (a Array[T]) Contains(elem T) bool {
-//line collection_immutable/array.gala:646
+//line collection_immutable/array.gala:625
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:647
+//line collection_immutable/array.gala:626
 		if Equal(a.Get(i), elem) {
-//line collection_immutable/array.gala:648
+//line collection_immutable/array.gala:627
 			return true
 		}
 	}
-//line collection_immutable/array.gala:651
+//line collection_immutable/array.gala:630
 	return false
 }
 
-//line collection_immutable/array.gala:653
+//line collection_immutable/array.gala:632
 
 // IndexOf returns the index of the first occurrence of elem, or -1 if not found.
 func (a Array[T]) IndexOf(elem T) int {
-//line collection_immutable/array.gala:656
+//line collection_immutable/array.gala:635
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:657
+//line collection_immutable/array.gala:636
 		if Equal(a.Get(i), elem) {
-//line collection_immutable/array.gala:658
+//line collection_immutable/array.gala:637
 			return i
 		}
 	}
-//line collection_immutable/array.gala:661
+//line collection_immutable/array.gala:640
 	return -1
 }
 
-//line collection_immutable/array.gala:663
+//line collection_immutable/array.gala:642
 
 // LastIndexOf returns the index of the last occurrence of elem, or -1 if not found.
 func (a Array[T]) LastIndexOf(elem T) int {
-//line collection_immutable/array.gala:666
+//line collection_immutable/array.gala:645
 	for i := a.length.Get() - 1; i >= 0; i-- {
-//line collection_immutable/array.gala:667
+//line collection_immutable/array.gala:646
 		if Equal(a.Get(i), elem) {
-//line collection_immutable/array.gala:668
+//line collection_immutable/array.gala:647
 			return i
 		}
 	}
-//line collection_immutable/array.gala:671
+//line collection_immutable/array.gala:650
 	return -1
 }
 
-//line collection_immutable/array.gala:673
+//line collection_immutable/array.gala:652
 
 // Reverse returns a new array with elements in reverse order. Uses arrayBuilder.
 func (a Array[T]) Reverse() Array[T] {
-//line collection_immutable/array.gala:676
+//line collection_immutable/array.gala:655
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:677
+//line collection_immutable/array.gala:656
 	for i := a.length.Get() - 1; i >= 0; i-- {
-//line collection_immutable/array.gala:678
+//line collection_immutable/array.gala:657
 		builder.Add(a.Get(i))
 	}
-//line collection_immutable/array.gala:680
+//line collection_immutable/array.gala:659
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:682
+//line collection_immutable/array.gala:661
 
 // Map applies a function to each element and returns a new array.
 // Uses arrayBuilder to avoid intermediate slice conversion.
 func Array_Map[U any, T any](a Array[T], f func(T) U) Array[U] {
-//line collection_immutable/array.gala:686
+//line collection_immutable/array.gala:665
 	var builder = newArrayBuilder[U]()
-//line collection_immutable/array.gala:687
+//line collection_immutable/array.gala:666
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:688
+//line collection_immutable/array.gala:667
 		builder.Add(f(a.Get(i)))
 	}
-//line collection_immutable/array.gala:690
+//line collection_immutable/array.gala:669
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:692
+//line collection_immutable/array.gala:671
 
 // FlatMap applies a function that returns an array to each element and flattens.
 // Uses arrayBuilder to avoid intermediate slice conversion.
 func Array_FlatMap[U any, T any](a Array[T], f func(T) Array[U]) Array[U] {
-//line collection_immutable/array.gala:696
+//line collection_immutable/array.gala:675
 	var builder = newArrayBuilder[U]()
-//line collection_immutable/array.gala:697
+//line collection_immutable/array.gala:676
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:698
+//line collection_immutable/array.gala:677
 		var inner = f(a.Get(i))
-//line collection_immutable/array.gala:699
+//line collection_immutable/array.gala:678
 		for j := 0; j < inner.Length(); j++ {
-//line collection_immutable/array.gala:700
+//line collection_immutable/array.gala:679
 			builder.Add(inner.Get(j))
 		}
 	}
-//line collection_immutable/array.gala:703
+//line collection_immutable/array.gala:682
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:705
+//line collection_immutable/array.gala:684
 
 // Collect applies a partial function to each element and collects the results.
 // Elements for which the function returns None are filtered out.
 // Uses arrayBuilder to avoid intermediate slice conversion.
 func Array_Collect[U any, T any](a Array[T], pf func(T) Option[U]) Array[U] {
-//line collection_immutable/array.gala:710
+//line collection_immutable/array.gala:689
 	var builder = newArrayBuilder[U]()
-//line collection_immutable/array.gala:711
+//line collection_immutable/array.gala:690
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:712
-		var opt = NewImmutable(pf(a.Get(i)))
-//line collection_immutable/array.gala:713
-		if opt.Get().IsDefined() {
-//line collection_immutable/array.gala:714
-			builder.Add(opt.Get().Get())
+//line collection_immutable/array.gala:691
+		var opt = pf(a.Get(i))
+//line collection_immutable/array.gala:692
+		if opt.IsDefined() {
+//line collection_immutable/array.gala:693
+			builder.Add(opt.Get())
 		}
 	}
-//line collection_immutable/array.gala:717
+//line collection_immutable/array.gala:696
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:719
+//line collection_immutable/array.gala:698
 
 // Concat returns a new array containing all elements of this array followed by
 // all elements of the other iterable. Uses arrayBuilder.
 func (a Array[T]) Concat(other Iterable[T]) Array[T] {
-//line collection_immutable/array.gala:723
+//line collection_immutable/array.gala:702
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:724
+//line collection_immutable/array.gala:703
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:725
+//line collection_immutable/array.gala:704
 		builder.Add(a.Get(i))
 	}
-//line collection_immutable/array.gala:727
+//line collection_immutable/array.gala:706
 	other.ForEach(func(elem T) {
-//line collection_immutable/array.gala:728
+//line collection_immutable/array.gala:707
 		builder.Add(elem)
 	})
-//line collection_immutable/array.gala:730
+//line collection_immutable/array.gala:709
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:732
+//line collection_immutable/array.gala:711
 
 // Filter returns a new array with only elements that satisfy the predicate.
 // Uses arrayBuilder to avoid intermediate slice conversion.
 func (a Array[T]) Filter(p func(T) bool) Array[T] {
-//line collection_immutable/array.gala:736
+//line collection_immutable/array.gala:715
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:737
+//line collection_immutable/array.gala:716
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:738
+//line collection_immutable/array.gala:717
 		var elem = a.Get(i)
-//line collection_immutable/array.gala:739
+//line collection_immutable/array.gala:718
 		if p(elem) {
-//line collection_immutable/array.gala:740
+//line collection_immutable/array.gala:719
 			builder.Add(elem)
 		}
 	}
-//line collection_immutable/array.gala:743
+//line collection_immutable/array.gala:722
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:745
+//line collection_immutable/array.gala:724
 
 // FilterNot returns a new array with elements that do not satisfy the predicate.
 func (a Array[T]) FilterNot(p func(T) bool) Array[T] {
@@ -1186,269 +1162,269 @@ func (a Array[T]) FilterNot(p func(T) bool) Array[T] {
 	})
 }
 
-//line collection_immutable/array.gala:748
+//line collection_immutable/array.gala:727
 
 // Partition splits the array into two arrays based on a predicate.
 func (a Array[T]) Partition(p func(T) bool) Tuple[Array[T], Array[T]] {
-//line collection_immutable/array.gala:751
-	var left = NewImmutable(a.Filter(p))
-//line collection_immutable/array.gala:752
-	var right = NewImmutable(a.FilterNot(p))
-//line collection_immutable/array.gala:753
-	return Tuple[Array[T], Array[T]]{V1: NewImmutable(left.Get()), V2: NewImmutable(right.Get())}
+//line collection_immutable/array.gala:730
+	var left = a.Filter(p)
+//line collection_immutable/array.gala:731
+	var right = a.FilterNot(p)
+//line collection_immutable/array.gala:732
+	return Tuple[Array[T], Array[T]]{V1: NewImmutable(left), V2: NewImmutable(right)}
 }
 
-//line collection_immutable/array.gala:755
+//line collection_immutable/array.gala:734
 
 // FoldLeft applies a binary operator from left to right.
 func Array_FoldLeft[U any, T any](a Array[T], initial U, f func(U, T) U) U {
-//line collection_immutable/array.gala:758
+//line collection_immutable/array.gala:737
 	var acc = initial
-//line collection_immutable/array.gala:759
+//line collection_immutable/array.gala:738
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:760
+//line collection_immutable/array.gala:739
 		acc = f(acc, a.Get(i))
 	}
-//line collection_immutable/array.gala:762
+//line collection_immutable/array.gala:741
 	return acc
 }
 
-//line collection_immutable/array.gala:764
+//line collection_immutable/array.gala:743
 
 // FoldRight applies a binary operator from right to left.
 func Array_FoldRight[U any, T any](a Array[T], initial U, f func(T, U) U) U {
-//line collection_immutable/array.gala:767
+//line collection_immutable/array.gala:746
 	var acc = initial
-//line collection_immutable/array.gala:768
+//line collection_immutable/array.gala:747
 	for i := a.length.Get() - 1; i >= 0; i-- {
-//line collection_immutable/array.gala:769
+//line collection_immutable/array.gala:748
 		acc = f(a.Get(i), acc)
 	}
-//line collection_immutable/array.gala:771
+//line collection_immutable/array.gala:750
 	return acc
 }
 
-//line collection_immutable/array.gala:773
+//line collection_immutable/array.gala:752
 
 // Reduce applies a binary operator from left to right, starting with the first element.
 // Panics if the array is empty.
 func (a Array[T]) Reduce(f func(T, T) T) T {
-//line collection_immutable/array.gala:777
+//line collection_immutable/array.gala:756
 	if a.length.Get() == 0 {
-//line collection_immutable/array.gala:778
+//line collection_immutable/array.gala:757
 		panic("Array.Reduce on empty array")
 	}
-//line collection_immutable/array.gala:780
+//line collection_immutable/array.gala:759
 	var tail = a.Tail()
-//line collection_immutable/array.gala:781
+//line collection_immutable/array.gala:760
 	var head = a.Head()
-//line collection_immutable/array.gala:782
+//line collection_immutable/array.gala:761
 	return Array_FoldLeft[T](tail, head, f)
 }
 
-//line collection_immutable/array.gala:784
+//line collection_immutable/array.gala:763
 
 // ReduceOption is like Reduce but returns None for empty array.
 func (a Array[T]) ReduceOption(f func(T, T) T) Option[T] {
-//line collection_immutable/array.gala:787
+//line collection_immutable/array.gala:766
 	if a.length.Get() == 0 {
-//line collection_immutable/array.gala:788
+//line collection_immutable/array.gala:767
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/array.gala:790
+//line collection_immutable/array.gala:769
 	return Some[T]{}.Apply(a.Reduce(f))
 }
 
-//line collection_immutable/array.gala:792
+//line collection_immutable/array.gala:771
 
 // ForEach applies a function to each element for side effects.
 func (a Array[T]) ForEach(f func(T)) {
-//line collection_immutable/array.gala:795
+//line collection_immutable/array.gala:774
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:796
+//line collection_immutable/array.gala:775
 		f(a.Get(i))
 	}
 }
 
-//line collection_immutable/array.gala:799
+//line collection_immutable/array.gala:778
 
 // Exists returns true if any element satisfies the predicate.
 func (a Array[T]) Exists(p func(T) bool) bool {
-//line collection_immutable/array.gala:802
+//line collection_immutable/array.gala:781
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:803
+//line collection_immutable/array.gala:782
 		if p(a.Get(i)) {
-//line collection_immutable/array.gala:804
+//line collection_immutable/array.gala:783
 			return true
 		}
 	}
-//line collection_immutable/array.gala:807
+//line collection_immutable/array.gala:786
 	return false
+}
+
+//line collection_immutable/array.gala:788
+
+// ForAll returns true if all elements satisfy the predicate.
+func (a Array[T]) ForAll(p func(T) bool) bool {
+//line collection_immutable/array.gala:791
+	for i := 0; i < a.length.Get(); i++ {
+//line collection_immutable/array.gala:792
+		if !p(a.Get(i)) {
+//line collection_immutable/array.gala:793
+			return false
+		}
+	}
+//line collection_immutable/array.gala:796
+	return true
+}
+
+//line collection_immutable/array.gala:798
+
+// Find returns the first element that satisfies the predicate.
+func (a Array[T]) Find(p func(T) bool) Option[T] {
+//line collection_immutable/array.gala:801
+	for i := 0; i < a.length.Get(); i++ {
+//line collection_immutable/array.gala:802
+		var elem = a.Get(i)
+//line collection_immutable/array.gala:803
+		if p(elem) {
+//line collection_immutable/array.gala:804
+			return Some[T]{}.Apply(elem)
+		}
+	}
+//line collection_immutable/array.gala:807
+	return None[T]{}.Apply()
 }
 
 //line collection_immutable/array.gala:809
 
-// ForAll returns true if all elements satisfy the predicate.
-func (a Array[T]) ForAll(p func(T) bool) bool {
-//line collection_immutable/array.gala:812
-	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:813
-		if !p(a.Get(i)) {
-//line collection_immutable/array.gala:814
-			return false
-		}
-	}
-//line collection_immutable/array.gala:817
-	return true
-}
-
-//line collection_immutable/array.gala:819
-
-// Find returns the first element that satisfies the predicate.
-func (a Array[T]) Find(p func(T) bool) Option[T] {
-//line collection_immutable/array.gala:822
-	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:823
-		var elem = a.Get(i)
-//line collection_immutable/array.gala:824
-		if p(elem) {
-//line collection_immutable/array.gala:825
-			return Some[T]{}.Apply(elem)
-		}
-	}
-//line collection_immutable/array.gala:828
-	return None[T]{}.Apply()
-}
-
-//line collection_immutable/array.gala:830
-
 // FindLast returns the last element that satisfies the predicate.
 func (a Array[T]) FindLast(p func(T) bool) Option[T] {
-//line collection_immutable/array.gala:833
+//line collection_immutable/array.gala:812
 	for i := a.length.Get() - 1; i >= 0; i-- {
-//line collection_immutable/array.gala:834
+//line collection_immutable/array.gala:813
 		var elem = a.Get(i)
-//line collection_immutable/array.gala:835
+//line collection_immutable/array.gala:814
 		if p(elem) {
-//line collection_immutable/array.gala:836
+//line collection_immutable/array.gala:815
 			return Some[T]{}.Apply(elem)
 		}
 	}
-//line collection_immutable/array.gala:839
+//line collection_immutable/array.gala:818
 	return None[T]{}.Apply()
 }
 
-//line collection_immutable/array.gala:841
+//line collection_immutable/array.gala:820
 
 // Count returns the number of elements satisfying the predicate.
 func (a Array[T]) Count(p func(T) bool) int {
-//line collection_immutable/array.gala:844
+//line collection_immutable/array.gala:823
 	return Array_FoldLeft[int, T](a, 0, func(acc int, elem T) int {
-//line collection_immutable/array.gala:845
+//line collection_immutable/array.gala:824
 		if p(elem) {
-//line collection_immutable/array.gala:846
+//line collection_immutable/array.gala:825
 			return acc + 1
 		}
-//line collection_immutable/array.gala:848
+//line collection_immutable/array.gala:827
 		return acc
 	})
 }
 
-//line collection_immutable/array.gala:851
+//line collection_immutable/array.gala:830
 
 // Zip combines two arrays into an array of tuples. Result length is the minimum.
 func Array_Zip[U any, T any](a Array[T], other Array[U]) Array[Tuple[T, U]] {
-//line collection_immutable/array.gala:854
+//line collection_immutable/array.gala:833
 	var minLen = a.length.Get()
-//line collection_immutable/array.gala:855
+//line collection_immutable/array.gala:834
 	if other.length.Get() < minLen {
-//line collection_immutable/array.gala:856
+//line collection_immutable/array.gala:835
 		minLen = other.length.Get()
 	}
-//line collection_immutable/array.gala:858
+//line collection_immutable/array.gala:837
 	var builder = newArrayBuilder[Tuple[T, U]]()
-//line collection_immutable/array.gala:859
+//line collection_immutable/array.gala:838
 	for i := 0; i < minLen; i++ {
-//line collection_immutable/array.gala:860
+//line collection_immutable/array.gala:839
 		builder.Add(Tuple[T, U]{V1: NewImmutable(a.Get(i)), V2: NewImmutable(other.Get(i))})
 	}
-//line collection_immutable/array.gala:862
+//line collection_immutable/array.gala:841
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:864
+//line collection_immutable/array.gala:843
 
 // ZipWithIndex pairs each element with its index.
 func Array_ZipWithIndex[T any](a Array[T]) Array[Tuple[T, int]] {
-//line collection_immutable/array.gala:867
+//line collection_immutable/array.gala:846
 	var builder = newArrayBuilder[Tuple[T, int]]()
-//line collection_immutable/array.gala:868
+//line collection_immutable/array.gala:847
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:869
+//line collection_immutable/array.gala:848
 		builder.Add(Tuple[T, int]{V1: NewImmutable(a.Get(i)), V2: NewImmutable(i)})
 	}
-//line collection_immutable/array.gala:871
+//line collection_immutable/array.gala:850
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:873
+//line collection_immutable/array.gala:852
 
 // Distinct returns a new array with duplicate elements removed.
 func (a Array[T]) Distinct() Array[T] {
-//line collection_immutable/array.gala:876
+//line collection_immutable/array.gala:855
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:877
+//line collection_immutable/array.gala:856
 	var seen = EmptyArray[T]()
-//line collection_immutable/array.gala:878
+//line collection_immutable/array.gala:857
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:879
+//line collection_immutable/array.gala:858
 		var elem = a.Get(i)
-//line collection_immutable/array.gala:880
+//line collection_immutable/array.gala:859
 		if !seen.Contains(elem) {
-//line collection_immutable/array.gala:881
+//line collection_immutable/array.gala:860
 			builder.Add(elem)
-//line collection_immutable/array.gala:882
+//line collection_immutable/array.gala:861
 			seen = seen.Append(elem)
 		}
 	}
-//line collection_immutable/array.gala:885
+//line collection_immutable/array.gala:864
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:887
+//line collection_immutable/array.gala:866
 
 // SplitAt splits the array at the given index.
 func (a Array[T]) SplitAt(n int) Tuple[Array[T], Array[T]] {
 	return Tuple[Array[T], Array[T]]{V1: NewImmutable(a.Take(n)), V2: NewImmutable(a.Drop(n))}
 }
 
-//line collection_immutable/array.gala:890
+//line collection_immutable/array.gala:869
 
 // Span splits the array into a prefix/suffix pair according to a predicate.
 // The first element contains the longest prefix of elements that satisfy p.
 func (a Array[T]) Span(p func(T) bool) Tuple[Array[T], Array[T]] {
-//line collection_immutable/array.gala:894
+//line collection_immutable/array.gala:873
 	var idx = 0
-//line collection_immutable/array.gala:895
+//line collection_immutable/array.gala:874
 	for idx < a.length.Get() && p(a.Get(idx)) {
-//line collection_immutable/array.gala:896
+//line collection_immutable/array.gala:875
 		idx++
 	}
-//line collection_immutable/array.gala:898
+//line collection_immutable/array.gala:877
 	return a.SplitAt(idx)
 }
 
-//line collection_immutable/array.gala:900
+//line collection_immutable/array.gala:879
 
 // PartitionMap applies a function to each element and partitions results into Left and Right.
 func Array_PartitionMap[A any, B any, T any](a Array[T], f func(T) Either[A, B]) Tuple[Array[A], Array[B]] {
-//line collection_immutable/array.gala:903
+//line collection_immutable/array.gala:882
 	var leftBuilder = newArrayBuilder[A]()
-//line collection_immutable/array.gala:904
+//line collection_immutable/array.gala:883
 	var rightBuilder = newArrayBuilder[B]()
-//line collection_immutable/array.gala:905
+//line collection_immutable/array.gala:884
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:906
+//line collection_immutable/array.gala:885
 		func(obj Either[A, B]) {
 			{
 				_tmp_1 := Left[A, B]{}.Unapply(obj)
@@ -1479,247 +1455,263 @@ func Array_PartitionMap[A any, B any, T any](a Array[T], f func(T) Either[A, B])
 			}
 		}(f(a.Get(i)))
 	}
-//line collection_immutable/array.gala:911
+//line collection_immutable/array.gala:890
 	return Tuple[Array[A], Array[B]]{V1: NewImmutable(leftBuilder.Result()), V2: NewImmutable(rightBuilder.Result())}
 }
 
-//line collection_immutable/array.gala:913
+//line collection_immutable/array.gala:892
 
 // GroupBy partitions this array into a map of arrays according to a discriminator function.
 func Array_GroupBy[K comparable, T any](a Array[T], f func(T) K) map[K]Array[T] {
-//line collection_immutable/array.gala:916
+//line collection_immutable/array.gala:895
 	var result = go_interop.MapEmpty[K, Array[T]]()
-//line collection_immutable/array.gala:917
+//line collection_immutable/array.gala:896
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:918
-		var elem = NewImmutable(a.Get(i))
-//line collection_immutable/array.gala:919
-		var key = NewImmutable(f(elem.Get()))
-//line collection_immutable/array.gala:920
-		var existing = NewImmutable(result[key.Get()])
-//line collection_immutable/array.gala:921
-		result[key.Get()] = existing.Get().Append(elem.Get())
+//line collection_immutable/array.gala:897
+		var elem = a.Get(i)
+//line collection_immutable/array.gala:898
+		var key = f(elem)
+//line collection_immutable/array.gala:899
+		var existing = result[key]
+//line collection_immutable/array.gala:900
+		result[key] = existing.Append(elem)
 	}
-//line collection_immutable/array.gala:923
+//line collection_immutable/array.gala:902
 	return result
 }
 
-//line collection_immutable/array.gala:925
+//line collection_immutable/array.gala:904
 
 // GroupMap partitions elements and maps values according to discriminator and value functions.
 func Array_GroupMap[K comparable, V any, T any](a Array[T], key func(T) K, value func(T) V) map[K]Array[V] {
-//line collection_immutable/array.gala:928
+//line collection_immutable/array.gala:907
 	var result = go_interop.MapEmpty[K, Array[V]]()
-//line collection_immutable/array.gala:929
+//line collection_immutable/array.gala:908
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:930
-		var elem = NewImmutable(a.Get(i))
-//line collection_immutable/array.gala:931
-		var k = NewImmutable(key(elem.Get()))
-//line collection_immutable/array.gala:932
-		var v = NewImmutable(value(elem.Get()))
-//line collection_immutable/array.gala:933
-		var existing = NewImmutable(result[k.Get()])
-//line collection_immutable/array.gala:934
-		result[k.Get()] = existing.Get().Append(v.Get())
+//line collection_immutable/array.gala:909
+		var elem = a.Get(i)
+//line collection_immutable/array.gala:910
+		var k = key(elem)
+//line collection_immutable/array.gala:911
+		var v = value(elem)
+//line collection_immutable/array.gala:912
+		var existing = result[k]
+//line collection_immutable/array.gala:913
+		result[k] = existing.Append(v)
 	}
-//line collection_immutable/array.gala:936
+//line collection_immutable/array.gala:915
 	return result
 }
 
-//line collection_immutable/array.gala:938
+//line collection_immutable/array.gala:917
 
 // GroupMapReduce partitions elements, maps values, and reduces them with a combining function.
 func Array_GroupMapReduce[K comparable, V any, T any](a Array[T], key func(T) K, value func(T) V, reduce func(V, V) V) map[K]V {
-//line collection_immutable/array.gala:941
+//line collection_immutable/array.gala:920
 	var result = go_interop.MapEmpty[K, V]()
-//line collection_immutable/array.gala:942
+//line collection_immutable/array.gala:921
 	var seen = go_interop.MapEmpty[K, bool]()
-//line collection_immutable/array.gala:943
+//line collection_immutable/array.gala:922
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:944
-		var elem = NewImmutable(a.Get(i))
-//line collection_immutable/array.gala:945
-		var k = NewImmutable(key(elem.Get()))
-//line collection_immutable/array.gala:946
-		var v = NewImmutable(value(elem.Get()))
-//line collection_immutable/array.gala:947
-		if seen[k.Get()] {
-//line collection_immutable/array.gala:948
-			result[k.Get()] = reduce(result[k.Get()], v.Get())
+//line collection_immutable/array.gala:923
+		var elem = a.Get(i)
+//line collection_immutable/array.gala:924
+		var k = key(elem)
+//line collection_immutable/array.gala:925
+		var v = value(elem)
+//line collection_immutable/array.gala:926
+		if seen[k] {
+//line collection_immutable/array.gala:927
+			result[k] = reduce(result[k], v)
 		} else {
-//line collection_immutable/array.gala:950
-			result[k.Get()] = v.Get()
-//line collection_immutable/array.gala:951
-			seen[k.Get()] = true
+//line collection_immutable/array.gala:929
+			result[k] = v
+//line collection_immutable/array.gala:930
+			seen[k] = true
 		}
 	}
-//line collection_immutable/array.gala:954
+//line collection_immutable/array.gala:933
 	return result
 }
 
-//line collection_immutable/array.gala:956
+//line collection_immutable/array.gala:935
 
 // Grouped splits the array into groups of size n.
 func Array_Grouped[T any](a Array[T], n int) Array[Array[T]] {
-//line collection_immutable/array.gala:959
+//line collection_immutable/array.gala:938
 	if n <= 0 {
-//line collection_immutable/array.gala:960
+//line collection_immutable/array.gala:939
 		panic("Array.Grouped: group size must be positive")
 	}
-//line collection_immutable/array.gala:962
+//line collection_immutable/array.gala:941
 	var builder = newArrayBuilder[Array[T]]()
-//line collection_immutable/array.gala:963
+//line collection_immutable/array.gala:942
 	for i := 0; i < a.length.Get(); i += n {
-//line collection_immutable/array.gala:964
+//line collection_immutable/array.gala:943
 		var end = i + n
-//line collection_immutable/array.gala:965
+//line collection_immutable/array.gala:944
 		if end > a.length.Get() {
-//line collection_immutable/array.gala:966
+//line collection_immutable/array.gala:945
 			end = a.length.Get()
 		}
-//line collection_immutable/array.gala:968
+//line collection_immutable/array.gala:947
 		builder.Add(a.Slice(i, end))
 	}
-//line collection_immutable/array.gala:970
+//line collection_immutable/array.gala:949
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:972
+//line collection_immutable/array.gala:951
 
 // Sliding returns a sliding window over the array.
 func Array_Sliding[T any](a Array[T], size int) Array[Array[T]] {
-//line collection_immutable/array.gala:975
+//line collection_immutable/array.gala:954
 	if size <= 0 {
-//line collection_immutable/array.gala:976
+//line collection_immutable/array.gala:955
 		panic("Array.Sliding: window size must be positive")
 	}
-//line collection_immutable/array.gala:978
+//line collection_immutable/array.gala:957
 	if a.length.Get() < size {
-//line collection_immutable/array.gala:979
+//line collection_immutable/array.gala:958
 		return EmptyArray[Array[T]]()
 	}
-//line collection_immutable/array.gala:981
+//line collection_immutable/array.gala:960
 	var builder = newArrayBuilder[Array[T]]()
-//line collection_immutable/array.gala:982
+//line collection_immutable/array.gala:961
 	var limit = a.length.Get() - size
-//line collection_immutable/array.gala:983
+//line collection_immutable/array.gala:962
 	for i := 0; i <= limit; i++ {
-//line collection_immutable/array.gala:984
+//line collection_immutable/array.gala:963
 		builder.Add(a.Slice(i, i+size))
 	}
-//line collection_immutable/array.gala:986
+//line collection_immutable/array.gala:965
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:988
+//line collection_immutable/array.gala:967
 
 // ToGoSlice converts the array to a Go slice. The slice is a fresh copy the caller owns.
 func (a Array[T]) ToGoSlice() []T {
-//line collection_immutable/array.gala:991
-	var withPrefix = NewImmutable(go_interop.SliceAppendAll(go_interop.SliceWithCapacity[T](a.length.Get()), a.prefix.Get()))
-//line collection_immutable/array.gala:992
-	return appendLeaves(withPrefix.Get(), a.root.Get())
+//line collection_immutable/array.gala:970
+	var withPrefix = go_interop.SliceAppendAll(go_interop.SliceWithCapacity[T](a.length.Get()), a.prefix.Get())
+//line collection_immutable/array.gala:971
+	return func(obj Option[*arrayNode[T]]) []T {
+		{
+			_tmp_7 := Some[*arrayNode[T]]{}.Unapply(obj)
+			_tmp_8 := _tmp_7.IsDefined()
+			var _tmp_9 *arrayNode[T]
+			if _tmp_8 {
+				_tmp_9 = _tmp_7.Get()
+			}
+			_ = _tmp_9
+			root := _tmp_9
+			if _tmp_8 {
+				return appendLeaves(withPrefix, root)
+			} else {
+				_tmp_10 := None[*arrayNode[T]]{}.Unapply(obj)
+				if _tmp_10 {
+					return withPrefix
+				} else {
+					panic("unreachable")
+				}
+			}
+		}
+	}(a.root.MatchView())
 }
 
-//line collection_immutable/array.gala:994
+//line collection_immutable/array.gala:976
 
 // appendLeaves appends every element under node to dst in index order, a whole
 // leaf at a time rather than descending from the root once per element.
 func appendLeaves[T any](dst []T, node *arrayNode[T]) []T {
-//line collection_immutable/array.gala:998
-	if node == nil {
-//line collection_immutable/array.gala:999
-		return dst
-	}
-//line collection_immutable/array.gala:1001
+//line collection_immutable/array.gala:980
 	if node.isLeaf.Get() {
-//line collection_immutable/array.gala:1002
+//line collection_immutable/array.gala:981
 		return go_interop.SliceAppendAll(dst, node.values)
 	}
-//line collection_immutable/array.gala:1004
+//line collection_immutable/array.gala:983
 	var out = dst
-//line collection_immutable/array.gala:1005
+//line collection_immutable/array.gala:984
 	for i := 0; i < len(node.children); i++ {
-//line collection_immutable/array.gala:1006
+//line collection_immutable/array.gala:985
 		out = appendLeaves(out, node.children[i])
 	}
-//line collection_immutable/array.gala:1008
+//line collection_immutable/array.gala:987
 	return out
 }
 
-//line collection_immutable/array.gala:1010
+//line collection_immutable/array.gala:989
 
 // ToList converts the array to a List.
 func (a Array[T]) ToList() List[T] {
-//line collection_immutable/array.gala:1013
+//line collection_immutable/array.gala:992
 	var result = emptyList[T]()
-//line collection_immutable/array.gala:1014
+//line collection_immutable/array.gala:993
 	for i := a.length.Get() - 1; i >= 0; i-- {
-//line collection_immutable/array.gala:1015
+//line collection_immutable/array.gala:994
 		result = consList[T](a.Get(i), result)
 	}
-//line collection_immutable/array.gala:1017
+//line collection_immutable/array.gala:996
 	return result
 }
 
-//line collection_immutable/array.gala:1019
+//line collection_immutable/array.gala:998
 
 // String returns a string representation of the array.
 func (a Array[T]) String() string {
-//line collection_immutable/array.gala:1022
+//line collection_immutable/array.gala:1001
 	if a.length.Get() == 0 {
-//line collection_immutable/array.gala:1023
+//line collection_immutable/array.gala:1002
 		return "Array()"
 	}
-//line collection_immutable/array.gala:1025
+//line collection_immutable/array.gala:1004
 	var result = "Array("
-//line collection_immutable/array.gala:1026
+//line collection_immutable/array.gala:1005
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:1027
+//line collection_immutable/array.gala:1006
 		if i > 0 {
-//line collection_immutable/array.gala:1028
+//line collection_immutable/array.gala:1007
 			result = result + ", "
 		}
-//line collection_immutable/array.gala:1030
+//line collection_immutable/array.gala:1009
 		result = result + fmt.Sprintf("%v", a.Get(i))
 	}
-//line collection_immutable/array.gala:1032
+//line collection_immutable/array.gala:1011
 	return result + ")"
 }
 
-//line collection_immutable/array.gala:1034
+//line collection_immutable/array.gala:1013
 
 // MkString joins elements into a string with separator.
 func (a Array[T]) MkString(sep string) string {
-//line collection_immutable/array.gala:1037
+//line collection_immutable/array.gala:1016
 	if a.length.Get() == 0 {
-//line collection_immutable/array.gala:1038
+//line collection_immutable/array.gala:1017
 		return ""
 	}
-//line collection_immutable/array.gala:1040
+//line collection_immutable/array.gala:1019
 	var result = ""
-//line collection_immutable/array.gala:1041
+//line collection_immutable/array.gala:1020
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:1042
+//line collection_immutable/array.gala:1021
 		if i > 0 {
-//line collection_immutable/array.gala:1043
+//line collection_immutable/array.gala:1022
 			result = result + sep
 		}
-//line collection_immutable/array.gala:1045
+//line collection_immutable/array.gala:1024
 		result = result + fmt.Sprintf("%v", a.Get(i))
 	}
-//line collection_immutable/array.gala:1047
+//line collection_immutable/array.gala:1026
 	return result
 }
 
-//line collection_immutable/array.gala:1051
+//line collection_immutable/array.gala:1030
 
 // lessToCompare orders x and y by less as a three-way comparison. If less reports
 // true both ways (a non-strict comparator such as <=), x and y count as equal, so
 // the sort keeps them in their original order.
 func lessToCompare[T any](less func(T, T) bool, x T, y T) int {
-	return func() int {
+	{
 		if less(x, y) {
 			return (func() int {
 				if less(y, x) {
@@ -1729,90 +1721,90 @@ func lessToCompare[T any](less func(T, T) bool, x T, y T) int {
 				}
 			}())
 		} else {
-			return func() int {
+			{
 				if less(y, x) {
 					return 1
 				} else {
 					return 0
 				}
-			}()
+			}
 		}
-	}()
+	}
 }
 
-//line collection_immutable/array.gala:1057
+//line collection_immutable/array.gala:1036
 
 // Sorted returns a new array with elements sorted in natural order.
 // Elements must be primitive types or implement std.Ordered[T].
 // The sort is stable: equal elements keep their original relative order.
 func (a Array[T]) Sorted() Array[T] {
-//line collection_immutable/array.gala:1062
+//line collection_immutable/array.gala:1041
 	if a.length.Get() <= 1 {
-//line collection_immutable/array.gala:1063
+//line collection_immutable/array.gala:1042
 		return a
 	}
-//line collection_immutable/array.gala:1065
-	var elements = NewImmutable(a.ToGoSlice())
-//line collection_immutable/array.gala:1066
-	go_interop.SliceSortStable(elements.Get(), func(i int, j int) int {
-		return CompareValues(elements.Get()[i], elements.Get()[j])
+//line collection_immutable/array.gala:1044
+	var elements = a.ToGoSlice()
+//line collection_immutable/array.gala:1045
+	go_interop.SliceSortStable(elements, func(i int, j int) int {
+		return CompareValues(elements[i], elements[j])
 	})
-//line collection_immutable/array.gala:1067
-	return arrayFromOwnedSlice(elements.Get())
+//line collection_immutable/array.gala:1046
+	return arrayFromOwnedSlice(elements)
 }
 
-//line collection_immutable/array.gala:1069
+//line collection_immutable/array.gala:1048
 
 // SortWith returns a new array sorted using the given comparison function.
 // The function should return true if x should come before y; it should be a strict
 // ordering (use <, not <=).
 // The sort is stable: elements that compare equal keep their original relative order.
 func (a Array[T]) SortWith(less func(T, T) bool) Array[T] {
-//line collection_immutable/array.gala:1075
+//line collection_immutable/array.gala:1054
 	if a.length.Get() <= 1 {
-//line collection_immutable/array.gala:1076
+//line collection_immutable/array.gala:1055
 		return a
 	}
-//line collection_immutable/array.gala:1078
-	var elements = NewImmutable(a.ToGoSlice())
-//line collection_immutable/array.gala:1079
-	go_interop.SliceSortStable(elements.Get(), func(i int, j int) int {
-		return lessToCompare(less, elements.Get()[i], elements.Get()[j])
+//line collection_immutable/array.gala:1057
+	var elements = a.ToGoSlice()
+//line collection_immutable/array.gala:1058
+	go_interop.SliceSortStable(elements, func(i int, j int) int {
+		return lessToCompare(less, elements[i], elements[j])
 	})
-//line collection_immutable/array.gala:1080
-	return arrayFromOwnedSlice(elements.Get())
+//line collection_immutable/array.gala:1059
+	return arrayFromOwnedSlice(elements)
 }
 
-//line collection_immutable/array.gala:1082
+//line collection_immutable/array.gala:1061
 
 // SortBy returns a new array sorted by a key extracted from each element.
 // Keys must be primitive types or implement std.Ordered.
 // The sort is stable: elements with equal keys keep their original relative order.
 // f runs once per element: keys are computed up front, not on every comparison.
 func Array_SortBy[K comparable, T any](a Array[T], f func(T) K) Array[T] {
-//line collection_immutable/array.gala:1088
+//line collection_immutable/array.gala:1067
 	if a.length.Get() <= 1 {
-//line collection_immutable/array.gala:1089
+//line collection_immutable/array.gala:1068
 		return a
 	}
-//line collection_immutable/array.gala:1091
-	var elements = NewImmutable(a.ToGoSlice())
-//line collection_immutable/array.gala:1092
-	var keys = NewImmutable(go_interop.SliceWithSize[K](a.length.Get()))
-//line collection_immutable/array.gala:1093
+//line collection_immutable/array.gala:1070
+	var elements = a.ToGoSlice()
+//line collection_immutable/array.gala:1071
+	var keys = go_interop.SliceWithSize[K](a.length.Get())
+//line collection_immutable/array.gala:1072
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:1094
-		keys.Get()[i] = f(elements.Get()[i])
+//line collection_immutable/array.gala:1073
+		NewImmutable(keys).Get()[i] = f(elements[i])
 	}
-//line collection_immutable/array.gala:1096
-	go_interop.SliceSortStable(elements.Get(), func(i int, j int) int {
-		return CompareValues(keys.Get()[i], keys.Get()[j])
+//line collection_immutable/array.gala:1075
+	go_interop.SliceSortStable(elements, func(i int, j int) int {
+		return CompareValues(keys[i], keys[j])
 	})
-//line collection_immutable/array.gala:1097
-	return arrayFromOwnedSlice(elements.Get())
+//line collection_immutable/array.gala:1076
+	return arrayFromOwnedSlice(elements)
 }
 
-//line collection_immutable/array.gala:1099
+//line collection_immutable/array.gala:1078
 
 // SeqDrop implements the Seq interface for sequence pattern matching.
 // Returns the array with the first n elements removed.
@@ -1820,7 +1812,7 @@ func (a Array[T]) SeqDrop(n int) any {
 	return a.Drop(n)
 }
 
-//line collection_immutable/array.gala:1103
+//line collection_immutable/array.gala:1082
 
 // ArrayEmpty extractor for pattern matching
 type ArrayEmpty struct {
@@ -1833,12 +1825,12 @@ func (s ArrayEmpty) Equal(other ArrayEmpty) bool {
 	return true
 }
 
-//line collection_immutable/array.gala:1106
+//line collection_immutable/array.gala:1085
 func (ae ArrayEmpty) Unapply(a any) Option[bool] {
 	return func(obj any) Option[bool] {
 		{
-			arr, _tmp_7 := As[Array[any]](obj)
-			if _tmp_7 && arr.length.Get() == 0 {
+			arr, _tmp_11 := As[Array[any]](obj)
+			if _tmp_11 && arr.length.Get() == 0 {
 				return Some[bool]{}.Apply(true)
 			} else {
 				return None[bool]{}.Apply()
@@ -1847,7 +1839,7 @@ func (ae ArrayEmpty) Unapply(a any) Option[bool] {
 	}(a)
 }
 
-//line collection_immutable/array.gala:1110
+//line collection_immutable/array.gala:1089
 
 // ArrayNonEmpty extractor for pattern matching
 type ArrayNonEmpty struct {
@@ -1860,12 +1852,12 @@ func (s ArrayNonEmpty) Equal(other ArrayNonEmpty) bool {
 	return true
 }
 
-//line collection_immutable/array.gala:1113
+//line collection_immutable/array.gala:1092
 func (ane ArrayNonEmpty) Unapply(a any) Option[any] {
 	return func(obj any) Option[any] {
 		{
-			arr, _tmp_8 := As[Array[any]](obj)
-			if _tmp_8 && arr.length.Get() > 0 {
+			arr, _tmp_12 := As[Array[any]](obj)
+			if _tmp_12 && arr.length.Get() > 0 {
 				return Some[any]{}.Apply(arr)
 			} else {
 				return None[any]{}.Apply()

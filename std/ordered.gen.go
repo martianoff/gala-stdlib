@@ -111,69 +111,69 @@ func CompareString(a string, b string) int {
 // Panics if the type does not support ordering.
 func CompareValues[T any](a T, b T) int {
 //line std/ordered.gala:78
-	var va Immutable[any] = NewImmutable[any](a)
+	var va any = a
 //line std/ordered.gala:79
-	var vb Immutable[any] = NewImmutable[any](b)
+	var vb any = b
 //line std/ordered.gala:80
 	return func(obj any) int {
 		{
 			ai, _tmp_1 := As[int](obj)
 			if _tmp_1 {
-				return compareValuesInts(ai, vb.Get())
+				return compareValuesInts(ai, vb)
 			} else {
 				as, _tmp_2 := As[string](obj)
 				if _tmp_2 {
-					return compareValuesStrings(as, vb.Get())
+					return compareValuesStrings(as, vb)
 				} else {
 					ai64, _tmp_3 := As[int64](obj)
 					if _tmp_3 {
-						return compareValuesInt64s(ai64, vb.Get())
+						return compareValuesInt64s(ai64, vb)
 					} else {
 						ai32, _tmp_4 := As[int32](obj)
 						if _tmp_4 {
-							return compareValuesInt32s(ai32, vb.Get())
+							return compareValuesInt32s(ai32, vb)
 						} else {
 							af64, _tmp_5 := As[float64](obj)
 							if _tmp_5 {
-								return compareValuesFloat64s(af64, vb.Get())
+								return compareValuesFloat64s(af64, vb)
 							} else {
 								af32, _tmp_6 := As[float32](obj)
 								if _tmp_6 {
-									return compareValuesFloat32s(af32, vb.Get())
+									return compareValuesFloat32s(af32, vb)
 								} else {
 									au, _tmp_7 := As[uint](obj)
 									if _tmp_7 {
-										return compareValuesUints(au, vb.Get())
+										return compareValuesUints(au, vb)
 									} else {
 										au64, _tmp_8 := As[uint64](obj)
 										if _tmp_8 {
-											return compareValuesUint64s(au64, vb.Get())
+											return compareValuesUint64s(au64, vb)
 										} else {
 											au32, _tmp_9 := As[uint32](obj)
 											if _tmp_9 {
-												return compareValuesUint32s(au32, vb.Get())
+												return compareValuesUint32s(au32, vb)
 											} else {
 												ai16, _tmp_10 := As[int16](obj)
 												if _tmp_10 {
-													return compareValuesInt16s(ai16, vb.Get())
+													return compareValuesInt16s(ai16, vb)
 												} else {
 													ai8, _tmp_11 := As[int8](obj)
 													if _tmp_11 {
-														return compareValuesInt8s(ai8, vb.Get())
+														return compareValuesInt8s(ai8, vb)
 													} else {
 														au16, _tmp_12 := As[uint16](obj)
 														if _tmp_12 {
-															return compareValuesUint16s(au16, vb.Get())
+															return compareValuesUint16s(au16, vb)
 														} else {
 															au8, _tmp_13 := As[uint8](obj)
 															if _tmp_13 {
-																return compareValuesUint8s(au8, vb.Get())
+																return compareValuesUint8s(au8, vb)
 															} else {
 																ao, _tmp_14 := As[Ordered[T]](obj)
 																if _tmp_14 {
 																	return ao.Compare(b)
 																} else {
-																	return panicNotOrderable(va.Get())
+																	return panicNotOrderable(va)
 																}
 															}
 														}
@@ -189,13 +189,13 @@ func CompareValues[T any](a T, b T) int {
 				}
 			}
 		}
-	}(va.Get())
+	}(va)
 }
 
 //line std/ordered.gala:99
 func compareValuesInts(a int, vb any) int {
 //line std/ordered.gala:100
-	var b = NewImmutable(func(obj any) int {
+	var b = func(obj any) int {
 		{
 			bi, _tmp_15 := As[int](obj)
 			if _tmp_15 {
@@ -204,14 +204,14 @@ func compareValuesInts(a int, vb any) int {
 				return 0
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:101
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:101
 		return -1
 	}
 //line std/ordered.gala:102
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:102
 		return 1
 	}
@@ -222,7 +222,7 @@ func compareValuesInts(a int, vb any) int {
 //line std/ordered.gala:106
 func compareValuesStrings(a string, vb any) int {
 //line std/ordered.gala:107
-	var b = NewImmutable(func(obj any) string {
+	var b = func(obj any) string {
 		{
 			bs, _tmp_16 := As[string](obj)
 			if _tmp_16 {
@@ -231,14 +231,14 @@ func compareValuesStrings(a string, vb any) int {
 				return ""
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:108
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:108
 		return -1
 	}
 //line std/ordered.gala:109
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:109
 		return 1
 	}
@@ -249,7 +249,7 @@ func compareValuesStrings(a string, vb any) int {
 //line std/ordered.gala:113
 func compareValuesInt64s(a int64, vb any) int {
 //line std/ordered.gala:114
-	var b = NewImmutable(func(obj any) int64 {
+	var b = func(obj any) int64 {
 		{
 			bi, _tmp_17 := As[int64](obj)
 			if _tmp_17 {
@@ -258,14 +258,14 @@ func compareValuesInt64s(a int64, vb any) int {
 				return int64(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:115
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:115
 		return -1
 	}
 //line std/ordered.gala:116
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:116
 		return 1
 	}
@@ -276,7 +276,7 @@ func compareValuesInt64s(a int64, vb any) int {
 //line std/ordered.gala:120
 func compareValuesInt32s(a int32, vb any) int {
 //line std/ordered.gala:121
-	var b = NewImmutable(func(obj any) int32 {
+	var b = func(obj any) int32 {
 		{
 			bi, _tmp_18 := As[int32](obj)
 			if _tmp_18 {
@@ -285,14 +285,14 @@ func compareValuesInt32s(a int32, vb any) int {
 				return int32(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:122
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:122
 		return -1
 	}
 //line std/ordered.gala:123
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:123
 		return 1
 	}
@@ -303,7 +303,7 @@ func compareValuesInt32s(a int32, vb any) int {
 //line std/ordered.gala:127
 func compareValuesInt16s(a int16, vb any) int {
 //line std/ordered.gala:128
-	var b = NewImmutable(func(obj any) int16 {
+	var b = func(obj any) int16 {
 		{
 			bi, _tmp_19 := As[int16](obj)
 			if _tmp_19 {
@@ -312,14 +312,14 @@ func compareValuesInt16s(a int16, vb any) int {
 				return int16(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:129
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:129
 		return -1
 	}
 //line std/ordered.gala:130
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:130
 		return 1
 	}
@@ -330,7 +330,7 @@ func compareValuesInt16s(a int16, vb any) int {
 //line std/ordered.gala:134
 func compareValuesInt8s(a int8, vb any) int {
 //line std/ordered.gala:135
-	var b = NewImmutable(func(obj any) int8 {
+	var b = func(obj any) int8 {
 		{
 			bi, _tmp_20 := As[int8](obj)
 			if _tmp_20 {
@@ -339,14 +339,14 @@ func compareValuesInt8s(a int8, vb any) int {
 				return int8(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:136
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:136
 		return -1
 	}
 //line std/ordered.gala:137
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:137
 		return 1
 	}
@@ -357,7 +357,7 @@ func compareValuesInt8s(a int8, vb any) int {
 //line std/ordered.gala:141
 func compareValuesFloat64s(a float64, vb any) int {
 //line std/ordered.gala:142
-	var b = NewImmutable(func(obj any) float64 {
+	var b = func(obj any) float64 {
 		{
 			bf, _tmp_21 := As[float64](obj)
 			if _tmp_21 {
@@ -366,14 +366,14 @@ func compareValuesFloat64s(a float64, vb any) int {
 				return float64(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:143
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:143
 		return -1
 	}
 //line std/ordered.gala:144
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:144
 		return 1
 	}
@@ -384,7 +384,7 @@ func compareValuesFloat64s(a float64, vb any) int {
 //line std/ordered.gala:148
 func compareValuesFloat32s(a float32, vb any) int {
 //line std/ordered.gala:149
-	var b = NewImmutable(func(obj any) float32 {
+	var b = func(obj any) float32 {
 		{
 			bf, _tmp_22 := As[float32](obj)
 			if _tmp_22 {
@@ -393,14 +393,14 @@ func compareValuesFloat32s(a float32, vb any) int {
 				return float32(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:150
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:150
 		return -1
 	}
 //line std/ordered.gala:151
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:151
 		return 1
 	}
@@ -411,7 +411,7 @@ func compareValuesFloat32s(a float32, vb any) int {
 //line std/ordered.gala:155
 func compareValuesUints(a uint, vb any) int {
 //line std/ordered.gala:156
-	var b = NewImmutable(func(obj any) uint {
+	var b = func(obj any) uint {
 		{
 			bu, _tmp_23 := As[uint](obj)
 			if _tmp_23 {
@@ -420,14 +420,14 @@ func compareValuesUints(a uint, vb any) int {
 				return uint(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:157
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:157
 		return -1
 	}
 //line std/ordered.gala:158
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:158
 		return 1
 	}
@@ -438,7 +438,7 @@ func compareValuesUints(a uint, vb any) int {
 //line std/ordered.gala:162
 func compareValuesUint64s(a uint64, vb any) int {
 //line std/ordered.gala:163
-	var b = NewImmutable(func(obj any) uint64 {
+	var b = func(obj any) uint64 {
 		{
 			bu, _tmp_24 := As[uint64](obj)
 			if _tmp_24 {
@@ -447,14 +447,14 @@ func compareValuesUint64s(a uint64, vb any) int {
 				return uint64(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:164
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:164
 		return -1
 	}
 //line std/ordered.gala:165
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:165
 		return 1
 	}
@@ -465,7 +465,7 @@ func compareValuesUint64s(a uint64, vb any) int {
 //line std/ordered.gala:169
 func compareValuesUint32s(a uint32, vb any) int {
 //line std/ordered.gala:170
-	var b = NewImmutable(func(obj any) uint32 {
+	var b = func(obj any) uint32 {
 		{
 			bu, _tmp_25 := As[uint32](obj)
 			if _tmp_25 {
@@ -474,14 +474,14 @@ func compareValuesUint32s(a uint32, vb any) int {
 				return uint32(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:171
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:171
 		return -1
 	}
 //line std/ordered.gala:172
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:172
 		return 1
 	}
@@ -492,7 +492,7 @@ func compareValuesUint32s(a uint32, vb any) int {
 //line std/ordered.gala:176
 func compareValuesUint16s(a uint16, vb any) int {
 //line std/ordered.gala:177
-	var b = NewImmutable(func(obj any) uint16 {
+	var b = func(obj any) uint16 {
 		{
 			bu, _tmp_26 := As[uint16](obj)
 			if _tmp_26 {
@@ -501,14 +501,14 @@ func compareValuesUint16s(a uint16, vb any) int {
 				return uint16(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:178
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:178
 		return -1
 	}
 //line std/ordered.gala:179
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:179
 		return 1
 	}
@@ -519,7 +519,7 @@ func compareValuesUint16s(a uint16, vb any) int {
 //line std/ordered.gala:183
 func compareValuesUint8s(a uint8, vb any) int {
 //line std/ordered.gala:184
-	var b = NewImmutable(func(obj any) uint8 {
+	var b = func(obj any) uint8 {
 		{
 			bu, _tmp_27 := As[uint8](obj)
 			if _tmp_27 {
@@ -528,14 +528,14 @@ func compareValuesUint8s(a uint8, vb any) int {
 				return uint8(0)
 			}
 		}
-	}(vb))
+	}(vb)
 //line std/ordered.gala:185
-	if a < b.Get() {
+	if a < b {
 //line std/ordered.gala:185
 		return -1
 	}
 //line std/ordered.gala:186
-	if a > b.Get() {
+	if a > b {
 //line std/ordered.gala:186
 		return 1
 	}

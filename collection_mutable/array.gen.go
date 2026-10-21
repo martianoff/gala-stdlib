@@ -120,6 +120,9 @@ func ArrayFill[T any](n int, value T) *Array[T] {
 
 // IsEmpty returns true if the array is empty.
 func (a *Array[T]) IsEmpty() bool {
+	if a == nil {
+		panic("Array.IsEmpty: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 	return len(a.elements) == 0
 }
 
@@ -127,6 +130,9 @@ func (a *Array[T]) IsEmpty() bool {
 
 // NonEmpty returns true if the array is not empty.
 func (a *Array[T]) NonEmpty() bool {
+	if a == nil {
+		panic("Array.NonEmpty: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 	return len(a.elements) > 0
 }
 
@@ -134,6 +140,9 @@ func (a *Array[T]) NonEmpty() bool {
 
 // Length returns the number of elements. O(1).
 func (a *Array[T]) Length() int {
+	if a == nil {
+		panic("Array.Length: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 	return len(a.elements)
 }
 
@@ -141,6 +150,9 @@ func (a *Array[T]) Length() int {
 
 // Size is an alias for Length.
 func (a *Array[T]) Size() int {
+	if a == nil {
+		panic("Array.Size: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 	return len(a.elements)
 }
 
@@ -148,6 +160,9 @@ func (a *Array[T]) Size() int {
 
 // Capacity returns the current capacity of the underlying slice.
 func (a *Array[T]) Capacity() int {
+	if a == nil {
+		panic("Array.Capacity: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 	return go_interop.SliceCap(a.elements)
 }
 
@@ -156,6 +171,9 @@ func (a *Array[T]) Capacity() int {
 // Get returns the element at the given index. O(1).
 // Panics if index is out of bounds.
 func (a *Array[T]) Get(index int) T {
+	if a == nil {
+		panic("Array.Get: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:105
 	if (index < 0) || (index >= len(a.elements)) {
 //line collection_mutable/array.gala:106
@@ -169,6 +187,9 @@ func (a *Array[T]) Get(index int) T {
 
 // GetOption returns the element at index wrapped in Option.
 func (a *Array[T]) GetOption(index int) Option[T] {
+	if a == nil {
+		panic("Array.GetOption: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:113
 	if (index < 0) || (index >= len(a.elements)) {
 //line collection_mutable/array.gala:114
@@ -183,6 +204,9 @@ func (a *Array[T]) GetOption(index int) Option[T] {
 // Head returns the first element. O(1).
 // Panics if the array is empty.
 func (a *Array[T]) Head() T {
+	if a == nil {
+		panic("Array.Head: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:122
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:123
@@ -196,6 +220,9 @@ func (a *Array[T]) Head() T {
 
 // HeadOption returns the first element wrapped in Option.
 func (a *Array[T]) HeadOption() Option[T] {
+	if a == nil {
+		panic("Array.HeadOption: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:130
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:131
@@ -210,6 +237,9 @@ func (a *Array[T]) HeadOption() Option[T] {
 // Last returns the last element. O(1).
 // Panics if the array is empty.
 func (a *Array[T]) Last() T {
+	if a == nil {
+		panic("Array.Last: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:139
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:140
@@ -223,6 +253,9 @@ func (a *Array[T]) Last() T {
 
 // LastOption returns the last element wrapped in Option.
 func (a *Array[T]) LastOption() Option[T] {
+	if a == nil {
+		panic("Array.LastOption: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:147
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:148
@@ -237,6 +270,9 @@ func (a *Array[T]) LastOption() Option[T] {
 // Set updates the element at index in place. O(1).
 // Panics if index is out of bounds.
 func (a *Array[T]) Set(index int, value T) {
+	if a == nil {
+		panic("Array.Set: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:158
 	if (index < 0) || (index >= len(a.elements)) {
 //line collection_mutable/array.gala:159
@@ -250,6 +286,9 @@ func (a *Array[T]) Set(index int, value T) {
 
 // Append adds an element to the end. O(1) amortized.
 func (a *Array[T]) Append(value T) {
+	if a == nil {
+		panic("Array.Append: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:166
 	a.elements = go_interop.SliceAppend(a.elements, value)
 }
@@ -258,6 +297,9 @@ func (a *Array[T]) Append(value T) {
 
 // AppendAll appends all elements from a slice. O(m) where m = values.Size().
 func (a *Array[T]) AppendAll(values []T) {
+	if a == nil {
+		panic("Array.AppendAll: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:171
 	a.elements = go_interop.SliceAppendAll(a.elements, values)
 }
@@ -266,6 +308,12 @@ func (a *Array[T]) AppendAll(values []T) {
 
 // AppendFrom appends all elements from another Array. O(m) where m = other.Length().
 func (a *Array[T]) AppendFrom(other *Array[T]) {
+	if a == nil {
+		panic("Array.AppendFrom: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("Array.AppendFrom: parameter other is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:176
 	a.elements = go_interop.SliceAppendAll(a.elements, other.elements)
 }
@@ -275,6 +323,9 @@ func (a *Array[T]) AppendFrom(other *Array[T]) {
 // Prepend adds an element to the front. O(n).
 // Uses single allocation with append+copy for efficiency.
 func (a *Array[T]) Prepend(value T) {
+	if a == nil {
+		panic("Array.Prepend: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:182
 	a.elements = go_interop.SlicePrepend(a.elements, value)
 }
@@ -284,6 +335,9 @@ func (a *Array[T]) Prepend(value T) {
 // PrependAll prepends all elements from a slice. O(n+m).
 // Uses single allocation for efficiency.
 func (a *Array[T]) PrependAll(values []T) {
+	if a == nil {
+		panic("Array.PrependAll: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:188
 	a.elements = go_interop.SlicePrependAll(a.elements, values)
 }
@@ -293,6 +347,9 @@ func (a *Array[T]) PrependAll(values []T) {
 // Insert inserts an element at the given index. O(n).
 // Panics if index is out of bounds (0 <= index <= length).
 func (a *Array[T]) Insert(index int, value T) {
+	if a == nil {
+		panic("Array.Insert: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:194
 	if (index < 0) || (index > len(a.elements)) {
 //line collection_mutable/array.gala:195
@@ -307,6 +364,9 @@ func (a *Array[T]) Insert(index int, value T) {
 // RemoveAt removes the element at the given index. O(n).
 // Panics if index is out of bounds.
 func (a *Array[T]) RemoveAt(index int) {
+	if a == nil {
+		panic("Array.RemoveAt: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:203
 	if (index < 0) || (index >= len(a.elements)) {
 //line collection_mutable/array.gala:204
@@ -322,6 +382,9 @@ func (a *Array[T]) RemoveAt(index int) {
 // Returns a slice view, so underlying memory is not reallocated.
 // Panics if the array is empty.
 func (a *Array[T]) RemoveFirst() T {
+	if a == nil {
+		panic("Array.RemoveFirst: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:213
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:214
@@ -341,6 +404,9 @@ func (a *Array[T]) RemoveFirst() T {
 // Returns a slice view, so underlying memory is not reallocated.
 // Panics if the array is empty.
 func (a *Array[T]) RemoveLast() T {
+	if a == nil {
+		panic("Array.RemoveLast: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:225
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:226
@@ -360,6 +426,9 @@ func (a *Array[T]) RemoveLast() T {
 
 // Clear removes all elements. O(1).
 func (a *Array[T]) Clear() {
+	if a == nil {
+		panic("Array.Clear: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:236
 	var empty []T
 //line collection_mutable/array.gala:237
@@ -371,12 +440,18 @@ func (a *Array[T]) Clear() {
 // EnsureCapacity grows the slice capacity if needed.
 // Currently a no-op, kept for API compatibility.
 func (a *Array[T]) EnsureCapacity(minCapacity int) {
+	if a == nil {
+		panic("Array.EnsureCapacity: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 }
 
 //line collection_mutable/array.gala:244
 
 // Reverse reverses the array in place. O(n).
 func (a *Array[T]) Reverse() {
+	if a == nil {
+		panic("Array.Reverse: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:247
 	var n = len(a.elements)
 //line collection_mutable/array.gala:248
@@ -394,6 +469,9 @@ func (a *Array[T]) Reverse() {
 
 // Contains checks if the array contains the given element. O(n).
 func (a *Array[T]) Contains(elem T) bool {
+	if a == nil {
+		panic("Array.Contains: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:259
 	for i := 0; i < len(a.elements); i++ {
 //line collection_mutable/array.gala:260
@@ -410,6 +488,9 @@ func (a *Array[T]) Contains(elem T) bool {
 
 // IndexOf returns the index of the first occurrence of elem, or -1 if not found.
 func (a *Array[T]) IndexOf(elem T) int {
+	if a == nil {
+		panic("Array.IndexOf: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:269
 	for i := 0; i < len(a.elements); i++ {
 //line collection_mutable/array.gala:270
@@ -426,6 +507,9 @@ func (a *Array[T]) IndexOf(elem T) int {
 
 // LastIndexOf returns the index of the last occurrence of elem, or -1 if not found.
 func (a *Array[T]) LastIndexOf(elem T) int {
+	if a == nil {
+		panic("Array.LastIndexOf: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:279
 	for i := len(a.elements) - 1; i >= 0; i-- {
 //line collection_mutable/array.gala:280
@@ -442,6 +526,9 @@ func (a *Array[T]) LastIndexOf(elem T) int {
 
 // Take returns a new Array with the first n elements.
 func (a *Array[T]) Take(n int) *Array[T] {
+	if a == nil {
+		panic("Array.Take: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:291
 	if n <= 0 {
 //line collection_mutable/array.gala:292
@@ -467,6 +554,9 @@ func (a *Array[T]) Take(n int) *Array[T] {
 
 // Drop returns a new Array without the first n elements.
 func (a *Array[T]) Drop(n int) *Array[T] {
+	if a == nil {
+		panic("Array.Drop: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:306
 	if n <= 0 {
 //line collection_mutable/array.gala:307
@@ -494,6 +584,9 @@ func (a *Array[T]) Drop(n int) *Array[T] {
 
 // Slice returns a new Array from start (inclusive) to end (exclusive).
 func (a *Array[T]) Slice(start int, end int) *Array[T] {
+	if a == nil {
+		panic("Array.Slice: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:322
 	if start < 0 {
 //line collection_mutable/array.gala:323
@@ -526,6 +619,9 @@ func (a *Array[T]) Slice(start int, end int) *Array[T] {
 
 // Clone creates a shallow copy of the array.
 func (a *Array[T]) Clone() *Array[T] {
+	if a == nil {
+		panic("Array.Clone: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:341
 	var elems = go_interop.SliceWithCapacity[T](len(a.elements))
 //line collection_mutable/array.gala:342
@@ -541,6 +637,9 @@ func (a *Array[T]) Clone() *Array[T] {
 
 // Tail returns all elements except the first.
 func (a *Array[T]) Tail() *Array[T] {
+	if a == nil {
+		panic("Array.Tail: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:350
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:351
@@ -554,6 +653,9 @@ func (a *Array[T]) Tail() *Array[T] {
 
 // Init returns all elements except the last.
 func (a *Array[T]) Init() *Array[T] {
+	if a == nil {
+		panic("Array.Init: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:358
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:359
@@ -567,6 +669,9 @@ func (a *Array[T]) Init() *Array[T] {
 
 // Reversed returns a new Array with elements in reverse order.
 func (a *Array[T]) Reversed() *Array[T] {
+	if a == nil {
+		panic("Array.Reversed: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:366
 	var result = a.Clone()
 //line collection_mutable/array.gala:367
@@ -579,6 +684,9 @@ func (a *Array[T]) Reversed() *Array[T] {
 
 // Map applies a function to each element and returns a new Array.
 func Array_Map[U any, T any](a *Array[T], f func(T) U) *Array[U] {
+	if a == nil {
+		panic("Array.Map: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:375
 	var elems = go_interop.SliceWithCapacity[U](len(a.elements))
 //line collection_mutable/array.gala:376
@@ -594,6 +702,9 @@ func Array_Map[U any, T any](a *Array[T], f func(T) U) *Array[U] {
 
 // FlatMap applies a function that returns a Array to each element and flattens.
 func Array_FlatMap[U any, T any](a *Array[T], f func(T) *Array[U]) *Array[U] {
+	if a == nil {
+		panic("Array.FlatMap: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:384
 	var result = EmptyArray[U]()
 //line collection_mutable/array.gala:385
@@ -611,16 +722,19 @@ func Array_FlatMap[U any, T any](a *Array[T], f func(T) *Array[U]) *Array[U] {
 
 // Collect applies a partial function to each element and collects the results.
 func Array_Collect[U any, T any](a *Array[T], pf func(T) Option[U]) *Array[U] {
+	if a == nil {
+		panic("Array.Collect: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:394
 	var result = EmptyArray[U]()
 //line collection_mutable/array.gala:395
 	for i := 0; i < len(a.elements); i++ {
 //line collection_mutable/array.gala:396
-		var opt = NewImmutable(pf(a.elements[i]))
+		var opt = pf(a.elements[i])
 //line collection_mutable/array.gala:397
-		if opt.Get().IsDefined() {
+		if opt.IsDefined() {
 //line collection_mutable/array.gala:398
-			result.Append(opt.Get().Get())
+			result.Append(opt.Get())
 		}
 	}
 //line collection_mutable/array.gala:401
@@ -631,6 +745,9 @@ func Array_Collect[U any, T any](a *Array[T], pf func(T) Option[U]) *Array[U] {
 
 // Filter returns a new Array with only elements that satisfy the predicate.
 func (a *Array[T]) Filter(p func(T) bool) *Array[T] {
+	if a == nil {
+		panic("Array.Filter: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:406
 	var result = EmptyArray[T]()
 //line collection_mutable/array.gala:407
@@ -649,6 +766,9 @@ func (a *Array[T]) Filter(p func(T) bool) *Array[T] {
 
 // FilterNot returns a new Array with elements that do not satisfy the predicate.
 func (a *Array[T]) FilterNot(p func(T) bool) *Array[T] {
+	if a == nil {
+		panic("Array.FilterNot: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 	return a.Filter(func(elem T) bool {
 		return !p(elem)
 	})
@@ -658,18 +778,24 @@ func (a *Array[T]) FilterNot(p func(T) bool) *Array[T] {
 
 // Partition splits the array into two based on a predicate.
 func (a *Array[T]) Partition(p func(T) bool) Tuple[*Array[T], *Array[T]] {
+	if a == nil {
+		panic("Array.Partition: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:420
-	var left = NewImmutable(a.Filter(p))
+	var left = a.Filter(p)
 //line collection_mutable/array.gala:421
-	var right = NewImmutable(a.FilterNot(p))
+	var right = a.FilterNot(p)
 //line collection_mutable/array.gala:422
-	return Tuple[*Array[T], *Array[T]]{V1: NewImmutable(left.Get()), V2: NewImmutable(right.Get())}
+	return Tuple[*Array[T], *Array[T]]{V1: NewImmutable(left), V2: NewImmutable(right)}
 }
 
 //line collection_mutable/array.gala:424
 
 // TakeWhile returns the longest prefix of elements that satisfy the predicate.
 func (a *Array[T]) TakeWhile(p func(T) bool) *Array[T] {
+	if a == nil {
+		panic("Array.TakeWhile: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:427
 	var result = EmptyArray[T]()
 //line collection_mutable/array.gala:428
@@ -690,6 +816,9 @@ func (a *Array[T]) TakeWhile(p func(T) bool) *Array[T] {
 
 // DropWhile drops the longest prefix of elements that satisfy the predicate.
 func (a *Array[T]) DropWhile(p func(T) bool) *Array[T] {
+	if a == nil {
+		panic("Array.DropWhile: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:439
 	var start = 0
 //line collection_mutable/array.gala:440
@@ -705,6 +834,9 @@ func (a *Array[T]) DropWhile(p func(T) bool) *Array[T] {
 
 // FoldLeft applies a binary operator from left to right.
 func Array_FoldLeft[U any, T any](a *Array[T], initial U, f func(U, T) U) U {
+	if a == nil {
+		panic("Array.FoldLeft: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:450
 	var acc = initial
 //line collection_mutable/array.gala:451
@@ -720,6 +852,9 @@ func Array_FoldLeft[U any, T any](a *Array[T], initial U, f func(U, T) U) U {
 
 // FoldRight applies a binary operator from right to left.
 func Array_FoldRight[U any, T any](a *Array[T], initial U, f func(T, U) U) U {
+	if a == nil {
+		panic("Array.FoldRight: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:459
 	var acc = initial
 //line collection_mutable/array.gala:460
@@ -736,6 +871,9 @@ func Array_FoldRight[U any, T any](a *Array[T], initial U, f func(T, U) U) U {
 // Reduce applies a binary operator from left to right, starting with the first element.
 // Panics if the array is empty.
 func (a *Array[T]) Reduce(f func(T, T) T) T {
+	if a == nil {
+		panic("Array.Reduce: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:469
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:470
@@ -756,6 +894,9 @@ func (a *Array[T]) Reduce(f func(T, T) T) T {
 
 // ReduceOption is like Reduce but returns None for empty array.
 func (a *Array[T]) ReduceOption(f func(T, T) T) Option[T] {
+	if a == nil {
+		panic("Array.ReduceOption: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:481
 	if len(a.elements) == 0 {
 //line collection_mutable/array.gala:482
@@ -769,6 +910,9 @@ func (a *Array[T]) ReduceOption(f func(T, T) T) Option[T] {
 
 // ForEach applies a function to each element for side effects.
 func (a *Array[T]) ForEach(f func(T)) {
+	if a == nil {
+		panic("Array.ForEach: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:491
 	for i := 0; i < len(a.elements); i++ {
 //line collection_mutable/array.gala:492
@@ -780,6 +924,9 @@ func (a *Array[T]) ForEach(f func(T)) {
 
 // Exists returns true if any element satisfies the predicate.
 func (a *Array[T]) Exists(p func(T) bool) bool {
+	if a == nil {
+		panic("Array.Exists: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:498
 	for i := 0; i < len(a.elements); i++ {
 //line collection_mutable/array.gala:499
@@ -796,6 +943,9 @@ func (a *Array[T]) Exists(p func(T) bool) bool {
 
 // ForAll returns true if all elements satisfy the predicate.
 func (a *Array[T]) ForAll(p func(T) bool) bool {
+	if a == nil {
+		panic("Array.ForAll: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:508
 	for i := 0; i < len(a.elements); i++ {
 //line collection_mutable/array.gala:509
@@ -812,6 +962,9 @@ func (a *Array[T]) ForAll(p func(T) bool) bool {
 
 // Find returns the first element that satisfies the predicate.
 func (a *Array[T]) Find(p func(T) bool) Option[T] {
+	if a == nil {
+		panic("Array.Find: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:518
 	for i := 0; i < len(a.elements); i++ {
 //line collection_mutable/array.gala:519
@@ -828,6 +981,9 @@ func (a *Array[T]) Find(p func(T) bool) Option[T] {
 
 // FindLast returns the last element that satisfies the predicate.
 func (a *Array[T]) FindLast(p func(T) bool) Option[T] {
+	if a == nil {
+		panic("Array.FindLast: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:528
 	for i := len(a.elements) - 1; i >= 0; i-- {
 //line collection_mutable/array.gala:529
@@ -844,8 +1000,11 @@ func (a *Array[T]) FindLast(p func(T) bool) Option[T] {
 
 // Count returns the number of elements satisfying the predicate.
 func (a *Array[T]) Count(p func(T) bool) int {
+	if a == nil {
+		panic("Array.Count: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:538
-	return Array_FoldLeft[int](a, 0, func(acc int, elem T) int {
+	return Array_FoldLeft[int, T](a, 0, func(acc int, elem T) int {
 //line collection_mutable/array.gala:539
 		if p(elem) {
 //line collection_mutable/array.gala:540
@@ -860,6 +1019,12 @@ func (a *Array[T]) Count(p func(T) bool) int {
 
 // Zip combines two arrays into an array of tuples. Result length is the minimum.
 func Array_Zip[U any, T any](a *Array[T], other *Array[U]) *Array[Tuple[T, U]] {
+	if a == nil {
+		panic("Array.Zip: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
+	if other == nil {
+		panic("Array.Zip: parameter other is a Ptr[collection_mutable.Array[U]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:550
 	var minLen = len(a.elements)
 //line collection_mutable/array.gala:551
@@ -882,6 +1047,9 @@ func Array_Zip[U any, T any](a *Array[T], other *Array[U]) *Array[Tuple[T, U]] {
 
 // ZipWithIndex pairs each element with its index.
 func Array_ZipWithIndex[T any](a *Array[T]) *Array[Tuple[T, int]] {
+	if a == nil {
+		panic("Array.ZipWithIndex: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:563
 	var result = EmptyArray[Tuple[T, int]]()
 //line collection_mutable/array.gala:564
@@ -897,6 +1065,9 @@ func Array_ZipWithIndex[T any](a *Array[T]) *Array[Tuple[T, int]] {
 
 // Distinct returns a new array with duplicate elements removed.
 func (a *Array[T]) Distinct() *Array[T] {
+	if a == nil {
+		panic("Array.Distinct: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:572
 	var result = EmptyArray[T]()
 //line collection_mutable/array.gala:573
@@ -915,6 +1086,9 @@ func (a *Array[T]) Distinct() *Array[T] {
 
 // SplitAt splits the array at the given index.
 func (a *Array[T]) SplitAt(n int) Tuple[*Array[T], *Array[T]] {
+	if a == nil {
+		panic("Array.SplitAt: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:583
 	return Tuple[*Array[T], *Array[T]]{V1: NewImmutable(a.Take(n)), V2: NewImmutable(a.Drop(n))}
 }
@@ -923,6 +1097,9 @@ func (a *Array[T]) SplitAt(n int) Tuple[*Array[T], *Array[T]] {
 
 // Grouped splits the array into groups of size n.
 func Array_Grouped[T any](a *Array[T], n int) *Array[*Array[T]] {
+	if a == nil {
+		panic("Array.Grouped: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:588
 	if n <= 0 {
 //line collection_mutable/array.gala:589
@@ -950,6 +1127,9 @@ func Array_Grouped[T any](a *Array[T], n int) *Array[*Array[T]] {
 
 // Sliding returns a sliding window over the array.
 func Array_Sliding[T any](a *Array[T], size int) *Array[*Array[T]] {
+	if a == nil {
+		panic("Array.Sliding: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:604
 	if size <= 0 {
 //line collection_mutable/array.gala:605
@@ -977,6 +1157,9 @@ func Array_Sliding[T any](a *Array[T], size int) *Array[*Array[T]] {
 
 // GroupBy partitions this array into a map of arrays according to a discriminator function.
 func Array_GroupBy[K comparable, T any](a *Array[T], f func(T) K) map[K]*Array[T] {
+	if a == nil {
+		panic("Array.GroupBy: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:620
 	var result = go_interop.MapEmpty[K, *Array[T]]()
 //line collection_mutable/array.gala:621
@@ -986,108 +1169,123 @@ func Array_GroupBy[K comparable, T any](a *Array[T], f func(T) K) map[K]*Array[T
 //line collection_mutable/array.gala:623
 		var key = f(elem)
 //line collection_mutable/array.gala:624
-		var existing = result[key]
+		var existing, ok = go_interop.MapGet(result, key)
 //line collection_mutable/array.gala:625
-		if existing == nil {
+		if ok {
 //line collection_mutable/array.gala:626
-			existing = EmptyArray[T]()
-//line collection_mutable/array.gala:627
-			result[key] = existing
-		}
+			existing.Append(elem)
+		} else {
+//line collection_mutable/array.gala:628
+			var group = EmptyArray[T]()
 //line collection_mutable/array.gala:629
-		existing.Append(elem)
+			group.Append(elem)
+//line collection_mutable/array.gala:630
+			result[key] = group
+		}
 	}
-//line collection_mutable/array.gala:631
+//line collection_mutable/array.gala:633
 	return result
 }
 
-//line collection_mutable/array.gala:635
+//line collection_mutable/array.gala:637
 
 // ToGoSlice returns a copy of the underlying slice.
 func (a *Array[T]) ToGoSlice() []T {
-//line collection_mutable/array.gala:638
-	var result []T
-//line collection_mutable/array.gala:639
-	for i := 0; i < len(a.elements); i++ {
+	if a == nil {
+		panic("Array.ToGoSlice: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:640
+	var result []T
+//line collection_mutable/array.gala:641
+	for i := 0; i < len(a.elements); i++ {
+//line collection_mutable/array.gala:642
 		result = go_interop.SliceAppend(result, a.elements[i])
 	}
-//line collection_mutable/array.gala:642
+//line collection_mutable/array.gala:644
 	return result
 }
 
-//line collection_mutable/array.gala:644
+//line collection_mutable/array.gala:646
 
 // String returns a string representation of the array.
 func (a *Array[T]) String() string {
-//line collection_mutable/array.gala:647
+	if a == nil {
+		panic("Array.String: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
+//line collection_mutable/array.gala:649
 	if len(a.elements) == 0 {
-//line collection_mutable/array.gala:648
+//line collection_mutable/array.gala:650
 		return "Array()"
 	}
-//line collection_mutable/array.gala:650
-	var result = "Array("
-//line collection_mutable/array.gala:651
-	for i := 0; i < len(a.elements); i++ {
 //line collection_mutable/array.gala:652
-		if i > 0 {
+	var result = "Array("
 //line collection_mutable/array.gala:653
+	for i := 0; i < len(a.elements); i++ {
+//line collection_mutable/array.gala:654
+		if i > 0 {
+//line collection_mutable/array.gala:655
 			result = result + ", "
 		}
-//line collection_mutable/array.gala:655
+//line collection_mutable/array.gala:657
 		result = result + fmt.Sprintf("%v", a.elements[i])
 	}
-//line collection_mutable/array.gala:657
+//line collection_mutable/array.gala:659
 	return result + ")"
 }
 
-//line collection_mutable/array.gala:659
+//line collection_mutable/array.gala:661
 
 // MkString joins elements into a string with separator.
 func (a *Array[T]) MkString(sep string) string {
-//line collection_mutable/array.gala:662
+	if a == nil {
+		panic("Array.MkString: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
+//line collection_mutable/array.gala:664
 	if len(a.elements) == 0 {
-//line collection_mutable/array.gala:663
+//line collection_mutable/array.gala:665
 		return ""
 	}
-//line collection_mutable/array.gala:665
-	var result = ""
-//line collection_mutable/array.gala:666
-	for i := 0; i < len(a.elements); i++ {
 //line collection_mutable/array.gala:667
-		if i > 0 {
+	var result = ""
 //line collection_mutable/array.gala:668
+	for i := 0; i < len(a.elements); i++ {
+//line collection_mutable/array.gala:669
+		if i > 0 {
+//line collection_mutable/array.gala:670
 			result = result + sep
 		}
-//line collection_mutable/array.gala:670
+//line collection_mutable/array.gala:672
 		result = result + fmt.Sprintf("%v", a.elements[i])
 	}
-//line collection_mutable/array.gala:672
+//line collection_mutable/array.gala:674
 	return result
 }
 
-//line collection_mutable/array.gala:674
+//line collection_mutable/array.gala:676
 
 // ToList converts the array to a mutable List.
 func (a *Array[T]) ToList() *List[T] {
-//line collection_mutable/array.gala:677
-	var result = EmptyList[T]()
-//line collection_mutable/array.gala:678
-	for i := 0; i < len(a.elements); i++ {
+	if a == nil {
+		panic("Array.ToList: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 //line collection_mutable/array.gala:679
+	var result = EmptyList[T]()
+//line collection_mutable/array.gala:680
+	for i := 0; i < len(a.elements); i++ {
+//line collection_mutable/array.gala:681
 		result.Append(a.elements[i])
 	}
-//line collection_mutable/array.gala:681
+//line collection_mutable/array.gala:683
 	return result
 }
 
-//line collection_mutable/array.gala:685
+//line collection_mutable/array.gala:687
 
 // lessToCompare orders x and y by less as a three-way comparison. If less reports
 // true both ways (a non-strict comparator such as <=), x and y count as equal, so
 // the sort keeps them in their original order.
 func lessToCompare[T any](less func(T, T) bool, x T, y T) int {
-	return func() int {
+	{
 		if less(x, y) {
 			return (func() int {
 				if less(y, x) {
@@ -1097,71 +1295,83 @@ func lessToCompare[T any](less func(T, T) bool, x T, y T) int {
 				}
 			}())
 		} else {
-			return func() int {
+			{
 				if less(y, x) {
 					return 1
 				} else {
 					return 0
 				}
-			}()
+			}
 		}
-	}()
+	}
 }
 
-//line collection_mutable/array.gala:691
+//line collection_mutable/array.gala:693
 
 // Sorted returns a new Array with elements sorted in natural order.
 // Elements must be primitive types or implement std.Ordered[T].
 // The sort is stable: equal elements keep their original relative order.
 func (a *Array[T]) Sorted() *Array[T] {
-//line collection_mutable/array.gala:696
-	var elements = NewImmutable(a.elements)
-//line collection_mutable/array.gala:697
-	return &Array[T]{elements: go_interop.SliceSortedStable(elements.Get(), func(i int, j int) int {
-		return CompareValues(elements.Get()[i], elements.Get()[j])
+	if a == nil {
+		panic("Array.Sorted: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
+//line collection_mutable/array.gala:698
+	var elements = a.elements
+//line collection_mutable/array.gala:699
+	return &Array[T]{elements: go_interop.SliceSortedStable(elements, func(i int, j int) int {
+		return CompareValues(elements[i], elements[j])
 	})}
 }
 
-//line collection_mutable/array.gala:699
+//line collection_mutable/array.gala:701
 
 // SortWith returns a new Array sorted using the given comparison function.
 // The function should return true if x should come before y; it should be a strict
 // ordering (use <, not <=).
 // The sort is stable: elements that compare equal keep their original relative order.
 func (a *Array[T]) SortWith(less func(T, T) bool) *Array[T] {
-//line collection_mutable/array.gala:705
-	var elements = NewImmutable(a.elements)
-//line collection_mutable/array.gala:706
-	return &Array[T]{elements: go_interop.SliceSortedStable(elements.Get(), func(i int, j int) int {
-		return lessToCompare(less, elements.Get()[i], elements.Get()[j])
+	if a == nil {
+		panic("Array.SortWith: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
+//line collection_mutable/array.gala:707
+	var elements = a.elements
+//line collection_mutable/array.gala:708
+	return &Array[T]{elements: go_interop.SliceSortedStable(elements, func(i int, j int) int {
+		return lessToCompare(less, elements[i], elements[j])
 	})}
 }
 
-//line collection_mutable/array.gala:708
+//line collection_mutable/array.gala:710
 
 // SortBy returns a new Array sorted by a key extracted from each element.
 // Keys must be primitive types or implement std.Ordered.
 // The sort is stable: elements with equal keys keep their original relative order.
 // f runs once per element: keys are computed up front, not on every comparison.
 func Array_SortBy[K comparable, T any](a *Array[T], f func(T) K) *Array[T] {
-//line collection_mutable/array.gala:714
-	var elements = NewImmutable(a.elements)
-//line collection_mutable/array.gala:715
-	var keys = NewImmutable(go_interop.SliceWithSize[K](len(elements.Get())))
-//line collection_mutable/array.gala:716
-	for i := 0; i < len(elements.Get()); i++ {
-//line collection_mutable/array.gala:717
-		keys.Get()[i] = f(elements.Get()[i])
+	if a == nil {
+		panic("Array.SortBy: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
 	}
+//line collection_mutable/array.gala:716
+	var elements = a.elements
+//line collection_mutable/array.gala:717
+	var keys = go_interop.SliceWithSize[K](len(elements))
+//line collection_mutable/array.gala:718
+	for i := 0; i < len(elements); i++ {
 //line collection_mutable/array.gala:719
-	return &Array[T]{elements: go_interop.SliceSortedStable(elements.Get(), func(i int, j int) int {
-		return CompareValues(keys.Get()[i], keys.Get()[j])
+		NewImmutable(keys).Get()[i] = f(elements[i])
+	}
+//line collection_mutable/array.gala:721
+	return &Array[T]{elements: go_interop.SliceSortedStable(elements, func(i int, j int) int {
+		return CompareValues(keys[i], keys[j])
 	})}
 }
 
-//line collection_mutable/array.gala:721
+//line collection_mutable/array.gala:723
 
 // SeqDrop implements the Seq interface for sequence pattern matching.
 func (a *Array[T]) SeqDrop(n int) any {
+	if a == nil {
+		panic("Array.SeqDrop: receiver a is a Ptr[collection_mutable.Array[T]], but the caller passed nil")
+	}
 	return a.Drop(n)
 }

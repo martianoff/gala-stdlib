@@ -31,18 +31,14 @@ func (s Regex) Equal(other Regex) bool {
 // Returns Try[Regex] - Success if valid, Failure if invalid.
 func Compile(pattern string) Try[Regex] {
 //line regex/regex.gala:19
-	var (
-		_tmp_1, _tmp_2 = regexp.Compile(pattern)
-		re             = NewImmutable(_tmp_1)
-		err            = NewImmutable(_tmp_2)
-	)
+	var re, err = regexp.Compile(pattern)
 //line regex/regex.gala:20
-	if err.Get() != nil {
+	if err != nil {
 //line regex/regex.gala:21
-		return Failure[Regex]{}.Apply(err.Get())
+		return Failure[Regex]{}.Apply(err)
 	}
 //line regex/regex.gala:23
-	return Success[Regex]{}.Apply(Regex{Pattern: NewImmutable(pattern), Re: NewImmutable(re.Get())})
+	return Success[Regex]{}.Apply(Regex{Pattern: NewImmutable(pattern), Re: NewImmutable(re)})
 }
 
 //line regex/regex.gala:25
@@ -50,9 +46,9 @@ func Compile(pattern string) Try[Regex] {
 // MustCompile compiles a pattern, panicking on error.
 func MustCompile(pattern string) Regex {
 //line regex/regex.gala:28
-	var re = NewImmutable(regexp.MustCompile(pattern))
+	var re = regexp.MustCompile(pattern)
 //line regex/regex.gala:29
-	return Regex{Pattern: NewImmutable(pattern), Re: NewImmutable(re.Get())}
+	return Regex{Pattern: NewImmutable(pattern), Re: NewImmutable(re)}
 }
 
 //line regex/regex.gala:31
@@ -67,9 +63,9 @@ func (r Regex) Matches(s string) bool {
 // FindFirst returns the first match as Option[string].
 func (r Regex) FindFirst(s string) Option[string] {
 //line regex/regex.gala:37
-	var result = NewImmutable(r.Re.Get().FindString(s))
+	var result = r.Re.Get().FindString(s)
 //line regex/regex.gala:38
-	return When(result.Get() != "", result.Get())
+	return When(result != "", result)
 }
 
 //line regex/regex.gala:40
@@ -77,9 +73,9 @@ func (r Regex) FindFirst(s string) Option[string] {
 // FindAll returns all non-overlapping matches as an Array.
 func (r Regex) FindAll(s string) Array[string] {
 //line regex/regex.gala:43
-	var matches = NewImmutable(r.Re.Get().FindAllString(s, -1))
+	var matches = r.Re.Get().FindAllString(s, -1)
 //line regex/regex.gala:44
-	return ArrayFromSlice(matches.Get())
+	return ArrayFromSlice(matches)
 }
 
 //line regex/regex.gala:46
@@ -87,9 +83,9 @@ func (r Regex) FindAll(s string) Array[string] {
 // FindGroups returns the first match with capture groups as Option[Array[string]].
 func (r Regex) FindGroups(s string) Option[Array[string]] {
 //line regex/regex.gala:49
-	var result = NewImmutable(r.Re.Get().FindStringSubmatch(s))
+	var result = r.Re.Get().FindStringSubmatch(s)
 //line regex/regex.gala:50
-	return When(result.Get() != nil, ArrayFromSlice(result.Get()))
+	return When(result != nil, ArrayFromSlice(result))
 }
 
 //line regex/regex.gala:52
@@ -104,9 +100,9 @@ func (r Regex) ReplaceAll(s string, replacement string) string {
 // Split splits the string by the regex pattern.
 func (r Regex) Split(s string) Array[string] {
 //line regex/regex.gala:58
-	var parts = NewImmutable(r.Re.Get().Split(s, -1))
+	var parts = r.Re.Get().Split(s, -1)
 //line regex/regex.gala:59
-	return ArrayFromSlice(parts.Get())
+	return ArrayFromSlice(parts)
 }
 
 //line regex/regex.gala:60
@@ -124,14 +120,14 @@ func (r Regex) Split(s string) Array[string] {
 //	}
 func (r Regex) Unapply(s string) Option[Array[string]] {
 //line regex/regex.gala:73
-	var result = NewImmutable(r.Re.Get().FindStringSubmatch(s))
+	var result = r.Re.Get().FindStringSubmatch(s)
 //line regex/regex.gala:74
-	if result.Get() == nil || len(result.Get()) < 2 {
+	if result == nil || len(result) < 2 {
 //line regex/regex.gala:75
 		return None[Array[string]]{}.Apply()
 	}
 //line regex/regex.gala:77
-	return Some[Array[string]]{}.Apply(ArrayFromSlice(go_interop.SliceFrom(result.Get(), 1)))
+	return Some[Array[string]]{}.Apply(ArrayFromSlice(go_interop.SliceFrom(result, 1)))
 }
 
 //line regex/regex.gala:79

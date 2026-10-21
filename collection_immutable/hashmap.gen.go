@@ -37,8 +37,10 @@ func (_ hashMapNode[K, V]) IshashMapNode() bool {
 //line collection_immutable/hashmap.gala:31
 
 // HashMap represents an immutable map.
+//
+// root is never reassigned; it is `var` for the reason List's tail is.
 type HashMap[K comparable, V any] struct {
-	root Immutable[*hashMapNode[K, V]]
+	root OptionPtr[hashMapNode[K, V]]
 	size Immutable[int]
 }
 
@@ -57,52 +59,49 @@ func (_ HashMap[K, V]) IsHashMap() bool {
 	return true
 }
 
-//line collection_immutable/hashmap.gala:37
+//line collection_immutable/hashmap.gala:39
 
 // EmptyHashMap returns an empty HashMap.
 func EmptyHashMap[K comparable, V any]() HashMap[K, V] {
-//line collection_immutable/hashmap.gala:40
-	var nilRoot *hashMapNode[K, V] = nil
-//line collection_immutable/hashmap.gala:41
-	return HashMap[K, V]{root: NewImmutable(nilRoot), size: NewImmutable(0)}
+	return HashMap[K, V]{root: EmptyOptionPtr[hashMapNode[K, V]](), size: NewImmutable(0)}
 }
 
-//line collection_immutable/hashmap.gala:43
+//line collection_immutable/hashmap.gala:42
 
 // IsEmpty returns true if the map is empty.
 func (m HashMap[K, V]) IsEmpty() bool {
 	return m.size.Get() == 0
 }
 
-//line collection_immutable/hashmap.gala:46
+//line collection_immutable/hashmap.gala:45
 
 // NonEmpty returns true if the map is not empty.
 func (m HashMap[K, V]) NonEmpty() bool {
 	return m.size.Get() > 0
 }
 
-//line collection_immutable/hashmap.gala:49
+//line collection_immutable/hashmap.gala:48
 
 // Size returns the number of entries. O(1) - cached.
 func (m HashMap[K, V]) Size() int {
 	return m.size.Get()
 }
 
-//line collection_immutable/hashmap.gala:52
+//line collection_immutable/hashmap.gala:51
 
 // Length is an alias for Size.
 func (m HashMap[K, V]) Length() int {
 	return m.size.Get()
 }
 
-//line collection_immutable/hashmap.gala:55
+//line collection_immutable/hashmap.gala:54
 
 // hashMapHash computes a hash code for a key.
 func hashMapHash[K comparable](key K) uint32 {
-//line collection_immutable/hashmap.gala:58
-	var v Immutable[any] = NewImmutable[any](key)
-//line collection_immutable/hashmap.gala:60
-	var result = NewImmutable(func(obj any) uint32 {
+//line collection_immutable/hashmap.gala:57
+	var v any = key
+//line collection_immutable/hashmap.gala:59
+	var result = func(obj any) uint32 {
 		{
 			i, _tmp_1 := As[int](obj)
 			if _tmp_1 {
@@ -164,7 +163,7 @@ func hashMapHash[K comparable](key K) uint32 {
 																	if _tmp_15 {
 																		return h.Hash()
 																	} else {
-																		return hashMapPanicNotHashable(v.Get())
+																		return hashMapPanicNotHashable(v)
 																	}
 																}
 															}
@@ -181,159 +180,159 @@ func hashMapHash[K comparable](key K) uint32 {
 				}
 			}
 		}
-	}(v.Get()))
-//line collection_immutable/hashmap.gala:78
-	return result.Get()
+	}(v)
+//line collection_immutable/hashmap.gala:77
+	return result
 }
 
-//line collection_immutable/hashmap.gala:80
+//line collection_immutable/hashmap.gala:79
 
 // hashMapPanicNotHashable panics with a helpful error message.
 func hashMapPanicNotHashable(v any) uint32 {
-//line collection_immutable/hashmap.gala:83
+//line collection_immutable/hashmap.gala:82
 	panic(fmt.Sprintf("HashMap: type %T must implement std.Hashable interface", v))
 }
 
-//line collection_immutable/hashmap.gala:85
+//line collection_immutable/hashmap.gala:84
 
 // hashMapBitpos returns the bit position for a hash at a given level.
 func hashMapBitpos(hashCode uint32, level int) uint32 {
-//line collection_immutable/hashmap.gala:88
+//line collection_immutable/hashmap.gala:87
 	var shift = uint(level * 5)
-//line collection_immutable/hashmap.gala:89
+//line collection_immutable/hashmap.gala:88
 	var idx = (hashCode >> shift) & 31
-//line collection_immutable/hashmap.gala:90
+//line collection_immutable/hashmap.gala:89
 	return uint32(1) << idx
 }
 
-//line collection_immutable/hashmap.gala:92
+//line collection_immutable/hashmap.gala:91
 
 // hashMapIndex returns the array index for a bit position in a bitmap.
 func hashMapIndex(bitmap uint32, bit uint32) int {
-//line collection_immutable/hashmap.gala:95
+//line collection_immutable/hashmap.gala:94
 	return hashMapPopcount(bitmap & (bit - 1))
 }
 
-//line collection_immutable/hashmap.gala:97
+//line collection_immutable/hashmap.gala:96
 
 // hashMapPopcount returns the number of set bits in a uint32.
 func hashMapPopcount(x uint32) int {
-//line collection_immutable/hashmap.gala:100
+//line collection_immutable/hashmap.gala:99
 	var count = 0
-//line collection_immutable/hashmap.gala:101
+//line collection_immutable/hashmap.gala:100
 	for x != 0 {
-//line collection_immutable/hashmap.gala:102
+//line collection_immutable/hashmap.gala:101
 		count++
-//line collection_immutable/hashmap.gala:103
+//line collection_immutable/hashmap.gala:102
 		x = x & (x - 1)
 	}
-//line collection_immutable/hashmap.gala:105
+//line collection_immutable/hashmap.gala:104
 	return count
 }
 
-//line collection_immutable/hashmap.gala:107
+//line collection_immutable/hashmap.gala:106
 
 // Contains checks if the map contains the given key. O(eC).
 func (m HashMap[K, V]) Contains(key K) bool {
+//line collection_immutable/hashmap.gala:109
+	if m.root.IsEmpty() {
 //line collection_immutable/hashmap.gala:110
-	if m.root.Get() == nil {
-//line collection_immutable/hashmap.gala:111
 		return false
 	}
+//line collection_immutable/hashmap.gala:112
+	var hashCode = hashMapHash[K](key)
 //line collection_immutable/hashmap.gala:113
-	var hashCode = NewImmutable(hashMapHash[K](key))
-//line collection_immutable/hashmap.gala:114
-	return containsKeyInNode[K, V](m.root.Get(), key, hashCode.Get(), 0)
+	return containsKeyInNode[K, V](m.root.Get(), key, hashCode, 0)
 }
 
-//line collection_immutable/hashmap.gala:116
+//line collection_immutable/hashmap.gala:115
 
 // containsKeyInNode searches for a key in a node.
 func containsKeyInNode[K comparable, V any](node *hashMapNode[K, V], key K, hashCode uint32, level int) bool {
-//line collection_immutable/hashmap.gala:119
+//line collection_immutable/hashmap.gala:118
 	if node.isLeaf.Get() {
-//line collection_immutable/hashmap.gala:120
+//line collection_immutable/hashmap.gala:119
 		for i := 0; i < len(node.keys.Get()); i++ {
-//line collection_immutable/hashmap.gala:121
+//line collection_immutable/hashmap.gala:120
 			if node.keys.Get()[i] == key {
-//line collection_immutable/hashmap.gala:122
+//line collection_immutable/hashmap.gala:121
 				return true
 			}
 		}
-//line collection_immutable/hashmap.gala:125
+//line collection_immutable/hashmap.gala:124
 		return false
 	}
+//line collection_immutable/hashmap.gala:127
+	var bit = hashMapBitpos(hashCode, level)
 //line collection_immutable/hashmap.gala:128
-	var bit = NewImmutable(hashMapBitpos(hashCode, level))
+	if (node.bitmap.Get() & bit) == 0 {
 //line collection_immutable/hashmap.gala:129
-	if (node.bitmap.Get() & bit.Get()) == 0 {
-//line collection_immutable/hashmap.gala:130
 		return false
 	}
+//line collection_immutable/hashmap.gala:132
+	var idx = hashMapIndex(node.bitmap.Get(), bit)
 //line collection_immutable/hashmap.gala:133
-	var idx = NewImmutable(hashMapIndex(node.bitmap.Get(), bit.Get()))
-//line collection_immutable/hashmap.gala:134
-	return containsKeyInNode[K, V](node.children.Get()[idx.Get()], key, hashCode, level+1)
+	return containsKeyInNode[K, V](node.children.Get()[idx], key, hashCode, level+1)
 }
 
-//line collection_immutable/hashmap.gala:136
+//line collection_immutable/hashmap.gala:135
 
 // Get returns the value for a key wrapped in Option. O(eC).
 func (m HashMap[K, V]) Get(key K) Option[V] {
+//line collection_immutable/hashmap.gala:138
+	if m.root.IsEmpty() {
 //line collection_immutable/hashmap.gala:139
-	if m.root.Get() == nil {
-//line collection_immutable/hashmap.gala:140
 		return None[V]{}.Apply()
 	}
+//line collection_immutable/hashmap.gala:141
+	var hashCode = hashMapHash[K](key)
 //line collection_immutable/hashmap.gala:142
-	var hashCode = NewImmutable(hashMapHash[K](key))
-//line collection_immutable/hashmap.gala:143
-	return getFromNodeMap[K, V](m.root.Get(), key, hashCode.Get(), 0)
+	return getFromNodeMap[K, V](m.root.Get(), key, hashCode, 0)
 }
 
-//line collection_immutable/hashmap.gala:145
+//line collection_immutable/hashmap.gala:144
 
 // getFromNodeMap searches for a key in a node and returns its value.
 func getFromNodeMap[K comparable, V any](node *hashMapNode[K, V], key K, hashCode uint32, level int) Option[V] {
-//line collection_immutable/hashmap.gala:148
+//line collection_immutable/hashmap.gala:147
 	if node.isLeaf.Get() {
-//line collection_immutable/hashmap.gala:149
+//line collection_immutable/hashmap.gala:148
 		for i := 0; i < len(node.keys.Get()); i++ {
-//line collection_immutable/hashmap.gala:150
+//line collection_immutable/hashmap.gala:149
 			if node.keys.Get()[i] == key {
-//line collection_immutable/hashmap.gala:151
+//line collection_immutable/hashmap.gala:150
 				return Some[V]{}.Apply(node.values.Get()[i])
 			}
 		}
-//line collection_immutable/hashmap.gala:154
+//line collection_immutable/hashmap.gala:153
 		return None[V]{}.Apply()
 	}
+//line collection_immutable/hashmap.gala:156
+	var bit = hashMapBitpos(hashCode, level)
 //line collection_immutable/hashmap.gala:157
-	var bit = NewImmutable(hashMapBitpos(hashCode, level))
+	if (node.bitmap.Get() & bit) == 0 {
 //line collection_immutable/hashmap.gala:158
-	if (node.bitmap.Get() & bit.Get()) == 0 {
-//line collection_immutable/hashmap.gala:159
 		return None[V]{}.Apply()
 	}
+//line collection_immutable/hashmap.gala:161
+	var idx = hashMapIndex(node.bitmap.Get(), bit)
 //line collection_immutable/hashmap.gala:162
-	var idx = NewImmutable(hashMapIndex(node.bitmap.Get(), bit.Get()))
-//line collection_immutable/hashmap.gala:163
-	return getFromNodeMap[K, V](node.children.Get()[idx.Get()], key, hashCode, level+1)
+	return getFromNodeMap[K, V](node.children.Get()[idx], key, hashCode, level+1)
 }
 
-//line collection_immutable/hashmap.gala:165
+//line collection_immutable/hashmap.gala:164
 
 // GetOrElse returns the value for a key, or the default if not found. O(eC).
 func (m HashMap[K, V]) GetOrElse(key K, defaultValue V) V {
-//line collection_immutable/hashmap.gala:168
+//line collection_immutable/hashmap.gala:167
 	return m.Get(key).GetOrElse(defaultValue)
 }
 
-//line collection_immutable/hashmap.gala:170
+//line collection_immutable/hashmap.gala:169
 
 // Apply returns the value for a key. Panics if key not found. O(eC).
 func (m HashMap[K, V]) Apply(key K) V {
-//line collection_immutable/hashmap.gala:173
+//line collection_immutable/hashmap.gala:172
 	return func(obj Option[V]) V {
 		{
 			_tmp_16 := Some[V]{}.Unapply(obj)
@@ -358,656 +357,685 @@ func (m HashMap[K, V]) Apply(key K) V {
 	}(m.Get(key))
 }
 
-//line collection_immutable/hashmap.gala:178
+//line collection_immutable/hashmap.gala:177
 
 // Put adds or updates a key-value pair. Returns a new map. O(eC).
 func (m HashMap[K, V]) Put(key K, value V) HashMap[K, V] {
+//line collection_immutable/hashmap.gala:180
+	if m.root.IsEmpty() {
 //line collection_immutable/hashmap.gala:181
-	var hashCode = NewImmutable(hashMapHash[K](key))
+		var leaf = &hashMapNode[K, V]{keys: NewImmutable(go_interop.SliceOf(key)), values: NewImmutable(go_interop.SliceOf(value)), isLeaf: NewImmutable(true)}
+//line collection_immutable/hashmap.gala:182
+		return HashMap[K, V]{root: SomePtr(leaf), size: NewImmutable(m.size.Get() + 1)}
+	}
 //line collection_immutable/hashmap.gala:184
-	var sizeChange = 1
+	var root = m.root.Get()
 //line collection_immutable/hashmap.gala:185
-	if m.root.Get() != nil && containsKeyInNode[K, V](m.root.Get(), key, hashCode.Get(), 0) {
-//line collection_immutable/hashmap.gala:186
-		sizeChange = 0
-	}
+	var hashCode = hashMapHash[K](key)
+//line collection_immutable/hashmap.gala:188
+	var sizeChange = func() int {
+		if containsKeyInNode[K, V](root, key, hashCode, 0) {
+			return 0
+		} else {
+			return 1
+		}
+	}()
 //line collection_immutable/hashmap.gala:189
-	var newRoot *hashMapNode[K, V]
+	var newRoot = putToNode[K, V](root, key, value, hashCode, 0)
 //line collection_immutable/hashmap.gala:190
-	if m.root.Get() == nil {
-//line collection_immutable/hashmap.gala:191
-		var keys []K
-//line collection_immutable/hashmap.gala:192
-		var values []V
-//line collection_immutable/hashmap.gala:193
-		keys = go_interop.SliceAppend(keys, key)
-//line collection_immutable/hashmap.gala:194
-		values = go_interop.SliceAppend(values, value)
-//line collection_immutable/hashmap.gala:195
-		newRoot = &hashMapNode[K, V]{keys: NewImmutable(keys), values: NewImmutable(values), isLeaf: NewImmutable(true)}
-	} else {
-//line collection_immutable/hashmap.gala:197
-		newRoot = putToNode[K, V](m.root.Get(), key, value, hashCode.Get(), 0)
-	}
-//line collection_immutable/hashmap.gala:200
-	return HashMap[K, V]{root: NewImmutable(newRoot), size: NewImmutable(m.size.Get() + sizeChange)}
+	return HashMap[K, V]{root: SomePtr(newRoot), size: NewImmutable(m.size.Get() + sizeChange)}
 }
 
-//line collection_immutable/hashmap.gala:202
+//line collection_immutable/hashmap.gala:192
 
 // putToNode adds an entry to a node, returning a new node.
 func putToNode[K comparable, V any](node *hashMapNode[K, V], key K, value V, hashCode uint32, level int) *hashMapNode[K, V] {
-//line collection_immutable/hashmap.gala:205
+//line collection_immutable/hashmap.gala:195
 	if node.isLeaf.Get() {
-//line collection_immutable/hashmap.gala:207
+//line collection_immutable/hashmap.gala:197
 		for i := 0; i < len(node.keys.Get()); i++ {
-//line collection_immutable/hashmap.gala:208
+//line collection_immutable/hashmap.gala:198
 			if node.keys.Get()[i] == key {
-//line collection_immutable/hashmap.gala:209
+//line collection_immutable/hashmap.gala:199
 				var newKeys []K
-//line collection_immutable/hashmap.gala:210
+//line collection_immutable/hashmap.gala:200
 				var newValues []V
-//line collection_immutable/hashmap.gala:211
+//line collection_immutable/hashmap.gala:201
 				for j := 0; j < len(node.keys.Get()); j++ {
-//line collection_immutable/hashmap.gala:212
+//line collection_immutable/hashmap.gala:202
 					newKeys = go_interop.SliceAppend(newKeys, node.keys.Get()[j])
-//line collection_immutable/hashmap.gala:213
+//line collection_immutable/hashmap.gala:203
 					if j == i {
-//line collection_immutable/hashmap.gala:214
+//line collection_immutable/hashmap.gala:204
 						newValues = go_interop.SliceAppend(newValues, value)
 					} else {
-//line collection_immutable/hashmap.gala:216
+//line collection_immutable/hashmap.gala:206
 						newValues = go_interop.SliceAppend(newValues, node.values.Get()[j])
 					}
 				}
-//line collection_immutable/hashmap.gala:219
+//line collection_immutable/hashmap.gala:209
 				return &hashMapNode[K, V]{keys: NewImmutable(newKeys), values: NewImmutable(newValues), isLeaf: NewImmutable(true)}
 			}
 		}
-//line collection_immutable/hashmap.gala:224
+//line collection_immutable/hashmap.gala:214
 		if level >= 6 {
-//line collection_immutable/hashmap.gala:226
+//line collection_immutable/hashmap.gala:216
 			var newKeys []K
-//line collection_immutable/hashmap.gala:227
+//line collection_immutable/hashmap.gala:217
 			var newValues []V
-//line collection_immutable/hashmap.gala:228
+//line collection_immutable/hashmap.gala:218
 			for i := 0; i < len(node.keys.Get()); i++ {
-//line collection_immutable/hashmap.gala:229
+//line collection_immutable/hashmap.gala:219
 				newKeys = go_interop.SliceAppend(newKeys, node.keys.Get()[i])
-//line collection_immutable/hashmap.gala:230
+//line collection_immutable/hashmap.gala:220
 				newValues = go_interop.SliceAppend(newValues, node.values.Get()[i])
 			}
-//line collection_immutable/hashmap.gala:232
+//line collection_immutable/hashmap.gala:222
 			newKeys = go_interop.SliceAppend(newKeys, key)
-//line collection_immutable/hashmap.gala:233
+//line collection_immutable/hashmap.gala:223
 			newValues = go_interop.SliceAppend(newValues, value)
-//line collection_immutable/hashmap.gala:234
+//line collection_immutable/hashmap.gala:224
 			return &hashMapNode[K, V]{keys: NewImmutable(newKeys), values: NewImmutable(newValues), isLeaf: NewImmutable(true)}
 		}
-//line collection_immutable/hashmap.gala:238
-		var newNode = &hashMapNode[K, V]{bitmap: NewImmutable(uint32(0)), isLeaf: NewImmutable(false)}
-//line collection_immutable/hashmap.gala:241
+//line collection_immutable/hashmap.gala:228
+		var newNode *hashMapNode[K, V] = &hashMapNode[K, V]{bitmap: NewImmutable(uint32(0)), isLeaf: NewImmutable(false)}
+//line collection_immutable/hashmap.gala:231
 		for i := 0; i < len(node.keys.Get()); i++ {
-//line collection_immutable/hashmap.gala:242
-			var existingHash = NewImmutable(hashMapHash[K](node.keys.Get()[i]))
-//line collection_immutable/hashmap.gala:243
-			newNode = insertIntoInternalNodeMap[K, V](newNode, node.keys.Get()[i], node.values.Get()[i], existingHash.Get(), level)
+//line collection_immutable/hashmap.gala:232
+			var existingHash = hashMapHash[K](node.keys.Get()[i])
+//line collection_immutable/hashmap.gala:233
+			newNode = insertIntoInternalNodeMap[K, V](newNode, node.keys.Get()[i], node.values.Get()[i], existingHash, level)
 		}
-//line collection_immutable/hashmap.gala:247
+//line collection_immutable/hashmap.gala:237
 		return insertIntoInternalNodeMap[K, V](newNode, key, value, hashCode, level)
 	}
-//line collection_immutable/hashmap.gala:251
-	var bit = NewImmutable(hashMapBitpos(hashCode, level))
-//line collection_immutable/hashmap.gala:252
-	var idx = NewImmutable(hashMapIndex(node.bitmap.Get(), bit.Get()))
-//line collection_immutable/hashmap.gala:254
-	if (node.bitmap.Get() & bit.Get()) == 0 {
-//line collection_immutable/hashmap.gala:256
+//line collection_immutable/hashmap.gala:241
+	var bit = hashMapBitpos(hashCode, level)
+//line collection_immutable/hashmap.gala:242
+	var idx = hashMapIndex(node.bitmap.Get(), bit)
+//line collection_immutable/hashmap.gala:244
+	if (node.bitmap.Get() & bit) == 0 {
+//line collection_immutable/hashmap.gala:246
 		var newKeys []K
-//line collection_immutable/hashmap.gala:257
+//line collection_immutable/hashmap.gala:247
 		var newValues []V
-//line collection_immutable/hashmap.gala:258
+//line collection_immutable/hashmap.gala:248
 		newKeys = go_interop.SliceAppend(newKeys, key)
-//line collection_immutable/hashmap.gala:259
+//line collection_immutable/hashmap.gala:249
 		newValues = go_interop.SliceAppend(newValues, value)
-//line collection_immutable/hashmap.gala:260
-		var newLeaf = NewImmutable(&hashMapNode[K, V]{keys: NewImmutable(newKeys), values: NewImmutable(newValues), isLeaf: NewImmutable(true)})
-//line collection_immutable/hashmap.gala:263
+//line collection_immutable/hashmap.gala:250
+		var newLeaf = &hashMapNode[K, V]{keys: NewImmutable(newKeys), values: NewImmutable(newValues), isLeaf: NewImmutable(true)}
+//line collection_immutable/hashmap.gala:253
 		var newChildren []*hashMapNode[K, V]
-//line collection_immutable/hashmap.gala:264
-		for i := 0; i < idx.Get(); i++ {
-//line collection_immutable/hashmap.gala:265
+//line collection_immutable/hashmap.gala:254
+		for i := 0; i < idx; i++ {
+//line collection_immutable/hashmap.gala:255
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
-//line collection_immutable/hashmap.gala:267
-		newChildren = go_interop.SliceAppend(newChildren, newLeaf.Get())
-//line collection_immutable/hashmap.gala:268
-		for i := idx.Get(); i < len(node.children.Get()); i++ {
+//line collection_immutable/hashmap.gala:257
+		newChildren = go_interop.SliceAppend(newChildren, newLeaf)
+//line collection_immutable/hashmap.gala:258
+		for i := idx; i < len(node.children.Get()); i++ {
+//line collection_immutable/hashmap.gala:259
+			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
+		}
+//line collection_immutable/hashmap.gala:262
+		return &hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get() | bit), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
+	}
+//line collection_immutable/hashmap.gala:266
+	var newChild = putToNode[K, V](node.children.Get()[idx], key, value, hashCode, level+1)
 //line collection_immutable/hashmap.gala:269
-			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
-		}
-//line collection_immutable/hashmap.gala:272
-		return &hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get() | bit.Get()), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
-	}
-//line collection_immutable/hashmap.gala:276
-	var newChild = NewImmutable(putToNode[K, V](node.children.Get()[idx.Get()], key, value, hashCode, level+1))
-//line collection_immutable/hashmap.gala:279
 	var newChildren []*hashMapNode[K, V]
-//line collection_immutable/hashmap.gala:280
+//line collection_immutable/hashmap.gala:270
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashmap.gala:281
-		if i == idx.Get() {
-//line collection_immutable/hashmap.gala:282
-			newChildren = go_interop.SliceAppend(newChildren, newChild.Get())
+//line collection_immutable/hashmap.gala:271
+		if i == idx {
+//line collection_immutable/hashmap.gala:272
+			newChildren = go_interop.SliceAppend(newChildren, newChild)
 		} else {
-//line collection_immutable/hashmap.gala:284
+//line collection_immutable/hashmap.gala:274
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
 	}
-//line collection_immutable/hashmap.gala:288
+//line collection_immutable/hashmap.gala:278
 	return &hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get()), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
 }
 
-//line collection_immutable/hashmap.gala:290
+//line collection_immutable/hashmap.gala:280
 
 // insertIntoInternalNodeMap inserts an entry into an internal node.
 func insertIntoInternalNodeMap[K comparable, V any](node *hashMapNode[K, V], key K, value V, hashCode uint32, level int) *hashMapNode[K, V] {
-//line collection_immutable/hashmap.gala:293
-	var bit = NewImmutable(hashMapBitpos(hashCode, level))
-//line collection_immutable/hashmap.gala:294
-	var idx = NewImmutable(hashMapIndex(node.bitmap.Get(), bit.Get()))
-//line collection_immutable/hashmap.gala:296
-	if (node.bitmap.Get() & bit.Get()) == 0 {
-//line collection_immutable/hashmap.gala:298
+//line collection_immutable/hashmap.gala:283
+	var bit = hashMapBitpos(hashCode, level)
+//line collection_immutable/hashmap.gala:284
+	var idx = hashMapIndex(node.bitmap.Get(), bit)
+//line collection_immutable/hashmap.gala:286
+	if (node.bitmap.Get() & bit) == 0 {
+//line collection_immutable/hashmap.gala:288
 		var newKeys []K
-//line collection_immutable/hashmap.gala:299
+//line collection_immutable/hashmap.gala:289
 		var newValues []V
-//line collection_immutable/hashmap.gala:300
+//line collection_immutable/hashmap.gala:290
 		newKeys = go_interop.SliceAppend(newKeys, key)
-//line collection_immutable/hashmap.gala:301
+//line collection_immutable/hashmap.gala:291
 		newValues = go_interop.SliceAppend(newValues, value)
-//line collection_immutable/hashmap.gala:302
-		var newLeaf = NewImmutable(&hashMapNode[K, V]{keys: NewImmutable(newKeys), values: NewImmutable(newValues), isLeaf: NewImmutable(true)})
-//line collection_immutable/hashmap.gala:305
+//line collection_immutable/hashmap.gala:292
+		var newLeaf = &hashMapNode[K, V]{keys: NewImmutable(newKeys), values: NewImmutable(newValues), isLeaf: NewImmutable(true)}
+//line collection_immutable/hashmap.gala:295
 		var newChildren []*hashMapNode[K, V]
-//line collection_immutable/hashmap.gala:306
-		for i := 0; i < idx.Get(); i++ {
-//line collection_immutable/hashmap.gala:307
+//line collection_immutable/hashmap.gala:296
+		for i := 0; i < idx; i++ {
+//line collection_immutable/hashmap.gala:297
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
-//line collection_immutable/hashmap.gala:309
-		newChildren = go_interop.SliceAppend(newChildren, newLeaf.Get())
-//line collection_immutable/hashmap.gala:310
-		for i := idx.Get(); i < len(node.children.Get()); i++ {
+//line collection_immutable/hashmap.gala:299
+		newChildren = go_interop.SliceAppend(newChildren, newLeaf)
+//line collection_immutable/hashmap.gala:300
+		for i := idx; i < len(node.children.Get()); i++ {
+//line collection_immutable/hashmap.gala:301
+			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
+		}
+//line collection_immutable/hashmap.gala:304
+		return &hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get() | bit), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
+	}
+//line collection_immutable/hashmap.gala:308
+	var newChild = putToNode[K, V](node.children.Get()[idx], key, value, hashCode, level+1)
 //line collection_immutable/hashmap.gala:311
-			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
-		}
-//line collection_immutable/hashmap.gala:314
-		return &hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get() | bit.Get()), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
-	}
-//line collection_immutable/hashmap.gala:318
-	var newChild = NewImmutable(putToNode[K, V](node.children.Get()[idx.Get()], key, value, hashCode, level+1))
-//line collection_immutable/hashmap.gala:321
 	var newChildren []*hashMapNode[K, V]
-//line collection_immutable/hashmap.gala:322
+//line collection_immutable/hashmap.gala:312
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashmap.gala:323
-		if i == idx.Get() {
-//line collection_immutable/hashmap.gala:324
-			newChildren = go_interop.SliceAppend(newChildren, newChild.Get())
+//line collection_immutable/hashmap.gala:313
+		if i == idx {
+//line collection_immutable/hashmap.gala:314
+			newChildren = go_interop.SliceAppend(newChildren, newChild)
 		} else {
-//line collection_immutable/hashmap.gala:326
+//line collection_immutable/hashmap.gala:316
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
 	}
-//line collection_immutable/hashmap.gala:330
+//line collection_immutable/hashmap.gala:320
 	return &hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get()), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
 }
 
-//line collection_immutable/hashmap.gala:332
+//line collection_immutable/hashmap.gala:322
 
 // Remove removes a key from the map. Returns a new map. O(eC).
 func (m HashMap[K, V]) Remove(key K) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:335
-	var hashCode = NewImmutable(hashMapHash[K](key))
-//line collection_immutable/hashmap.gala:338
-	if m.root.Get() == nil || !containsKeyInNode[K, V](m.root.Get(), key, hashCode.Get(), 0) {
-//line collection_immutable/hashmap.gala:339
+//line collection_immutable/hashmap.gala:325
+	if m.root.IsEmpty() {
+//line collection_immutable/hashmap.gala:326
 		return m
 	}
-//line collection_immutable/hashmap.gala:342
+//line collection_immutable/hashmap.gala:328
+	var root = m.root.Get()
+//line collection_immutable/hashmap.gala:329
+	var hashCode = hashMapHash[K](key)
+//line collection_immutable/hashmap.gala:332
+	if !containsKeyInNode[K, V](root, key, hashCode, 0) {
+//line collection_immutable/hashmap.gala:333
+		return m
+	}
+//line collection_immutable/hashmap.gala:336
 	if m.size.Get() == 1 {
-//line collection_immutable/hashmap.gala:343
+//line collection_immutable/hashmap.gala:337
 		return EmptyHashMap[K, V]()
 	}
-//line collection_immutable/hashmap.gala:346
-	var newRoot = NewImmutable(removeFromNodeMap[K, V](m.root.Get(), key, hashCode.Get(), 0))
-//line collection_immutable/hashmap.gala:347
-	return HashMap[K, V]{root: NewImmutable(newRoot.Get()), size: NewImmutable(m.size.Get() - 1)}
+//line collection_immutable/hashmap.gala:340
+	return HashMap[K, V]{root: removeFromNodeMap[K, V](root, key, hashCode, 0), size: NewImmutable(m.size.Get() - 1)}
 }
 
-//line collection_immutable/hashmap.gala:349
+//line collection_immutable/hashmap.gala:342
 
-// removeFromNodeMap removes a key from a node, returning a new node.
-func removeFromNodeMap[K comparable, V any](node *hashMapNode[K, V], key K, hashCode uint32, level int) *hashMapNode[K, V] {
-//line collection_immutable/hashmap.gala:352
+// removeFromNodeMap removes a key from a node, returning the new node, or
+// empty when no entry is left under it.
+func removeFromNodeMap[K comparable, V any](node *hashMapNode[K, V], key K, hashCode uint32, level int) OptionPtr[hashMapNode[K, V]] {
+//line collection_immutable/hashmap.gala:346
 	if node.isLeaf.Get() {
-//line collection_immutable/hashmap.gala:353
+//line collection_immutable/hashmap.gala:347
 		var newKeys []K
-//line collection_immutable/hashmap.gala:354
+//line collection_immutable/hashmap.gala:348
 		var newValues []V
-//line collection_immutable/hashmap.gala:355
+//line collection_immutable/hashmap.gala:349
 		for i := 0; i < len(node.keys.Get()); i++ {
-//line collection_immutable/hashmap.gala:356
+//line collection_immutable/hashmap.gala:350
 			if node.keys.Get()[i] != key {
-//line collection_immutable/hashmap.gala:357
+//line collection_immutable/hashmap.gala:351
 				newKeys = go_interop.SliceAppend(newKeys, node.keys.Get()[i])
-//line collection_immutable/hashmap.gala:358
+//line collection_immutable/hashmap.gala:352
 				newValues = go_interop.SliceAppend(newValues, node.values.Get()[i])
 			}
 		}
-//line collection_immutable/hashmap.gala:361
+//line collection_immutable/hashmap.gala:355
 		if len(newKeys) == 0 {
+//line collection_immutable/hashmap.gala:356
+			return EmptyOptionPtr[hashMapNode[K, V]]()
+		}
+//line collection_immutable/hashmap.gala:358
+		return SomePtr(&hashMapNode[K, V]{keys: NewImmutable(newKeys), values: NewImmutable(newValues), isLeaf: NewImmutable(true)})
+	}
+//line collection_immutable/hashmap.gala:361
+	var bit = hashMapBitpos(hashCode, level)
 //line collection_immutable/hashmap.gala:362
-			return nil
-		}
+	var idx = hashMapIndex(node.bitmap.Get(), bit)
 //line collection_immutable/hashmap.gala:364
-		return &hashMapNode[K, V]{keys: NewImmutable(newKeys), values: NewImmutable(newValues), isLeaf: NewImmutable(true)}
+	if (node.bitmap.Get() & bit) == 0 {
+//line collection_immutable/hashmap.gala:365
+		return SomePtr(node)
 	}
-//line collection_immutable/hashmap.gala:367
-	var bit = NewImmutable(hashMapBitpos(hashCode, level))
 //line collection_immutable/hashmap.gala:368
-	var idx = NewImmutable(hashMapIndex(node.bitmap.Get(), bit.Get()))
+	var newChild = removeFromNodeMap[K, V](node.children.Get()[idx], key, hashCode, level+1)
 //line collection_immutable/hashmap.gala:370
-	if (node.bitmap.Get() & bit.Get()) == 0 {
-//line collection_immutable/hashmap.gala:371
-		return node
-	}
-//line collection_immutable/hashmap.gala:374
-	var newChild = NewImmutable(removeFromNodeMap[K, V](node.children.Get()[idx.Get()], key, hashCode, level+1))
-//line collection_immutable/hashmap.gala:376
-	if newChild.Get() == nil {
-//line collection_immutable/hashmap.gala:378
+	if newChild.IsEmpty() {
+//line collection_immutable/hashmap.gala:372
 		if hashMapPopcount(node.bitmap.Get()) == 1 {
-//line collection_immutable/hashmap.gala:379
-			return nil
+//line collection_immutable/hashmap.gala:373
+			return EmptyOptionPtr[hashMapNode[K, V]]()
 		}
-//line collection_immutable/hashmap.gala:382
+//line collection_immutable/hashmap.gala:376
 		var newChildren []*hashMapNode[K, V]
-//line collection_immutable/hashmap.gala:383
+//line collection_immutable/hashmap.gala:377
 		for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashmap.gala:384
-			if i != idx.Get() {
-//line collection_immutable/hashmap.gala:385
+//line collection_immutable/hashmap.gala:378
+			if i != idx {
+//line collection_immutable/hashmap.gala:379
 				newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 			}
 		}
-//line collection_immutable/hashmap.gala:388
-		return &hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get() & (^bit.Get())), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
+//line collection_immutable/hashmap.gala:382
+		return SomePtr(&hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get() & (^bit)), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)})
 	}
-//line collection_immutable/hashmap.gala:392
+//line collection_immutable/hashmap.gala:386
 	var newChildren []*hashMapNode[K, V]
-//line collection_immutable/hashmap.gala:393
+//line collection_immutable/hashmap.gala:387
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashmap.gala:394
-		if i == idx.Get() {
-//line collection_immutable/hashmap.gala:395
+//line collection_immutable/hashmap.gala:388
+		if i == idx {
+//line collection_immutable/hashmap.gala:389
 			newChildren = go_interop.SliceAppend(newChildren, newChild.Get())
 		} else {
-//line collection_immutable/hashmap.gala:397
+//line collection_immutable/hashmap.gala:391
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
 	}
-//line collection_immutable/hashmap.gala:401
-	return &hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get()), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
+//line collection_immutable/hashmap.gala:395
+	return SomePtr(&hashMapNode[K, V]{bitmap: NewImmutable(node.bitmap.Get()), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)})
 }
 
-//line collection_immutable/hashmap.gala:403
+//line collection_immutable/hashmap.gala:397
 
 // Updated is an alias for Put.
 func (m HashMap[K, V]) Updated(key K, value V) HashMap[K, V] {
 	return m.Put(key, value)
 }
 
-//line collection_immutable/hashmap.gala:408
+//line collection_immutable/hashmap.gala:402
 
 // ForEachKV applies a function to each key-value pair for side effects.
 func (m HashMap[K, V]) ForEachKV(f func(K, V)) {
-//line collection_immutable/hashmap.gala:411
-	if m.root.Get() != nil {
-//line collection_immutable/hashmap.gala:412
-		forEachInNodeMapKV[K, V](m.root.Get(), f)
-	}
+//line collection_immutable/hashmap.gala:405
+	m.root.ForEach(func(root *hashMapNode[K, V]) {
+		forEachInNodeMapKV[K, V](root, f)
+	})
 }
 
-//line collection_immutable/hashmap.gala:415
+//line collection_immutable/hashmap.gala:407
 
 // forEachInNodeMapKV traverses a node and applies f to each entry.
 func forEachInNodeMapKV[K comparable, V any](node *hashMapNode[K, V], f func(K, V)) {
-//line collection_immutable/hashmap.gala:418
+//line collection_immutable/hashmap.gala:410
 	if node.isLeaf.Get() {
-//line collection_immutable/hashmap.gala:419
+//line collection_immutable/hashmap.gala:411
 		for i := 0; i < len(node.keys.Get()); i++ {
-//line collection_immutable/hashmap.gala:420
+//line collection_immutable/hashmap.gala:412
 			f(node.keys.Get()[i], node.values.Get()[i])
 		}
-//line collection_immutable/hashmap.gala:422
+//line collection_immutable/hashmap.gala:414
 		return
 	}
-//line collection_immutable/hashmap.gala:425
+//line collection_immutable/hashmap.gala:417
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashmap.gala:426
+//line collection_immutable/hashmap.gala:418
 		forEachInNodeMapKV[K, V](node.children.Get()[i], f)
 	}
 }
 
-//line collection_immutable/hashmap.gala:429
+//line collection_immutable/hashmap.gala:421
 
 // ForEachKey applies a function to each key for side effects.
 func (m HashMap[K, V]) ForEachKey(f func(K)) {
-//line collection_immutable/hashmap.gala:432
+//line collection_immutable/hashmap.gala:424
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/hashmap.gala:433
+//line collection_immutable/hashmap.gala:425
 		f(k)
 	})
 }
 
-//line collection_immutable/hashmap.gala:436
+//line collection_immutable/hashmap.gala:428
 
 // ForEachValue applies a function to each value for side effects.
 func (m HashMap[K, V]) ForEachValue(f func(V)) {
-//line collection_immutable/hashmap.gala:439
+//line collection_immutable/hashmap.gala:431
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/hashmap.gala:440
+//line collection_immutable/hashmap.gala:432
 		f(v)
 	})
 }
 
-//line collection_immutable/hashmap.gala:445
+//line collection_immutable/hashmap.gala:437
 
 // MapValues applies a function to each value and returns a new map.
 func HashMap_MapValues[U any, K comparable, V any](m HashMap[K, V], f func(V) U) HashMap[K, U] {
-//line collection_immutable/hashmap.gala:448
+//line collection_immutable/hashmap.gala:440
 	return HashMap_FoldLeftKV[HashMap[K, U], K, V](m, EmptyHashMap[K, U](), func(acc HashMap[K, U], k K, v V) HashMap[K, U] {
 		return acc.Put(k, f(v))
 	})
 }
 
-//line collection_immutable/hashmap.gala:450
+//line collection_immutable/hashmap.gala:442
 
 // Filter returns a new map with only entries that satisfy the predicate.
 func (m HashMap[K, V]) Filter(p func(K, V) bool) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:453
+//line collection_immutable/hashmap.gala:445
 	return HashMap_FoldLeftKV[HashMap[K, V], K, V](m, EmptyHashMap[K, V](), func(acc HashMap[K, V], k K, v V) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:454
+//line collection_immutable/hashmap.gala:446
 		if p(k, v) {
-//line collection_immutable/hashmap.gala:455
+//line collection_immutable/hashmap.gala:447
 			return acc.Put(k, v)
 		}
-//line collection_immutable/hashmap.gala:457
+//line collection_immutable/hashmap.gala:449
 		return acc
 	})
 }
 
-//line collection_immutable/hashmap.gala:460
+//line collection_immutable/hashmap.gala:452
 
 // FilterKeys returns a new map with only entries whose keys satisfy the predicate.
 func (m HashMap[K, V]) FilterKeys(p func(K) bool) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:463
+//line collection_immutable/hashmap.gala:455
 	return HashMap_FoldLeftKV[HashMap[K, V], K, V](m, EmptyHashMap[K, V](), func(acc HashMap[K, V], k K, v V) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:464
+//line collection_immutable/hashmap.gala:456
 		if p(k) {
-//line collection_immutable/hashmap.gala:465
+//line collection_immutable/hashmap.gala:457
 			return acc.Put(k, v)
 		}
-//line collection_immutable/hashmap.gala:467
+//line collection_immutable/hashmap.gala:459
 		return acc
 	})
 }
 
-//line collection_immutable/hashmap.gala:470
+//line collection_immutable/hashmap.gala:462
 
 // FilterValues returns a new map with only entries whose values satisfy the predicate.
 func (m HashMap[K, V]) FilterValues(p func(V) bool) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:473
+//line collection_immutable/hashmap.gala:465
 	return HashMap_FoldLeftKV[HashMap[K, V], K, V](m, EmptyHashMap[K, V](), func(acc HashMap[K, V], k K, v V) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:474
+//line collection_immutable/hashmap.gala:466
 		if p(v) {
-//line collection_immutable/hashmap.gala:475
+//line collection_immutable/hashmap.gala:467
 			return acc.Put(k, v)
 		}
-//line collection_immutable/hashmap.gala:477
+//line collection_immutable/hashmap.gala:469
 		return acc
 	})
 }
 
-//line collection_immutable/hashmap.gala:480
+//line collection_immutable/hashmap.gala:472
 
 // Collect applies a partial function to each key-value pair and collects the results.
 // Entries for which the function returns None are filtered out.
 // Returns an Array since the result type may not be suitable for a HashMap.
 func HashMap_Collect[U any, K comparable, V any](m HashMap[K, V], pf func(K, V) Option[U]) Array[U] {
-//line collection_immutable/hashmap.gala:485
+//line collection_immutable/hashmap.gala:477
 	var builder = newArrayBuilder[U]()
-//line collection_immutable/hashmap.gala:486
+//line collection_immutable/hashmap.gala:478
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/hashmap.gala:487
-		var opt = NewImmutable(pf(k, v))
-//line collection_immutable/hashmap.gala:488
-		if opt.Get().IsDefined() {
-//line collection_immutable/hashmap.gala:489
-			builder.Add(opt.Get().Get())
+//line collection_immutable/hashmap.gala:479
+		var opt = pf(k, v)
+//line collection_immutable/hashmap.gala:480
+		if opt.IsDefined() {
+//line collection_immutable/hashmap.gala:481
+			builder.Add(opt.Get())
 		}
 	})
-//line collection_immutable/hashmap.gala:492
+//line collection_immutable/hashmap.gala:484
 	return builder.Result()
 }
 
-//line collection_immutable/hashmap.gala:494
+//line collection_immutable/hashmap.gala:486
 
 // FilterNot returns a new map with entries that do not satisfy the predicate.
 func (m HashMap[K, V]) FilterNot(p func(K, V) bool) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:497
+//line collection_immutable/hashmap.gala:489
 	return HashMap_FoldLeftKV[HashMap[K, V], K, V](m, EmptyHashMap[K, V](), func(acc HashMap[K, V], k K, v V) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:498
+//line collection_immutable/hashmap.gala:490
 		if !p(k, v) {
-//line collection_immutable/hashmap.gala:499
+//line collection_immutable/hashmap.gala:491
 			return acc.Put(k, v)
 		}
-//line collection_immutable/hashmap.gala:501
+//line collection_immutable/hashmap.gala:493
 		return acc
 	})
 }
 
-//line collection_immutable/hashmap.gala:506
+//line collection_immutable/hashmap.gala:498
 
 // FoldLeftKV applies a binary operator from left to right with key-value pairs.
 func HashMap_FoldLeftKV[U any, K comparable, V any](m HashMap[K, V], initial U, f func(U, K, V) U) U {
-//line collection_immutable/hashmap.gala:509
+//line collection_immutable/hashmap.gala:501
 	var acc = initial
-//line collection_immutable/hashmap.gala:510
+//line collection_immutable/hashmap.gala:502
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/hashmap.gala:511
+//line collection_immutable/hashmap.gala:503
 		acc = f(acc, k, v)
 	})
-//line collection_immutable/hashmap.gala:513
+//line collection_immutable/hashmap.gala:505
 	return acc
 }
 
-//line collection_immutable/hashmap.gala:517
+//line collection_immutable/hashmap.gala:509
 
 // Exists returns true if any entry satisfies the predicate.
 // Uses early exit for performance.
 func (m HashMap[K, V]) Exists(p func(K, V) bool) bool {
-//line collection_immutable/hashmap.gala:521
-	if m.root.Get() == nil {
-//line collection_immutable/hashmap.gala:522
-		return false
-	}
-//line collection_immutable/hashmap.gala:524
-	return existsInNodeMap[K, V](m.root.Get(), p)
+	return func(obj Option[*hashMapNode[K, V]]) bool {
+		{
+			_tmp_20 := Some[*hashMapNode[K, V]]{}.Unapply(obj)
+			_tmp_21 := _tmp_20.IsDefined()
+			var _tmp_22 *hashMapNode[K, V]
+			if _tmp_21 {
+				_tmp_22 = _tmp_20.Get()
+			}
+			_ = _tmp_22
+			root := _tmp_22
+			if _tmp_21 {
+				return existsInNodeMap[K, V](root, p)
+			} else {
+				_tmp_23 := None[*hashMapNode[K, V]]{}.Unapply(obj)
+				if _tmp_23 {
+					return false
+				} else {
+					panic("unreachable")
+				}
+			}
+		}
+	}(m.root.MatchView())
 }
 
-//line collection_immutable/hashmap.gala:526
+//line collection_immutable/hashmap.gala:516
 
 // existsInNodeMap searches for an entry satisfying p with early exit.
 func existsInNodeMap[K comparable, V any](node *hashMapNode[K, V], p func(K, V) bool) bool {
-//line collection_immutable/hashmap.gala:529
+//line collection_immutable/hashmap.gala:519
 	if node.isLeaf.Get() {
-//line collection_immutable/hashmap.gala:530
+//line collection_immutable/hashmap.gala:520
 		for i := 0; i < len(node.keys.Get()); i++ {
-//line collection_immutable/hashmap.gala:531
+//line collection_immutable/hashmap.gala:521
 			if p(node.keys.Get()[i], node.values.Get()[i]) {
-//line collection_immutable/hashmap.gala:532
+//line collection_immutable/hashmap.gala:522
 				return true
 			}
 		}
-//line collection_immutable/hashmap.gala:535
+//line collection_immutable/hashmap.gala:525
 		return false
 	}
-//line collection_immutable/hashmap.gala:537
+//line collection_immutable/hashmap.gala:527
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashmap.gala:538
+//line collection_immutable/hashmap.gala:528
 		if existsInNodeMap[K, V](node.children.Get()[i], p) {
-//line collection_immutable/hashmap.gala:539
+//line collection_immutable/hashmap.gala:529
 			return true
 		}
 	}
-//line collection_immutable/hashmap.gala:542
+//line collection_immutable/hashmap.gala:532
 	return false
 }
 
-//line collection_immutable/hashmap.gala:544
+//line collection_immutable/hashmap.gala:534
 
 // ForAll returns true if all entries satisfy the predicate.
 // Uses early exit for performance.
 func (m HashMap[K, V]) ForAll(p func(K, V) bool) bool {
-//line collection_immutable/hashmap.gala:548
-	if m.root.Get() == nil {
-//line collection_immutable/hashmap.gala:549
-		return true
-	}
-//line collection_immutable/hashmap.gala:551
-	return forAllInNodeMap[K, V](m.root.Get(), p)
+	return func(obj Option[*hashMapNode[K, V]]) bool {
+		{
+			_tmp_24 := Some[*hashMapNode[K, V]]{}.Unapply(obj)
+			_tmp_25 := _tmp_24.IsDefined()
+			var _tmp_26 *hashMapNode[K, V]
+			if _tmp_25 {
+				_tmp_26 = _tmp_24.Get()
+			}
+			_ = _tmp_26
+			root := _tmp_26
+			if _tmp_25 {
+				return forAllInNodeMap[K, V](root, p)
+			} else {
+				_tmp_27 := None[*hashMapNode[K, V]]{}.Unapply(obj)
+				if _tmp_27 {
+					return true
+				} else {
+					panic("unreachable")
+				}
+			}
+		}
+	}(m.root.MatchView())
 }
 
-//line collection_immutable/hashmap.gala:553
+//line collection_immutable/hashmap.gala:541
 
 // forAllInNodeMap checks if all entries satisfy p with early exit.
 func forAllInNodeMap[K comparable, V any](node *hashMapNode[K, V], p func(K, V) bool) bool {
-//line collection_immutable/hashmap.gala:556
+//line collection_immutable/hashmap.gala:544
 	if node.isLeaf.Get() {
-//line collection_immutable/hashmap.gala:557
+//line collection_immutable/hashmap.gala:545
 		for i := 0; i < len(node.keys.Get()); i++ {
-//line collection_immutable/hashmap.gala:558
+//line collection_immutable/hashmap.gala:546
 			if !p(node.keys.Get()[i], node.values.Get()[i]) {
-//line collection_immutable/hashmap.gala:559
+//line collection_immutable/hashmap.gala:547
 				return false
 			}
 		}
-//line collection_immutable/hashmap.gala:562
+//line collection_immutable/hashmap.gala:550
 		return true
 	}
-//line collection_immutable/hashmap.gala:564
+//line collection_immutable/hashmap.gala:552
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashmap.gala:565
+//line collection_immutable/hashmap.gala:553
 		if !forAllInNodeMap[K, V](node.children.Get()[i], p) {
-//line collection_immutable/hashmap.gala:566
+//line collection_immutable/hashmap.gala:554
 			return false
 		}
 	}
-//line collection_immutable/hashmap.gala:569
+//line collection_immutable/hashmap.gala:557
 	return true
 }
 
-//line collection_immutable/hashmap.gala:571
+//line collection_immutable/hashmap.gala:559
 
 // Count returns the number of entries satisfying the predicate.
 func (m HashMap[K, V]) Count(p func(K, V) bool) int {
-//line collection_immutable/hashmap.gala:574
+//line collection_immutable/hashmap.gala:562
 	return HashMap_FoldLeftKV[int, K, V](m, 0, func(acc int, k K, v V) int {
-//line collection_immutable/hashmap.gala:575
+//line collection_immutable/hashmap.gala:563
 		if p(k, v) {
-//line collection_immutable/hashmap.gala:576
+//line collection_immutable/hashmap.gala:564
 			return acc + 1
 		}
-//line collection_immutable/hashmap.gala:578
+//line collection_immutable/hashmap.gala:566
 		return acc
 	})
 }
 
-//line collection_immutable/hashmap.gala:583
+//line collection_immutable/hashmap.gala:571
 
 // Keys returns a HashSet of all keys.
 func (m HashMap[K, V]) Keys() HashSet[K] {
-//line collection_immutable/hashmap.gala:586
+//line collection_immutable/hashmap.gala:574
 	return HashMap_FoldLeftKV[HashSet[K], K, V](m, EmptyHashSet[K](), func(acc HashSet[K], k K, v V) HashSet[K] {
 		return acc.Add(k)
 	})
 }
 
-//line collection_immutable/hashmap.gala:588
+//line collection_immutable/hashmap.gala:576
 
 // Values returns a List of all values.
 func (m HashMap[K, V]) Values() List[V] {
-//line collection_immutable/hashmap.gala:591
+//line collection_immutable/hashmap.gala:579
 	return HashMap_FoldLeftKV[List[V], K, V](m, emptyList[V](), func(acc List[V], k K, v V) List[V] {
 		return consList[V](v, acc)
 	})
 }
 
-//line collection_immutable/hashmap.gala:593
+//line collection_immutable/hashmap.gala:581
 
 // KeyArray returns an Array of all keys.
 func (m HashMap[K, V]) KeyArray() Array[K] {
-//line collection_immutable/hashmap.gala:596
+//line collection_immutable/hashmap.gala:584
 	return HashMap_FoldLeftKV[Array[K], K, V](m, EmptyArray[K](), func(acc Array[K], k K, v V) Array[K] {
 		return acc.Append(k)
 	})
 }
 
-//line collection_immutable/hashmap.gala:598
+//line collection_immutable/hashmap.gala:586
 
 // ValueArray returns an Array of all values.
 func (m HashMap[K, V]) ValueArray() Array[V] {
-//line collection_immutable/hashmap.gala:601
+//line collection_immutable/hashmap.gala:589
 	return HashMap_FoldLeftKV[Array[V], K, V](m, EmptyArray[V](), func(acc Array[V], k K, v V) Array[V] {
 		return acc.Append(v)
 	})
 }
 
-//line collection_immutable/hashmap.gala:605
+//line collection_immutable/hashmap.gala:593
 
 // PutAll adds all entries from another map. Returns a new map.
 func (m HashMap[K, V]) PutAll(other HashMap[K, V]) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:608
+//line collection_immutable/hashmap.gala:596
 	return HashMap_FoldLeftKV[HashMap[K, V], K, V](other, m, func(acc HashMap[K, V], k K, v V) HashMap[K, V] {
 		return acc.Put(k, v)
 	})
 }
 
-//line collection_immutable/hashmap.gala:610
+//line collection_immutable/hashmap.gala:598
 
 // Merge merges another map with a combining function for duplicate keys.
 func (m HashMap[K, V]) Merge(other HashMap[K, V], f func(V, V) V) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:613
+//line collection_immutable/hashmap.gala:601
 	return HashMap_FoldLeftKV[HashMap[K, V], K, V](other, m, func(acc HashMap[K, V], k K, v V) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:614
+//line collection_immutable/hashmap.gala:602
 		return func(obj Option[V]) HashMap[K, V] {
 			{
-				_tmp_20 := Some[V]{}.Unapply(obj)
-				_tmp_21 := _tmp_20.IsDefined()
-				var _tmp_22 V
-				if _tmp_21 {
-					_tmp_22 = _tmp_20.Get()
+				_tmp_28 := Some[V]{}.Unapply(obj)
+				_tmp_29 := _tmp_28.IsDefined()
+				var _tmp_30 V
+				if _tmp_29 {
+					_tmp_30 = _tmp_28.Get()
 				}
-				_ = _tmp_22
-				existing := _tmp_22
-				if _tmp_21 {
+				_ = _tmp_30
+				existing := _tmp_30
+				if _tmp_29 {
 					return acc.Put(k, f(existing, v))
 				} else {
-					_tmp_23 := None[V]{}.Unapply(obj)
-					if _tmp_23 {
+					_tmp_31 := None[V]{}.Unapply(obj)
+					if _tmp_31 {
 						return acc.Put(k, v)
 					} else {
 						panic("unreachable")
@@ -1018,97 +1046,97 @@ func (m HashMap[K, V]) Merge(other HashMap[K, V], f func(V, V) V) HashMap[K, V] 
 	})
 }
 
-//line collection_immutable/hashmap.gala:622
+//line collection_immutable/hashmap.gala:610
 
 // ToGoMap converts the map to a Go map.
 func (m HashMap[K, V]) ToGoMap() map[K]V {
-//line collection_immutable/hashmap.gala:625
+//line collection_immutable/hashmap.gala:613
 	var result = go_interop.MapEmpty[K, V]()
-//line collection_immutable/hashmap.gala:626
+//line collection_immutable/hashmap.gala:614
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/hashmap.gala:627
+//line collection_immutable/hashmap.gala:615
 		go_interop.MapPut[K, V](result, k, v)
 	})
-//line collection_immutable/hashmap.gala:629
+//line collection_immutable/hashmap.gala:617
 	return result
 }
 
-//line collection_immutable/hashmap.gala:631
+//line collection_immutable/hashmap.gala:619
 
 // ToList converts the map to a List of tuples.
 func (m HashMap[K, V]) ToList() List[Tuple[K, V]] {
-//line collection_immutable/hashmap.gala:634
+//line collection_immutable/hashmap.gala:622
 	return HashMap_FoldLeftKV[List[Tuple[K, V]], K, V](m, emptyList[Tuple[K, V]](), func(acc List[Tuple[K, V]], k K, v V) List[Tuple[K, V]] {
 		return consList[Tuple[K, V]](Tuple[K, V]{V1: NewImmutable(k), V2: NewImmutable(v)}, acc)
 	})
 }
 
-//line collection_immutable/hashmap.gala:636
+//line collection_immutable/hashmap.gala:624
 
 // String returns a string representation of the map.
 func (m HashMap[K, V]) String() string {
-//line collection_immutable/hashmap.gala:639
+//line collection_immutable/hashmap.gala:627
 	if m.size.Get() == 0 {
-//line collection_immutable/hashmap.gala:640
+//line collection_immutable/hashmap.gala:628
 		return "HashMap()"
 	}
-//line collection_immutable/hashmap.gala:642
+//line collection_immutable/hashmap.gala:630
 	var result = "HashMap("
-//line collection_immutable/hashmap.gala:643
+//line collection_immutable/hashmap.gala:631
 	var first = true
-//line collection_immutable/hashmap.gala:644
+//line collection_immutable/hashmap.gala:632
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/hashmap.gala:645
+//line collection_immutable/hashmap.gala:633
 		if !first {
-//line collection_immutable/hashmap.gala:646
+//line collection_immutable/hashmap.gala:634
 			result = result + ", "
 		}
-//line collection_immutable/hashmap.gala:648
+//line collection_immutable/hashmap.gala:636
 		result = result + fmt.Sprintf("%v -> %v", k, v)
-//line collection_immutable/hashmap.gala:649
+//line collection_immutable/hashmap.gala:637
 		first = false
 	})
-//line collection_immutable/hashmap.gala:651
+//line collection_immutable/hashmap.gala:639
 	return result + ")"
 }
 
-//line collection_immutable/hashmap.gala:653
+//line collection_immutable/hashmap.gala:641
 
 // MkString joins entries into a string with separator.
 func (m HashMap[K, V]) MkString(sep string) string {
-//line collection_immutable/hashmap.gala:656
+//line collection_immutable/hashmap.gala:644
 	if m.size.Get() == 0 {
-//line collection_immutable/hashmap.gala:657
+//line collection_immutable/hashmap.gala:645
 		return ""
 	}
-//line collection_immutable/hashmap.gala:659
+//line collection_immutable/hashmap.gala:647
 	var result = ""
-//line collection_immutable/hashmap.gala:660
+//line collection_immutable/hashmap.gala:648
 	var first = true
-//line collection_immutable/hashmap.gala:661
+//line collection_immutable/hashmap.gala:649
 	m.ForEachKV(func(k K, v V) {
-//line collection_immutable/hashmap.gala:662
+//line collection_immutable/hashmap.gala:650
 		if !first {
-//line collection_immutable/hashmap.gala:663
+//line collection_immutable/hashmap.gala:651
 			result = result + sep
 		}
-//line collection_immutable/hashmap.gala:665
+//line collection_immutable/hashmap.gala:653
 		result = result + fmt.Sprintf("%v -> %v", k, v)
-//line collection_immutable/hashmap.gala:666
+//line collection_immutable/hashmap.gala:654
 		first = false
 	})
-//line collection_immutable/hashmap.gala:668
+//line collection_immutable/hashmap.gala:656
 	return result
 }
 
-//line collection_immutable/hashmap.gala:670
+//line collection_immutable/hashmap.gala:658
 
 // KeySet returns a HashSet of all keys.
 func (m HashMap[K, V]) KeySet() HashSet[K] {
 	return m.Keys()
 }
 
-//line collection_immutable/hashmap.gala:675
+//line collection_immutable/hashmap.gala:663
 
 // Sorted returns an array of key-value tuples sorted by key in natural order.
 func (m HashMap[K, V]) Sorted() Array[Tuple[K, V]] {
@@ -1117,56 +1145,56 @@ func (m HashMap[K, V]) Sorted() Array[Tuple[K, V]] {
 	})
 }
 
-//line collection_immutable/hashmap.gala:678
+//line collection_immutable/hashmap.gala:666
 
 // SortWith returns an array of key-value tuples sorted using the given comparison function.
 func (m HashMap[K, V]) SortWith(less func(Tuple[K, V], Tuple[K, V]) bool) Array[Tuple[K, V]] {
 	return m.ToArray().SortWith(less)
 }
 
-//line collection_immutable/hashmap.gala:681
+//line collection_immutable/hashmap.gala:669
 
 // SortBy returns an array of key-value tuples sorted by a key extracted from each entry.
 func HashMap_SortBy[S comparable, K comparable, V any](m HashMap[K, V], f func(Tuple[K, V]) S) Array[Tuple[K, V]] {
 	return Array_SortBy(m.ToArray(), f)
 }
 
-//line collection_immutable/hashmap.gala:686
+//line collection_immutable/hashmap.gala:674
 
 // Find returns the first entry satisfying the predicate.
 func (m HashMap[K, V]) Find(p func(K, V) bool) Option[Tuple[K, V]] {
-//line collection_immutable/hashmap.gala:689
+//line collection_immutable/hashmap.gala:677
 	return HashMap_FoldLeftKV[Option[Tuple[K, V]], K, V](m, None[Tuple[K, V]]{}.Apply(), func(acc Option[Tuple[K, V]], k K, v V) Option[Tuple[K, V]] {
-//line collection_immutable/hashmap.gala:690
+//line collection_immutable/hashmap.gala:678
 		if acc.IsEmpty() && p(k, v) {
-//line collection_immutable/hashmap.gala:691
+//line collection_immutable/hashmap.gala:679
 			return Some[Tuple[K, V]]{}.Apply(Tuple[K, V]{V1: NewImmutable(k), V2: NewImmutable(v)})
 		}
-//line collection_immutable/hashmap.gala:693
+//line collection_immutable/hashmap.gala:681
 		return acc
 	})
 }
 
-//line collection_immutable/hashmap.gala:696
+//line collection_immutable/hashmap.gala:684
 
 // Head returns the first entry. Panics if empty.
 func (m HashMap[K, V]) Head() Tuple[K, V] {
-//line collection_immutable/hashmap.gala:699
+//line collection_immutable/hashmap.gala:687
 	return func(obj Option[Tuple[K, V]]) Tuple[K, V] {
 		{
-			_tmp_24 := Some[Tuple[K, V]]{}.Unapply(obj)
-			_tmp_25 := _tmp_24.IsDefined()
-			var _tmp_26 Tuple[K, V]
-			if _tmp_25 {
-				_tmp_26 = _tmp_24.Get()
+			_tmp_32 := Some[Tuple[K, V]]{}.Unapply(obj)
+			_tmp_33 := _tmp_32.IsDefined()
+			var _tmp_34 Tuple[K, V]
+			if _tmp_33 {
+				_tmp_34 = _tmp_32.Get()
 			}
-			_ = _tmp_26
-			v := _tmp_26
-			if _tmp_25 {
+			_ = _tmp_34
+			v := _tmp_34
+			if _tmp_33 {
 				return v
 			} else {
-				_tmp_27 := None[Tuple[K, V]]{}.Unapply(obj)
-				if _tmp_27 {
+				_tmp_35 := None[Tuple[K, V]]{}.Unapply(obj)
+				if _tmp_35 {
 					panic("HashMap: head of empty map")
 				} else {
 					panic("unreachable")
@@ -1176,96 +1204,96 @@ func (m HashMap[K, V]) Head() Tuple[K, V] {
 	}(m.HeadOption())
 }
 
-//line collection_immutable/hashmap.gala:704
+//line collection_immutable/hashmap.gala:692
 
 // HeadOption returns the first entry as Option.
 func (m HashMap[K, V]) HeadOption() Option[Tuple[K, V]] {
-//line collection_immutable/hashmap.gala:707
+//line collection_immutable/hashmap.gala:695
 	if m.IsEmpty() {
-//line collection_immutable/hashmap.gala:708
+//line collection_immutable/hashmap.gala:696
 		return None[Tuple[K, V]]{}.Apply()
 	}
-//line collection_immutable/hashmap.gala:710
+//line collection_immutable/hashmap.gala:698
 	return HashMap_FoldLeftKV[Option[Tuple[K, V]], K, V](m, None[Tuple[K, V]]{}.Apply(), func(acc Option[Tuple[K, V]], k K, v V) Option[Tuple[K, V]] {
-//line collection_immutable/hashmap.gala:711
+//line collection_immutable/hashmap.gala:699
 		if acc.IsEmpty() {
-//line collection_immutable/hashmap.gala:712
+//line collection_immutable/hashmap.gala:700
 			return Some[Tuple[K, V]]{}.Apply(Tuple[K, V]{V1: NewImmutable(k), V2: NewImmutable(v)})
 		}
-//line collection_immutable/hashmap.gala:714
+//line collection_immutable/hashmap.gala:702
 		return acc
 	})
 }
 
-//line collection_immutable/hashmap.gala:717
+//line collection_immutable/hashmap.gala:705
 
 // ToArray returns an immutable Array of key-value tuples.
 func (m HashMap[K, V]) ToArray() Array[Tuple[K, V]] {
-//line collection_immutable/hashmap.gala:720
+//line collection_immutable/hashmap.gala:708
 	return HashMap_FoldLeftKV[Array[Tuple[K, V]], K, V](m, EmptyArray[Tuple[K, V]](), func(acc Array[Tuple[K, V]], k K, v V) Array[Tuple[K, V]] {
 		return acc.Append(Tuple[K, V]{V1: NewImmutable(k), V2: NewImmutable(v)})
 	})
 }
 
-//line collection_immutable/hashmap.gala:722
+//line collection_immutable/hashmap.gala:710
 
 // Partition partitions the map into two maps based on predicate.
 func (m HashMap[K, V]) Partition(p func(K, V) bool) Tuple[HashMap[K, V], HashMap[K, V]] {
-//line collection_immutable/hashmap.gala:725
-	var initial = NewImmutable(Tuple[HashMap[K, V], HashMap[K, V]]{V1: NewImmutable(EmptyHashMap[K, V]()), V2: NewImmutable(EmptyHashMap[K, V]())})
-//line collection_immutable/hashmap.gala:726
-	return HashMap_FoldLeftKV[Tuple[HashMap[K, V], HashMap[K, V]], K, V](m, initial.Get(), func(acc Tuple[HashMap[K, V], HashMap[K, V]], k K, v V) Tuple[HashMap[K, V], HashMap[K, V]] {
-//line collection_immutable/hashmap.gala:727
+//line collection_immutable/hashmap.gala:713
+	var initial = Tuple[HashMap[K, V], HashMap[K, V]]{V1: NewImmutable(EmptyHashMap[K, V]()), V2: NewImmutable(EmptyHashMap[K, V]())}
+//line collection_immutable/hashmap.gala:714
+	return HashMap_FoldLeftKV[Tuple[HashMap[K, V], HashMap[K, V]], K, V](m, initial, func(acc Tuple[HashMap[K, V], HashMap[K, V]], k K, v V) Tuple[HashMap[K, V], HashMap[K, V]] {
+//line collection_immutable/hashmap.gala:715
 		if p(k, v) {
-//line collection_immutable/hashmap.gala:728
+//line collection_immutable/hashmap.gala:716
 			return Tuple[HashMap[K, V], HashMap[K, V]]{V1: NewImmutable(acc.V1.Get().Put(k, v)), V2: NewImmutable(acc.V2.Get())}
 		}
-//line collection_immutable/hashmap.gala:730
+//line collection_immutable/hashmap.gala:718
 		return Tuple[HashMap[K, V], HashMap[K, V]]{V1: NewImmutable(acc.V1.Get()), V2: NewImmutable(acc.V2.Get().Put(k, v))}
 	})
 }
 
-//line collection_immutable/hashmap.gala:735
+//line collection_immutable/hashmap.gala:723
 
 // HashMapOf creates a HashMap from key-value tuples.
 func HashMapOf[K comparable, V any](entries ...Tuple[K, V]) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:738
+//line collection_immutable/hashmap.gala:726
 	var result = EmptyHashMap[K, V]()
-//line collection_immutable/hashmap.gala:739
+//line collection_immutable/hashmap.gala:727
 	for i := 0; i < len(entries); i++ {
-//line collection_immutable/hashmap.gala:740
+//line collection_immutable/hashmap.gala:728
 		result = result.Put(entries[i].V1.Get(), entries[i].V2.Get())
 	}
-//line collection_immutable/hashmap.gala:742
+//line collection_immutable/hashmap.gala:730
 	return result
 }
 
-//line collection_immutable/hashmap.gala:744
+//line collection_immutable/hashmap.gala:732
 
 // HashMapFromSlice creates a HashMap from a slice of tuples.
 func HashMapFromSlice[K comparable, V any](entries []Tuple[K, V]) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:747
+//line collection_immutable/hashmap.gala:735
 	var result = EmptyHashMap[K, V]()
-//line collection_immutable/hashmap.gala:748
+//line collection_immutable/hashmap.gala:736
 	for i := 0; i < len(entries); i++ {
-//line collection_immutable/hashmap.gala:749
+//line collection_immutable/hashmap.gala:737
 		result = result.Put(entries[i].V1.Get(), entries[i].V2.Get())
 	}
-//line collection_immutable/hashmap.gala:751
+//line collection_immutable/hashmap.gala:739
 	return result
 }
 
-//line collection_immutable/hashmap.gala:753
+//line collection_immutable/hashmap.gala:741
 
 // HashMapFromGoMap creates a HashMap from a Go map.
 func HashMapFromGoMap[K comparable, V any](m map[K]V) HashMap[K, V] {
-//line collection_immutable/hashmap.gala:756
+//line collection_immutable/hashmap.gala:744
 	var result = EmptyHashMap[K, V]()
-//line collection_immutable/hashmap.gala:757
+//line collection_immutable/hashmap.gala:745
 	for k, v := range m {
-//line collection_immutable/hashmap.gala:758
+//line collection_immutable/hashmap.gala:746
 		result = result.Put(k, v)
 	}
-//line collection_immutable/hashmap.gala:760
+//line collection_immutable/hashmap.gala:748
 	return result
 }

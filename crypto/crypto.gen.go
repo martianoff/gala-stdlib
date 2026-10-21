@@ -100,6 +100,9 @@ func (s Hasher) Equal(other Hasher) bool {
 // Update feeds more bytes into the running hash and returns the receiver
 // for chaining: h.Update(a).Update(b).Finish().
 func (h *Hasher) Update(data Array[byte]) *Hasher {
+	if h == nil {
+		panic("Hasher.Update: receiver h is a Ptr[crypto.Hasher], but the caller passed nil")
+	}
 //line crypto/crypto.gala:58
 	h.h.Write(data.ToGoSlice())
 //line crypto/crypto.gala:59
@@ -112,16 +115,22 @@ func (h *Hasher) Update(data Array[byte]) *Hasher {
 // continuing to feed bytes will produce a digest of the full stream so
 // far rather than just what came after Finish.
 func (h *Hasher) Finish() Digest {
+	if h == nil {
+		panic("Hasher.Finish: receiver h is a Ptr[crypto.Hasher], but the caller passed nil")
+	}
 //line crypto/crypto.gala:66
-	var sum = NewImmutable(h.h.Sum(nil))
+	var sum = h.h.Sum(nil)
 //line crypto/crypto.gala:67
-	return Digest{bytes: NewImmutable(ArrayFromSlice(sum.Get()))}
+	return Digest{bytes: NewImmutable(ArrayFromSlice(sum))}
 }
 
 //line crypto/crypto.gala:69
 
 // Algorithm returns the human-readable algorithm name (e.g. "SHA-256").
 func (h *Hasher) Algorithm() string {
+	if h == nil {
+		panic("Hasher.Algorithm: receiver h is a Ptr[crypto.Hasher], but the caller passed nil")
+	}
 	return h.algorithm.Get()
 }
 
@@ -160,11 +169,11 @@ func (s Sha256) Size() int {
 //line crypto/crypto.gala:81
 func (s Sha256) Hash(data Array[byte]) Digest {
 //line crypto/crypto.gala:82
-	var h = NewImmutable(sha256.New())
+	var h = sha256.New()
 //line crypto/crypto.gala:83
-	h.Get().Write(data.ToGoSlice())
+	h.Write(data.ToGoSlice())
 //line crypto/crypto.gala:84
-	return Digest{bytes: NewImmutable(ArrayFromSlice(h.Get().Sum(nil)))}
+	return Digest{bytes: NewImmutable(ArrayFromSlice(h.Sum(nil)))}
 }
 
 //line crypto/crypto.gala:87
@@ -208,11 +217,11 @@ func (s Sha512) Size() int {
 //line crypto/crypto.gala:97
 func (s Sha512) Hash(data Array[byte]) Digest {
 //line crypto/crypto.gala:98
-	var h = NewImmutable(sha512.New())
+	var h = sha512.New()
 //line crypto/crypto.gala:99
-	h.Get().Write(data.ToGoSlice())
+	h.Write(data.ToGoSlice())
 //line crypto/crypto.gala:100
-	return Digest{bytes: NewImmutable(ArrayFromSlice(h.Get().Sum(nil)))}
+	return Digest{bytes: NewImmutable(ArrayFromSlice(h.Sum(nil)))}
 }
 
 //line crypto/crypto.gala:103
@@ -257,11 +266,11 @@ func (s Sha1) Size() int {
 //line crypto/crypto.gala:114
 func (s Sha1) Hash(data Array[byte]) Digest {
 //line crypto/crypto.gala:115
-	var h = NewImmutable(sha1.New())
+	var h = sha1.New()
 //line crypto/crypto.gala:116
-	h.Get().Write(data.ToGoSlice())
+	h.Write(data.ToGoSlice())
 //line crypto/crypto.gala:117
-	return Digest{bytes: NewImmutable(ArrayFromSlice(h.Get().Sum(nil)))}
+	return Digest{bytes: NewImmutable(ArrayFromSlice(h.Sum(nil)))}
 }
 
 //line crypto/crypto.gala:120
@@ -306,11 +315,11 @@ func (s Md5) Size() int {
 //line crypto/crypto.gala:131
 func (s Md5) Hash(data Array[byte]) Digest {
 //line crypto/crypto.gala:132
-	var h = NewImmutable(md5.New())
+	var h = md5.New()
 //line crypto/crypto.gala:133
-	h.Get().Write(data.ToGoSlice())
+	h.Write(data.ToGoSlice())
 //line crypto/crypto.gala:134
-	return Digest{bytes: NewImmutable(ArrayFromSlice(h.Get().Sum(nil)))}
+	return Digest{bytes: NewImmutable(ArrayFromSlice(h.Sum(nil)))}
 }
 
 //line crypto/crypto.gala:137
@@ -361,11 +370,11 @@ func (h HmacSha256) Size() int {
 //line crypto/crypto.gala:154
 func (h HmacSha256) Sum(data Array[byte]) Digest {
 //line crypto/crypto.gala:155
-	var mac = NewImmutable(hmac.New(sha256.New, h.Key.Get().ToGoSlice()))
+	var mac = hmac.New(sha256.New, h.Key.Get().ToGoSlice())
 //line crypto/crypto.gala:156
-	mac.Get().Write(data.ToGoSlice())
+	mac.Write(data.ToGoSlice())
 //line crypto/crypto.gala:157
-	return Digest{bytes: NewImmutable(ArrayFromSlice(mac.Get().Sum(nil)))}
+	return Digest{bytes: NewImmutable(ArrayFromSlice(mac.Sum(nil)))}
 }
 
 //line crypto/crypto.gala:160
@@ -416,11 +425,11 @@ func (h HmacSha512) Size() int {
 //line crypto/crypto.gala:170
 func (h HmacSha512) Sum(data Array[byte]) Digest {
 //line crypto/crypto.gala:171
-	var mac = NewImmutable(hmac.New(sha512.New, h.Key.Get().ToGoSlice()))
+	var mac = hmac.New(sha512.New, h.Key.Get().ToGoSlice())
 //line crypto/crypto.gala:172
-	mac.Get().Write(data.ToGoSlice())
+	mac.Write(data.ToGoSlice())
 //line crypto/crypto.gala:173
-	return Digest{bytes: NewImmutable(ArrayFromSlice(mac.Get().Sum(nil)))}
+	return Digest{bytes: NewImmutable(ArrayFromSlice(mac.Sum(nil)))}
 }
 
 //line crypto/crypto.gala:176
@@ -472,11 +481,11 @@ func (h HmacSha1) Size() int {
 //line crypto/crypto.gala:187
 func (h HmacSha1) Sum(data Array[byte]) Digest {
 //line crypto/crypto.gala:188
-	var mac = NewImmutable(hmac.New(sha1.New, h.Key.Get().ToGoSlice()))
+	var mac = hmac.New(sha1.New, h.Key.Get().ToGoSlice())
 //line crypto/crypto.gala:189
-	mac.Get().Write(data.ToGoSlice())
+	mac.Write(data.ToGoSlice())
 //line crypto/crypto.gala:190
-	return Digest{bytes: NewImmutable(ArrayFromSlice(mac.Get().Sum(nil)))}
+	return Digest{bytes: NewImmutable(ArrayFromSlice(mac.Sum(nil)))}
 }
 
 //line crypto/crypto.gala:193
@@ -502,19 +511,16 @@ func RandomBytes(n int) Try[Array[byte]] {
 		return Success[Array[byte]]{}.Apply(EmptyArray[byte]())
 	}
 //line crypto/crypto.gala:209
-	var buf = NewImmutable(ArrayFill[byte](n, byte(0)).ToGoSlice())
+	var buf = ArrayFill[byte](n, byte(0)).ToGoSlice()
 //line crypto/crypto.gala:210
-	var (
-		_, _tmp_1 = rand.Read(buf.Get())
-		err       = NewImmutable(_tmp_1)
-	)
+	var _, err = rand.Read(buf)
 //line crypto/crypto.gala:211
-	if err.Get() != nil {
+	if err != nil {
 //line crypto/crypto.gala:212
-		return Failure[Array[byte]]{}.Apply(errors.New(fmt.Sprintf("crypto.RandomBytes: rand.Read failed: %s", err.Get().Error())))
+		return Failure[Array[byte]]{}.Apply(errors.New(fmt.Sprintf("crypto.RandomBytes: rand.Read failed: %s", err.Error())))
 	}
 //line crypto/crypto.gala:214
-	return Success[Array[byte]]{}.Apply(ArrayFromSlice(buf.Get()))
+	return Success[Array[byte]]{}.Apply(ArrayFromSlice(buf))
 }
 
 //line crypto/crypto.gala:216
@@ -619,9 +625,9 @@ func GenerateEd25519KeyPair() Try[Ed25519KeyPair] {
 // 32-byte seed (the canonical RFC 8032 wire format for an Ed25519 secret).
 func Ed25519PrivateKeyFromSeed(seed Array[byte]) Ed25519PrivateKey {
 //line crypto/crypto.gala:252
-	var priv = NewImmutable(ed25519.NewKeyFromSeed(seed.ToGoSlice()))
+	var priv = ed25519.NewKeyFromSeed(seed.ToGoSlice())
 //line crypto/crypto.gala:253
-	return Ed25519PrivateKey{bytes: NewImmutable(ArrayFromSlice[byte](priv.Get()))}
+	return Ed25519PrivateKey{bytes: NewImmutable(ArrayFromSlice[byte](priv))}
 }
 
 //line crypto/crypto.gala:255
@@ -651,9 +657,9 @@ func SignatureFromBytes(bytes Array[byte]) Signature {
 // Sign returns the Ed25519 signature of message under sk.
 func (sk Ed25519PrivateKey) Sign(message Array[byte]) Signature {
 //line crypto/crypto.gala:271
-	var sig = NewImmutable(ed25519.Sign(sk.bytes.Get().ToGoSlice(), message.ToGoSlice()))
+	var sig = ed25519.Sign(sk.bytes.Get().ToGoSlice(), message.ToGoSlice())
 //line crypto/crypto.gala:272
-	return Signature{bytes: NewImmutable(ArrayFromSlice[byte](sig.Get()))}
+	return Signature{bytes: NewImmutable(ArrayFromSlice[byte](sig))}
 }
 
 //line crypto/crypto.gala:274
@@ -670,9 +676,9 @@ func (pk Ed25519PublicKey) Verify(message Array[byte], sig Signature) bool {
 // math needed.
 func (sk Ed25519PrivateKey) PublicKey() Ed25519PublicKey {
 //line crypto/crypto.gala:283
-	var pub = NewImmutable(go_interop.SliceDrop(sk.bytes.Get().ToGoSlice(), 32))
+	var pub = go_interop.SliceDrop(sk.bytes.Get().ToGoSlice(), 32)
 //line crypto/crypto.gala:284
-	return Ed25519PublicKey{bytes: NewImmutable(ArrayFromSlice[byte](pub.Get()))}
+	return Ed25519PublicKey{bytes: NewImmutable(ArrayFromSlice[byte](pub))}
 }
 
 //line crypto/crypto.gala:286
@@ -783,19 +789,19 @@ func NewX25519KeyPair(public X25519PublicKey, private X25519PrivateKey) X25519Ke
 // crypto/rand, or Failure if the OS RNG fails.
 func GenerateX25519KeyPair() Try[X25519KeyPair] {
 //line crypto/crypto.gala:324
-	var curve = NewImmutable(ecdh.X25519())
+	var curve = ecdh.X25519()
 //line crypto/crypto.gala:325
 	return Try_Map(Try[*ecdh.PrivateKey]{}.Apply(func() *ecdh.PrivateKey {
-		_v0, _err := curve.Get().GenerateKey(rand.Reader)
+		_v0, _err := curve.GenerateKey(rand.Reader)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(priv *ecdh.PrivateKey) X25519KeyPair {
 //line crypto/crypto.gala:326
-		var pub = NewImmutable(priv.PublicKey())
+		var pub = priv.PublicKey()
 //line crypto/crypto.gala:327
-		return X25519KeyPair{Public: NewImmutable(X25519PublicKey{bytes: NewImmutable(ArrayFromSlice[byte](pub.Get().Bytes()))}), Private: NewImmutable(X25519PrivateKey{bytes: NewImmutable(ArrayFromSlice[byte](priv.Bytes()))})}
+		return X25519KeyPair{Public: NewImmutable(X25519PublicKey{bytes: NewImmutable(ArrayFromSlice[byte](pub.Bytes()))}), Private: NewImmutable(X25519PrivateKey{bytes: NewImmutable(ArrayFromSlice[byte](priv.Bytes()))})}
 	})
 }
 
@@ -820,42 +826,30 @@ func X25519PublicKeyFromBytes(bytes Array[byte]) X25519PublicKey {
 // and returns an error in those cases — that error becomes Failure here.
 func (sk X25519PrivateKey) ECDH(peer X25519PublicKey) Try[Array[byte]] {
 //line crypto/crypto.gala:346
-	var curve = NewImmutable(ecdh.X25519())
+	var curve = ecdh.X25519()
 //line crypto/crypto.gala:347
-	var (
-		_tmp_2, _tmp_3 = curve.Get().NewPrivateKey(sk.bytes.Get().ToGoSlice())
-		privKey        = NewImmutable(_tmp_2)
-		perr           = NewImmutable(_tmp_3)
-	)
+	var privKey, perr = curve.NewPrivateKey(sk.bytes.Get().ToGoSlice())
 //line crypto/crypto.gala:348
-	if perr.Get() != nil {
+	if perr != nil {
 //line crypto/crypto.gala:349
-		return Failure[Array[byte]]{}.Apply(perr.Get())
+		return Failure[Array[byte]]{}.Apply(perr)
 	}
 //line crypto/crypto.gala:351
-	var (
-		_tmp_4, _tmp_5 = curve.Get().NewPublicKey(peer.bytes.Get().ToGoSlice())
-		pubKey         = NewImmutable(_tmp_4)
-		kerr           = NewImmutable(_tmp_5)
-	)
+	var pubKey, kerr = curve.NewPublicKey(peer.bytes.Get().ToGoSlice())
 //line crypto/crypto.gala:352
-	if kerr.Get() != nil {
+	if kerr != nil {
 //line crypto/crypto.gala:353
-		return Failure[Array[byte]]{}.Apply(kerr.Get())
+		return Failure[Array[byte]]{}.Apply(kerr)
 	}
 //line crypto/crypto.gala:355
-	var (
-		_tmp_6, _tmp_7 = privKey.Get().ECDH(pubKey.Get())
-		secret         = NewImmutable(_tmp_6)
-		eerr           = NewImmutable(_tmp_7)
-	)
+	var secret, eerr = privKey.ECDH(pubKey)
 //line crypto/crypto.gala:356
-	if eerr.Get() != nil {
+	if eerr != nil {
 //line crypto/crypto.gala:357
-		return Failure[Array[byte]]{}.Apply(eerr.Get())
+		return Failure[Array[byte]]{}.Apply(eerr)
 	}
 //line crypto/crypto.gala:359
-	return Success[Array[byte]]{}.Apply(ArrayFromSlice[byte](secret.Get()))
+	return Success[Array[byte]]{}.Apply(ArrayFromSlice[byte](secret))
 }
 
 //line crypto/crypto.gala:361
@@ -865,19 +859,19 @@ func (sk X25519PrivateKey) ECDH(peer X25519PublicKey) Try[Array[byte]] {
 // constructed key).
 func (sk X25519PrivateKey) PublicKey() Try[X25519PublicKey] {
 //line crypto/crypto.gala:366
-	var curve = NewImmutable(ecdh.X25519())
+	var curve = ecdh.X25519()
 //line crypto/crypto.gala:367
 	return Try_Map(Try[*ecdh.PrivateKey]{}.Apply(func() *ecdh.PrivateKey {
-		_v0, _err := curve.Get().NewPrivateKey(sk.bytes.Get().ToGoSlice())
+		_v0, _err := curve.NewPrivateKey(sk.bytes.Get().ToGoSlice())
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(privKey *ecdh.PrivateKey) X25519PublicKey {
 //line crypto/crypto.gala:368
-		var pub = NewImmutable(privKey.PublicKey().Bytes())
+		var pub = privKey.PublicKey().Bytes()
 //line crypto/crypto.gala:369
-		return X25519PublicKey{bytes: NewImmutable(ArrayFromSlice[byte](pub.Get()))}
+		return X25519PublicKey{bytes: NewImmutable(ArrayFromSlice[byte](pub))}
 	})
 }
 
@@ -901,16 +895,16 @@ func (sk X25519PrivateKey) Bytes() Array[byte] {
 // crypto/rand (length 2n), or Failure if the OS RNG fails.
 func RandomHex(n int) Try[string] {
 //line crypto/crypto.gala:386
-	var buf = NewImmutable(go_interop.SliceWithSize[byte](n))
+	var buf = go_interop.SliceWithSize[byte](n)
 //line crypto/crypto.gala:387
 	return Try_Map(Try[int]{}.Apply(func() int {
-		_v0, _err := rand.Read(buf.Get())
+		_v0, _err := rand.Read(buf)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(_ int) string {
-		return hex.EncodeToString(buf.Get())
+		return hex.EncodeToString(buf)
 	})
 }
 
@@ -920,16 +914,16 @@ func RandomHex(n int) Try[string] {
 // n random bytes drawn from crypto/rand, or Failure if the OS RNG fails.
 func RandomBase64URL(n int) Try[string] {
 //line crypto/crypto.gala:393
-	var buf = NewImmutable(go_interop.SliceWithSize[byte](n))
+	var buf = go_interop.SliceWithSize[byte](n)
 //line crypto/crypto.gala:394
 	return Try_Map(Try[int]{}.Apply(func() int {
-		_v0, _err := rand.Read(buf.Get())
+		_v0, _err := rand.Read(buf)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(_ int) string {
-		return base64.RawURLEncoding.EncodeToString(buf.Get())
+		return base64.RawURLEncoding.EncodeToString(buf)
 	})
 }
 

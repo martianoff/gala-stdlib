@@ -100,24 +100,24 @@ func BuildKeys(numFields int, fieldName func(int) string, naming Naming, config 
 //line yaml/helpers.gala:50
 	for i < numFields {
 //line yaml/helpers.gala:51
-		var name = std.NewImmutable(fieldName(i))
+		var name = fieldName(i)
 //line yaml/helpers.gala:52
-		if config.Omits.Get().Contains(name.Get()) {
+		if config.Omits.Get().Contains(name) {
 //line yaml/helpers.gala:53
 			keys = keys.Append("")
 //line yaml/helpers.gala:54
 			omitIfEmpty = omitIfEmpty.Append(false)
 		} else {
 //line yaml/helpers.gala:56
-			var renamed = std.NewImmutable(config.Renames.Get().Get(name.Get()))
+			var renamed = config.Renames.Get().Get(name)
 //line yaml/helpers.gala:57
-			var key = std.NewImmutable(renamed.Get().GetOrElse(ApplyNaming(name.Get(), naming)))
+			var key = renamed.GetOrElse(ApplyNaming(name, naming))
 //line yaml/helpers.gala:58
-			keys = keys.Append(key.Get())
+			keys = keys.Append(key)
 //line yaml/helpers.gala:59
-			reverseKeys = reverseKeys.Put(key.Get(), name.Get())
+			reverseKeys = reverseKeys.Put(key, name)
 //line yaml/helpers.gala:60
-			omitIfEmpty = omitIfEmpty.Append(config.OmitEmpties.Get().Contains(name.Get()))
+			omitIfEmpty = omitIfEmpty.Append(config.OmitEmpties.Get().Contains(name))
 		}
 //line yaml/helpers.gala:62
 		i = i + 1

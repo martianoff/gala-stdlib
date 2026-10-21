@@ -12,18 +12,22 @@ import (
 
 // List represents an immutable singly-linked list.
 // Every List is either Cons (non-empty) or Nil (empty).
+// A List is empty exactly when its length is 0; only then is tail empty.
+//
+// tail is never reassigned. It is `var` so the generated Go holds the
+// OptionPtr itself rather than an Immutable of it, whose methods Go would
+// otherwise compile once more for every element type.
 type List[T any] struct {
-	head    Immutable[T]
-	tail    Immutable[*List[T]]
-	length  Immutable[int]
-	isEmpty Immutable[bool]
+	head   Immutable[T]
+	tail   OptionPtr[List[T]]
+	length Immutable[int]
 }
 
 func (s List[T]) Copy() List[T] {
-	return List[T]{head: Copy(s.head), tail: Copy(s.tail), length: Copy(s.length), isEmpty: Copy(s.isEmpty)}
+	return List[T]{head: Copy(s.head), tail: Copy(s.tail), length: Copy(s.length)}
 }
 func (s List[T]) Equal(other List[T]) bool {
-	return Equal(s.head, other.head) && Equal(s.tail, other.tail) && Equal(s.length, other.length) && Equal(s.isEmpty, other.isEmpty)
+	return Equal(s.head, other.head) && Equal(s.tail, other.tail) && Equal(s.length, other.length)
 }
 
 type ListInstance interface {
@@ -34,27 +38,25 @@ func (_ List[T]) IsList() bool {
 	return true
 }
 
-//line collection_immutable/list.gala:26
+//line collection_immutable/list.gala:30
 
 // Internal helper to create empty list
 func emptyList[T any]() List[T] {
-//line collection_immutable/list.gala:29
+//line collection_immutable/list.gala:33
 	var zeroT T
-//line collection_immutable/list.gala:30
-	var nilTail *List[T] = nil
-//line collection_immutable/list.gala:31
-	return List[T]{head: NewImmutable(zeroT), tail: NewImmutable(nilTail), length: NewImmutable(0), isEmpty: NewImmutable(true)}
+//line collection_immutable/list.gala:34
+	return List[T]{head: NewImmutable(zeroT), tail: EmptyOptionPtr[List[T]](), length: NewImmutable(0)}
 }
 
-//line collection_immutable/list.gala:33
+//line collection_immutable/list.gala:36
 
 // Internal helper to prepend element to list
 func consList[T any](head T, tail List[T]) List[T] {
-//line collection_immutable/list.gala:36
-	return List[T]{head: NewImmutable(head), tail: NewImmutable(&tail), length: NewImmutable(tail.length.Get() + 1), isEmpty: NewImmutable(false)}
+//line collection_immutable/list.gala:39
+	return List[T]{head: NewImmutable(head), tail: SomePtr(&tail), length: NewImmutable(tail.length.Get() + 1)}
 }
 
-//line collection_immutable/list.gala:38
+//line collection_immutable/list.gala:41
 
 // Cons extractor for pattern matching on non-empty lists.
 // Generic type parameter T is inferred from the matched List[T] type.
@@ -76,18 +78,18 @@ func (_ Cons[T]) IsCons() bool {
 	return true
 }
 
-//line collection_immutable/list.gala:42
+//line collection_immutable/list.gala:45
 func (c Cons[T]) Unapply(l List[T]) Option[Tuple[T, List[T]]] {
-//line collection_immutable/list.gala:43
+//line collection_immutable/list.gala:46
 	if l.IsEmpty() {
-//line collection_immutable/list.gala:44
+//line collection_immutable/list.gala:47
 		return None[Tuple[T, List[T]]]{}.Apply()
 	}
-//line collection_immutable/list.gala:46
+//line collection_immutable/list.gala:49
 	return Some[Tuple[T, List[T]]]{}.Apply(Tuple[T, List[T]]{V1: NewImmutable(l.Head()), V2: NewImmutable(l.Tail())})
 }
 
-//line collection_immutable/list.gala:48
+//line collection_immutable/list.gala:51
 
 // Nil extractor for pattern matching on empty lists.
 // Generic type parameter T is inferred from the matched List[T] type.
@@ -109,493 +111,493 @@ func (_ Nil[T]) IsNil() bool {
 	return true
 }
 
-//line collection_immutable/list.gala:52
+//line collection_immutable/list.gala:55
 func (n Nil[T]) Unapply(l List[T]) Option[bool] {
-//line collection_immutable/list.gala:53
+//line collection_immutable/list.gala:56
 	if l.IsEmpty() {
-//line collection_immutable/list.gala:54
+//line collection_immutable/list.gala:57
 		return Some[bool]{}.Apply(true)
 	}
-//line collection_immutable/list.gala:56
+//line collection_immutable/list.gala:59
 	return None[bool]{}.Apply()
 }
 
-//line collection_immutable/list.gala:58
+//line collection_immutable/list.gala:61
 
 // ListOf creates a List from variadic arguments.
 // Example: ListOf[int](1, 2, 3) creates List(1, 2, 3)
 func ListOf[T any](elements ...T) List[T] {
-//line collection_immutable/list.gala:62
+//line collection_immutable/list.gala:65
 	var result = emptyList[T]()
-//line collection_immutable/list.gala:63
+//line collection_immutable/list.gala:66
 	for i := len(elements) - 1; i >= 0; i-- {
-//line collection_immutable/list.gala:64
+//line collection_immutable/list.gala:67
 		result = consList[T](elements[i], result)
 	}
-//line collection_immutable/list.gala:66
+//line collection_immutable/list.gala:69
 	return result
 }
 
-//line collection_immutable/list.gala:68
+//line collection_immutable/list.gala:71
 
 // ListFromSlice creates a List from a slice.
 func ListFromSlice[T any](elements []T) List[T] {
-//line collection_immutable/list.gala:71
+//line collection_immutable/list.gala:74
 	var result = emptyList[T]()
-//line collection_immutable/list.gala:72
+//line collection_immutable/list.gala:75
 	for i := len(elements) - 1; i >= 0; i-- {
-//line collection_immutable/list.gala:73
+//line collection_immutable/list.gala:76
 		result = consList[T](elements[i], result)
 	}
-//line collection_immutable/list.gala:75
+//line collection_immutable/list.gala:78
 	return result
 }
 
-//line collection_immutable/list.gala:77
+//line collection_immutable/list.gala:80
 
 // EmptyList returns an empty list.
 func EmptyList[T any]() List[T] {
 	return emptyList[T]()
 }
 
-//line collection_immutable/list.gala:80
+//line collection_immutable/list.gala:83
 
 // IsEmpty returns true if the list is empty.
 func (l List[T]) IsEmpty() bool {
-	return l.isEmpty.Get()
-}
-
-//line collection_immutable/list.gala:83
-
-// NonEmpty returns true if the list is not empty.
-func (l List[T]) NonEmpty() bool {
-	return !l.isEmpty.Get()
+	return l.length.Get() == 0
 }
 
 //line collection_immutable/list.gala:86
 
+// NonEmpty returns true if the list is not empty.
+func (l List[T]) NonEmpty() bool {
+	return l.length.Get() > 0
+}
+
+//line collection_immutable/list.gala:89
+
 // Head returns the first element of the list.
 // Panics if the list is empty.
 func (l List[T]) Head() T {
-//line collection_immutable/list.gala:90
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:91
+//line collection_immutable/list.gala:93
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:94
 		panic("List.Head on empty list")
 	}
-//line collection_immutable/list.gala:93
+//line collection_immutable/list.gala:96
 	return l.head.Get()
 }
 
-//line collection_immutable/list.gala:95
+//line collection_immutable/list.gala:98
 
 // HeadOption returns the first element wrapped in Option.
 func (l List[T]) HeadOption() Option[T] {
-//line collection_immutable/list.gala:98
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:99
+//line collection_immutable/list.gala:101
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:102
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/list.gala:101
+//line collection_immutable/list.gala:104
 	return Some[T]{}.Apply(l.head.Get())
 }
 
-//line collection_immutable/list.gala:103
+//line collection_immutable/list.gala:106
 
 // Tail returns all elements except the first.
 // Panics if the list is empty.
 func (l List[T]) Tail() List[T] {
-//line collection_immutable/list.gala:107
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:108
+//line collection_immutable/list.gala:110
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:111
 		panic("List.Tail on empty list")
 	}
-//line collection_immutable/list.gala:110
+//line collection_immutable/list.gala:113
 	return *l.tail.Get()
 }
 
-//line collection_immutable/list.gala:112
+//line collection_immutable/list.gala:115
 
 // TailOption returns the tail wrapped in Option.
 func (l List[T]) TailOption() Option[List[T]] {
-//line collection_immutable/list.gala:115
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:116
+//line collection_immutable/list.gala:118
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:119
 		return None[List[T]]{}.Apply()
 	}
-//line collection_immutable/list.gala:118
+//line collection_immutable/list.gala:121
 	return Some[List[T]]{}.Apply(*l.tail.Get())
 }
 
-//line collection_immutable/list.gala:120
+//line collection_immutable/list.gala:123
 
 // Length returns the number of elements in the list. O(1) - cached.
 func (l List[T]) Length() int {
 	return l.length.Get()
 }
 
-//line collection_immutable/list.gala:123
+//line collection_immutable/list.gala:126
 
 // Size is an alias for Length.
 func (l List[T]) Size() int {
 	return l.length.Get()
 }
 
-//line collection_immutable/list.gala:126
+//line collection_immutable/list.gala:129
 
 // Prepend adds an element to the front of the list. O(1).
 func (l List[T]) Prepend(elem T) List[T] {
 	return consList[T](elem, l)
 }
 
-//line collection_immutable/list.gala:129
+//line collection_immutable/list.gala:132
 
 // PrependAll prepends all elements from another list. O(m) where m is other's length.
 func (l List[T]) PrependAll(other List[T]) List[T] {
-//line collection_immutable/list.gala:132
-	if other.isEmpty.Get() {
-//line collection_immutable/list.gala:133
+//line collection_immutable/list.gala:135
+	if other.length.Get() == 0 {
+//line collection_immutable/list.gala:136
 		return l
 	}
-//line collection_immutable/list.gala:136
-	var result = l
-//line collection_immutable/list.gala:137
-	var stack = emptyList[T]()
-//line collection_immutable/list.gala:138
-	var current = other
 //line collection_immutable/list.gala:139
-	for !current.isEmpty.Get() {
+	var result = l
 //line collection_immutable/list.gala:140
-		stack = consList[T](current.head.Get(), stack)
+	var stack = emptyList[T]()
 //line collection_immutable/list.gala:141
+	var current = other
+//line collection_immutable/list.gala:142
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:143
+		stack = consList[T](current.head.Get(), stack)
+//line collection_immutable/list.gala:144
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:143
-	for !stack.isEmpty.Get() {
-//line collection_immutable/list.gala:144
+//line collection_immutable/list.gala:146
+	for stack.length.Get() > 0 {
+//line collection_immutable/list.gala:147
 		result = result.Prepend(stack.head.Get())
-//line collection_immutable/list.gala:145
+//line collection_immutable/list.gala:148
 		stack = *stack.tail.Get()
 	}
-//line collection_immutable/list.gala:147
+//line collection_immutable/list.gala:150
 	return result
 }
 
-//line collection_immutable/list.gala:149
+//line collection_immutable/list.gala:152
 
 // Append adds an element to the end of the list. O(n).
 func (l List[T]) Append(elem T) List[T] {
 	return l.AppendAll(consList[T](elem, emptyList[T]()))
 }
 
-//line collection_immutable/list.gala:152
+//line collection_immutable/list.gala:155
 
 // AppendAll appends all elements from another list. O(n).
 func (l List[T]) AppendAll(other List[T]) List[T] {
-//line collection_immutable/list.gala:155
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:156
+//line collection_immutable/list.gala:158
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:159
 		return other
 	}
-//line collection_immutable/list.gala:159
-	var stack = emptyList[T]()
-//line collection_immutable/list.gala:160
-	var current = l
-//line collection_immutable/list.gala:161
-	for !current.isEmpty.Get() {
 //line collection_immutable/list.gala:162
-		stack = consList[T](current.head.Get(), stack)
+	var stack = emptyList[T]()
 //line collection_immutable/list.gala:163
+	var current = l
+//line collection_immutable/list.gala:164
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:165
+		stack = consList[T](current.head.Get(), stack)
+//line collection_immutable/list.gala:166
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:165
-	var result = other
-//line collection_immutable/list.gala:166
-	for !stack.isEmpty.Get() {
-//line collection_immutable/list.gala:167
-		result = consList[T](stack.head.Get(), result)
 //line collection_immutable/list.gala:168
+	var result = other
+//line collection_immutable/list.gala:169
+	for stack.length.Get() > 0 {
+//line collection_immutable/list.gala:170
+		result = consList[T](stack.head.Get(), result)
+//line collection_immutable/list.gala:171
 		stack = *stack.tail.Get()
 	}
-//line collection_immutable/list.gala:170
+//line collection_immutable/list.gala:173
 	return result
 }
 
-//line collection_immutable/list.gala:172
+//line collection_immutable/list.gala:175
 
 // Get returns the element at the given index. O(n).
 // Panics if index is out of bounds.
 func (l List[T]) Get(index int) T {
-//line collection_immutable/list.gala:176
+//line collection_immutable/list.gala:179
 	if (index < 0) || (index >= l.length.Get()) {
-//line collection_immutable/list.gala:177
+//line collection_immutable/list.gala:180
 		panic(fmt.Sprintf("List.Get: index %d out of bounds [0, %d)", index, l.length.Get()))
 	}
-//line collection_immutable/list.gala:179
+//line collection_immutable/list.gala:182
 	var current = l
-//line collection_immutable/list.gala:180
+//line collection_immutable/list.gala:183
 	for i := 0; i < index; i++ {
-//line collection_immutable/list.gala:181
+//line collection_immutable/list.gala:184
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:183
+//line collection_immutable/list.gala:186
 	return current.head.Get()
 }
 
-//line collection_immutable/list.gala:185
+//line collection_immutable/list.gala:188
 
 // GetOption returns the element at index wrapped in Option.
 func (l List[T]) GetOption(index int) Option[T] {
-//line collection_immutable/list.gala:188
+//line collection_immutable/list.gala:191
 	if (index < 0) || (index >= l.length.Get()) {
-//line collection_immutable/list.gala:189
+//line collection_immutable/list.gala:192
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/list.gala:191
+//line collection_immutable/list.gala:194
 	return Some[T]{}.Apply(l.Get(index))
 }
 
-//line collection_immutable/list.gala:193
+//line collection_immutable/list.gala:196
 
 // Updated returns a new list with element at index replaced. O(n).
 func (l List[T]) Updated(index int, elem T) List[T] {
-//line collection_immutable/list.gala:196
+//line collection_immutable/list.gala:199
 	if (index < 0) || (index >= l.length.Get()) {
-//line collection_immutable/list.gala:197
+//line collection_immutable/list.gala:200
 		panic(fmt.Sprintf("List.Updated: index %d out of bounds [0, %d)", index, l.length.Get()))
 	}
-//line collection_immutable/list.gala:199
+//line collection_immutable/list.gala:202
 	if index == 0 {
-//line collection_immutable/list.gala:200
+//line collection_immutable/list.gala:203
 		return consList[T](elem, *l.tail.Get())
 	}
-//line collection_immutable/list.gala:202
+//line collection_immutable/list.gala:205
 	return consList[T](l.head.Get(), l.tail.Get().Updated(index-1, elem))
 }
 
-//line collection_immutable/list.gala:204
+//line collection_immutable/list.gala:207
 
 // Last returns the last element of the list. O(n).
 // Panics if the list is empty.
 func (l List[T]) Last() T {
-//line collection_immutable/list.gala:208
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:209
+//line collection_immutable/list.gala:211
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:212
 		panic("List.Last on empty list")
 	}
-//line collection_immutable/list.gala:211
-	var current = l
-//line collection_immutable/list.gala:212
-	var next = *current.tail.Get()
-//line collection_immutable/list.gala:213
-	for !next.isEmpty.Get() {
 //line collection_immutable/list.gala:214
-		current = next
+	var current = l
 //line collection_immutable/list.gala:215
+	var next = *current.tail.Get()
+//line collection_immutable/list.gala:216
+	for next.length.Get() > 0 {
+//line collection_immutable/list.gala:217
+		current = next
+//line collection_immutable/list.gala:218
 		next = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:217
+//line collection_immutable/list.gala:220
 	return current.head.Get()
 }
 
-//line collection_immutable/list.gala:219
+//line collection_immutable/list.gala:222
 
 // LastOption returns the last element wrapped in Option.
 func (l List[T]) LastOption() Option[T] {
-//line collection_immutable/list.gala:222
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:223
+//line collection_immutable/list.gala:225
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:226
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/list.gala:225
+//line collection_immutable/list.gala:228
 	return Some[T]{}.Apply(l.Last())
 }
 
-//line collection_immutable/list.gala:227
+//line collection_immutable/list.gala:230
 
 // Init returns all elements except the last. O(n).
 // Panics if the list is empty.
 func (l List[T]) Init() List[T] {
-//line collection_immutable/list.gala:231
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:232
+//line collection_immutable/list.gala:234
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:235
 		panic("List.Init on empty list")
 	}
-//line collection_immutable/list.gala:234
+//line collection_immutable/list.gala:237
 	var tail = *l.tail.Get()
-//line collection_immutable/list.gala:235
-	if tail.isEmpty.Get() {
-//line collection_immutable/list.gala:236
+//line collection_immutable/list.gala:238
+	if tail.length.Get() == 0 {
+//line collection_immutable/list.gala:239
 		return emptyList[T]()
 	}
-//line collection_immutable/list.gala:238
+//line collection_immutable/list.gala:241
 	return consList[T](l.head.Get(), tail.Init())
 }
 
-//line collection_immutable/list.gala:240
+//line collection_immutable/list.gala:243
 
 // Take returns the first n elements. O(n).
 func (l List[T]) Take(n int) List[T] {
-//line collection_immutable/list.gala:243
-	if n <= 0 || l.isEmpty.Get() {
-//line collection_immutable/list.gala:244
+//line collection_immutable/list.gala:246
+	if n <= 0 || l.length.Get() == 0 {
+//line collection_immutable/list.gala:247
 		return emptyList[T]()
 	}
-//line collection_immutable/list.gala:246
+//line collection_immutable/list.gala:249
 	return consList[T](l.head.Get(), l.tail.Get().Take(n-1))
 }
 
-//line collection_immutable/list.gala:248
+//line collection_immutable/list.gala:251
 
 // Drop returns all elements except the first n. O(n).
 func (l List[T]) Drop(n int) List[T] {
-//line collection_immutable/list.gala:251
-	if n <= 0 || l.isEmpty.Get() {
-//line collection_immutable/list.gala:252
+//line collection_immutable/list.gala:254
+	if n <= 0 || l.length.Get() == 0 {
+//line collection_immutable/list.gala:255
 		return l
 	}
-//line collection_immutable/list.gala:254
+//line collection_immutable/list.gala:257
 	return l.tail.Get().Drop(n - 1)
 }
 
-//line collection_immutable/list.gala:256
+//line collection_immutable/list.gala:259
 
 // TakeWhile returns the longest prefix of elements that satisfy the predicate.
 func (l List[T]) TakeWhile(p func(T) bool) List[T] {
-//line collection_immutable/list.gala:259
-	if l.isEmpty.Get() || !p(l.head.Get()) {
-//line collection_immutable/list.gala:260
+//line collection_immutable/list.gala:262
+	if l.length.Get() == 0 || !p(l.head.Get()) {
+//line collection_immutable/list.gala:263
 		return emptyList[T]()
 	}
-//line collection_immutable/list.gala:262
+//line collection_immutable/list.gala:265
 	return consList[T](l.head.Get(), l.tail.Get().TakeWhile(p))
 }
 
-//line collection_immutable/list.gala:264
+//line collection_immutable/list.gala:267
 
 // DropWhile drops the longest prefix of elements that satisfy the predicate.
 func (l List[T]) DropWhile(p func(T) bool) List[T] {
-//line collection_immutable/list.gala:267
-	if l.isEmpty.Get() || !p(l.head.Get()) {
-//line collection_immutable/list.gala:268
+//line collection_immutable/list.gala:270
+	if l.length.Get() == 0 || !p(l.head.Get()) {
+//line collection_immutable/list.gala:271
 		return l
 	}
-//line collection_immutable/list.gala:270
+//line collection_immutable/list.gala:273
 	return l.tail.Get().DropWhile(p)
 }
 
-//line collection_immutable/list.gala:272
+//line collection_immutable/list.gala:275
 
 // Contains checks if the list contains the given element. O(n).
 func (l List[T]) Contains(elem T) bool {
-//line collection_immutable/list.gala:275
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:276
+//line collection_immutable/list.gala:278
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:279
 		return false
 	}
-//line collection_immutable/list.gala:278
+//line collection_immutable/list.gala:281
 	if Equal(l.head.Get(), elem) {
-//line collection_immutable/list.gala:279
+//line collection_immutable/list.gala:282
 		return true
 	}
-//line collection_immutable/list.gala:281
+//line collection_immutable/list.gala:284
 	return l.tail.Get().Contains(elem)
 }
 
-//line collection_immutable/list.gala:283
+//line collection_immutable/list.gala:286
 
 // IndexOf returns the index of the first occurrence of elem, or -1 if not found. O(n).
 func (l List[T]) IndexOf(elem T) int {
-//line collection_immutable/list.gala:286
-	var current = l
-//line collection_immutable/list.gala:287
-	for i := 0; !current.isEmpty.Get(); i++ {
-//line collection_immutable/list.gala:288
-		if Equal(current.head.Get(), elem) {
 //line collection_immutable/list.gala:289
+	var current = l
+//line collection_immutable/list.gala:290
+	for i := 0; current.length.Get() > 0; i++ {
+//line collection_immutable/list.gala:291
+		if Equal(current.head.Get(), elem) {
+//line collection_immutable/list.gala:292
 			return i
 		}
-//line collection_immutable/list.gala:291
+//line collection_immutable/list.gala:294
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:293
+//line collection_immutable/list.gala:296
 	return -1
 }
 
-//line collection_immutable/list.gala:295
+//line collection_immutable/list.gala:298
 
 // LastIndexOf returns the index of the last occurrence of elem, or -1 if not found. O(n).
 func (l List[T]) LastIndexOf(elem T) int {
-//line collection_immutable/list.gala:298
-	var result = -1
-//line collection_immutable/list.gala:299
-	var current = l
-//line collection_immutable/list.gala:300
-	for i := 0; !current.isEmpty.Get(); i++ {
 //line collection_immutable/list.gala:301
-		if Equal(current.head.Get(), elem) {
+	var result = -1
 //line collection_immutable/list.gala:302
+	var current = l
+//line collection_immutable/list.gala:303
+	for i := 0; current.length.Get() > 0; i++ {
+//line collection_immutable/list.gala:304
+		if Equal(current.head.Get(), elem) {
+//line collection_immutable/list.gala:305
 			result = i
 		}
-//line collection_immutable/list.gala:304
+//line collection_immutable/list.gala:307
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:306
+//line collection_immutable/list.gala:309
 	return result
 }
 
-//line collection_immutable/list.gala:308
+//line collection_immutable/list.gala:311
 
 // Reverse returns a new list with elements in reverse order. O(n).
 func (l List[T]) Reverse() List[T] {
-//line collection_immutable/list.gala:311
+//line collection_immutable/list.gala:314
 	return List_FoldLeft[List[T], T](l, emptyList[T](), func(acc List[T], elem T) List[T] {
 		return consList[T](elem, acc)
 	})
 }
 
-//line collection_immutable/list.gala:313
+//line collection_immutable/list.gala:316
 
 // Map applies a function to each element and returns a new list.
 func List_Map[U any, T any](l List[T], f func(T) U) List[U] {
-//line collection_immutable/list.gala:316
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:317
+//line collection_immutable/list.gala:319
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:320
 		return emptyList[U]()
 	}
-//line collection_immutable/list.gala:319
+//line collection_immutable/list.gala:322
 	var tail = *l.tail.Get()
-//line collection_immutable/list.gala:320
+//line collection_immutable/list.gala:323
 	return consList[U](f(l.head.Get()), List_Map[U, T](tail, f))
 }
 
-//line collection_immutable/list.gala:322
+//line collection_immutable/list.gala:325
 
 // FlatMap applies a function that returns a list to each element and flattens the result.
 func List_FlatMap[U any, T any](l List[T], f func(T) List[U]) List[U] {
-//line collection_immutable/list.gala:325
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:326
+//line collection_immutable/list.gala:328
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:329
 		return emptyList[U]()
 	}
-//line collection_immutable/list.gala:328
+//line collection_immutable/list.gala:331
 	var tail = *l.tail.Get()
-//line collection_immutable/list.gala:329
+//line collection_immutable/list.gala:332
 	return f(l.head.Get()).AppendAll(List_FlatMap[U, T](tail, f))
 }
 
-//line collection_immutable/list.gala:331
+//line collection_immutable/list.gala:334
 
 // Collect applies a partial function to each element and collects the results.
 // Elements for which the function returns None are filtered out.
 func List_Collect[U any, T any](l List[T], pf func(T) Option[U]) List[U] {
-//line collection_immutable/list.gala:335
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:336
+//line collection_immutable/list.gala:338
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:339
 		return emptyList[U]()
 	}
-//line collection_immutable/list.gala:338
-	var tail = NewImmutable(*l.tail.Get())
-//line collection_immutable/list.gala:339
+//line collection_immutable/list.gala:341
+	var tail = *l.tail.Get()
+//line collection_immutable/list.gala:342
 	return func(obj Option[U]) List[U] {
 		{
 			_tmp_1 := Some[U]{}.Unapply(obj)
@@ -607,11 +609,11 @@ func List_Collect[U any, T any](l List[T], pf func(T) Option[U]) List[U] {
 			_ = _tmp_3
 			v := _tmp_3
 			if _tmp_2 {
-				return consList[U](v, List_Collect[U, T](tail.Get(), pf))
+				return consList[U](v, List_Collect[U, T](tail, pf))
 			} else {
 				_tmp_4 := None[U]{}.Unapply(obj)
 				if _tmp_4 {
-					return List_Collect[U, T](tail.Get(), pf)
+					return List_Collect[U, T](tail, pf)
 				} else {
 					panic("unreachable")
 				}
@@ -620,7 +622,7 @@ func List_Collect[U any, T any](l List[T], pf func(T) Option[U]) List[U] {
 	}(pf(l.head.Get()))
 }
 
-//line collection_immutable/list.gala:344
+//line collection_immutable/list.gala:347
 
 // Concat returns a new list containing all elements of this list followed by
 // all elements of the other iterable. O(n + m) where n = this length, m = other length.
@@ -631,36 +633,36 @@ func List_Collect[U any, T any](l List[T], pf func(T) Option[U]) List[U] {
 // then AppendAll onto the receiver (O(n)). Net: O(n + m) with one allocation
 // per input element.
 func (l List[T]) Concat(other Iterable[T]) List[T] {
-//line collection_immutable/list.gala:354
+//line collection_immutable/list.gala:357
 	var acc = emptyList[T]()
-//line collection_immutable/list.gala:355
+//line collection_immutable/list.gala:358
 	other.ForEach(func(elem T) {
-//line collection_immutable/list.gala:356
+//line collection_immutable/list.gala:359
 		acc = acc.Prepend(elem)
 	})
-//line collection_immutable/list.gala:358
+//line collection_immutable/list.gala:361
 	return l.AppendAll(acc.Reverse())
 }
 
-//line collection_immutable/list.gala:360
+//line collection_immutable/list.gala:363
 
 // Filter returns a new list with only elements that satisfy the predicate.
 func (l List[T]) Filter(p func(T) bool) List[T] {
-//line collection_immutable/list.gala:363
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:364
+//line collection_immutable/list.gala:366
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:367
 		return emptyList[T]()
 	}
-//line collection_immutable/list.gala:366
+//line collection_immutable/list.gala:369
 	if p(l.head.Get()) {
-//line collection_immutable/list.gala:367
+//line collection_immutable/list.gala:370
 		return consList[T](l.head.Get(), l.tail.Get().Filter(p))
 	}
-//line collection_immutable/list.gala:369
+//line collection_immutable/list.gala:372
 	return l.tail.Get().Filter(p)
 }
 
-//line collection_immutable/list.gala:371
+//line collection_immutable/list.gala:374
 
 // FilterNot returns a new list with elements that do not satisfy the predicate.
 func (l List[T]) FilterNot(p func(T) bool) List[T] {
@@ -669,7 +671,7 @@ func (l List[T]) FilterNot(p func(T) bool) List[T] {
 	})
 }
 
-//line collection_immutable/list.gala:374
+//line collection_immutable/list.gala:377
 
 // Partition splits the list into two lists based on a predicate. O(n).
 //
@@ -678,301 +680,301 @@ func (l List[T]) FilterNot(p func(T) bool) List[T] {
 // version traverses once, prepending matches to `left` and non-matches to
 // `right`, then reverses both for order preservation (still O(n)).
 func (l List[T]) Partition(p func(T) bool) Tuple[List[T], List[T]] {
-//line collection_immutable/list.gala:382
-	var left = emptyList[T]()
-//line collection_immutable/list.gala:383
-	var right = emptyList[T]()
-//line collection_immutable/list.gala:384
-	var current = l
 //line collection_immutable/list.gala:385
-	for !current.isEmpty.Get() {
+	var left = emptyList[T]()
 //line collection_immutable/list.gala:386
-		if p(current.head.Get()) {
+	var right = emptyList[T]()
 //line collection_immutable/list.gala:387
+	var current = l
+//line collection_immutable/list.gala:388
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:389
+		if p(current.head.Get()) {
+//line collection_immutable/list.gala:390
 			left = left.Prepend(current.head.Get())
 		} else {
-//line collection_immutable/list.gala:389
+//line collection_immutable/list.gala:392
 			right = right.Prepend(current.head.Get())
 		}
-//line collection_immutable/list.gala:391
+//line collection_immutable/list.gala:394
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:393
+//line collection_immutable/list.gala:396
 	return Tuple[List[T], List[T]]{V1: NewImmutable(left.Reverse()), V2: NewImmutable(right.Reverse())}
 }
 
-//line collection_immutable/list.gala:395
+//line collection_immutable/list.gala:398
 
 // FoldLeft applies a binary operator from left to right.
 func List_FoldLeft[U any, T any](l List[T], initial U, f func(U, T) U) U {
-//line collection_immutable/list.gala:398
-	var acc = initial
-//line collection_immutable/list.gala:399
-	var current = l
-//line collection_immutable/list.gala:400
-	for !current.isEmpty.Get() {
 //line collection_immutable/list.gala:401
-		acc = f(acc, current.head.Get())
+	var acc = initial
 //line collection_immutable/list.gala:402
+	var current = l
+//line collection_immutable/list.gala:403
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:404
+		acc = f(acc, current.head.Get())
+//line collection_immutable/list.gala:405
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:404
+//line collection_immutable/list.gala:407
 	return acc
 }
 
-//line collection_immutable/list.gala:406
+//line collection_immutable/list.gala:409
 
 // FoldRight applies a binary operator from right to left.
 func List_FoldRight[U any, T any](l List[T], initial U, f func(T, U) U) U {
-//line collection_immutable/list.gala:409
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:410
+//line collection_immutable/list.gala:412
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:413
 		return initial
 	}
-//line collection_immutable/list.gala:412
+//line collection_immutable/list.gala:415
 	var tail = *l.tail.Get()
-//line collection_immutable/list.gala:413
+//line collection_immutable/list.gala:416
 	return f(l.head.Get(), List_FoldRight[U, T](tail, initial, f))
 }
 
-//line collection_immutable/list.gala:415
+//line collection_immutable/list.gala:418
 
 // Reduce applies a binary operator from left to right, starting with the first element.
 // Panics if the list is empty.
 func (l List[T]) Reduce(f func(T, T) T) T {
-//line collection_immutable/list.gala:419
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:420
+//line collection_immutable/list.gala:422
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:423
 		panic("List.Reduce on empty list")
 	}
-//line collection_immutable/list.gala:422
+//line collection_immutable/list.gala:425
 	var tail = *l.tail.Get()
-//line collection_immutable/list.gala:423
+//line collection_immutable/list.gala:426
 	return List_FoldLeft[T, T](tail, l.head.Get(), f)
 }
 
-//line collection_immutable/list.gala:425
+//line collection_immutable/list.gala:428
 
 // ReduceOption is like Reduce but returns None for empty list.
 func (l List[T]) ReduceOption(f func(T, T) T) Option[T] {
-//line collection_immutable/list.gala:428
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:429
+//line collection_immutable/list.gala:431
+	if l.length.Get() == 0 {
+//line collection_immutable/list.gala:432
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/list.gala:431
+//line collection_immutable/list.gala:434
 	return Some[T]{}.Apply(l.Reduce(f))
 }
 
-//line collection_immutable/list.gala:433
+//line collection_immutable/list.gala:436
 
 // ForEach applies a function to each element for side effects.
 func (l List[T]) ForEach(f func(T)) {
-//line collection_immutable/list.gala:436
-	var current = l
-//line collection_immutable/list.gala:437
-	for !current.isEmpty.Get() {
-//line collection_immutable/list.gala:438
-		f(current.head.Get())
 //line collection_immutable/list.gala:439
+	var current = l
+//line collection_immutable/list.gala:440
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:441
+		f(current.head.Get())
+//line collection_immutable/list.gala:442
 		current = *current.tail.Get()
 	}
 }
 
-//line collection_immutable/list.gala:442
+//line collection_immutable/list.gala:445
 
 // Exists returns true if any element satisfies the predicate.
 func (l List[T]) Exists(p func(T) bool) bool {
-//line collection_immutable/list.gala:445
-	var current = l
-//line collection_immutable/list.gala:446
-	for !current.isEmpty.Get() {
-//line collection_immutable/list.gala:447
-		if p(current.head.Get()) {
 //line collection_immutable/list.gala:448
+	var current = l
+//line collection_immutable/list.gala:449
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:450
+		if p(current.head.Get()) {
+//line collection_immutable/list.gala:451
 			return true
 		}
-//line collection_immutable/list.gala:450
+//line collection_immutable/list.gala:453
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:452
+//line collection_immutable/list.gala:455
 	return false
 }
 
-//line collection_immutable/list.gala:454
+//line collection_immutable/list.gala:457
 
 // ForAll returns true if all elements satisfy the predicate.
 func (l List[T]) ForAll(p func(T) bool) bool {
-//line collection_immutable/list.gala:457
-	var current = l
-//line collection_immutable/list.gala:458
-	for !current.isEmpty.Get() {
-//line collection_immutable/list.gala:459
-		if !p(current.head.Get()) {
 //line collection_immutable/list.gala:460
+	var current = l
+//line collection_immutable/list.gala:461
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:462
+		if !p(current.head.Get()) {
+//line collection_immutable/list.gala:463
 			return false
 		}
-//line collection_immutable/list.gala:462
+//line collection_immutable/list.gala:465
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:464
+//line collection_immutable/list.gala:467
 	return true
 }
 
-//line collection_immutable/list.gala:466
+//line collection_immutable/list.gala:469
 
 // Find returns the first element that satisfies the predicate.
 func (l List[T]) Find(p func(T) bool) Option[T] {
-//line collection_immutable/list.gala:469
-	var current = l
-//line collection_immutable/list.gala:470
-	for !current.isEmpty.Get() {
-//line collection_immutable/list.gala:471
-		if p(current.head.Get()) {
 //line collection_immutable/list.gala:472
+	var current = l
+//line collection_immutable/list.gala:473
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:474
+		if p(current.head.Get()) {
+//line collection_immutable/list.gala:475
 			return Some[T]{}.Apply(current.head.Get())
 		}
-//line collection_immutable/list.gala:474
+//line collection_immutable/list.gala:477
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:476
+//line collection_immutable/list.gala:479
 	return None[T]{}.Apply()
 }
 
-//line collection_immutable/list.gala:478
+//line collection_immutable/list.gala:481
 
 // Count returns the number of elements satisfying the predicate.
 func (l List[T]) Count(p func(T) bool) int {
-//line collection_immutable/list.gala:481
+//line collection_immutable/list.gala:484
 	return List_FoldLeft[int, T](l, 0, func(acc int, elem T) int {
-//line collection_immutable/list.gala:482
+//line collection_immutable/list.gala:485
 		if p(elem) {
-//line collection_immutable/list.gala:483
+//line collection_immutable/list.gala:486
 			return acc + 1
 		}
-//line collection_immutable/list.gala:485
+//line collection_immutable/list.gala:488
 		return acc
 	})
 }
 
-//line collection_immutable/list.gala:488
+//line collection_immutable/list.gala:491
 
 // Zip combines two lists into a list of tuples. Result length is the minimum of both.
 func List_Zip[U any, T any](l List[T], other List[U]) List[Tuple[T, U]] {
-//line collection_immutable/list.gala:491
-	if l.isEmpty.Get() || other.isEmpty.Get() {
-//line collection_immutable/list.gala:492
+//line collection_immutable/list.gala:494
+	if l.length.Get() == 0 || other.length.Get() == 0 {
+//line collection_immutable/list.gala:495
 		return emptyList[Tuple[T, U]]()
 	}
-//line collection_immutable/list.gala:494
-	var pair = NewImmutable(Tuple[T, U]{V1: NewImmutable(l.head.Get()), V2: NewImmutable(other.head.Get())})
-//line collection_immutable/list.gala:495
-	var lTail = NewImmutable(*l.tail.Get())
-//line collection_immutable/list.gala:496
-	var otherTail = NewImmutable(*other.tail.Get())
 //line collection_immutable/list.gala:497
-	return consList[Tuple[T, U]](pair.Get(), List_Zip[U, T](lTail.Get(), otherTail.Get()))
+	var pair = Tuple[T, U]{V1: NewImmutable(l.head.Get()), V2: NewImmutable(other.head.Get())}
+//line collection_immutable/list.gala:498
+	var lTail = *l.tail.Get()
+//line collection_immutable/list.gala:499
+	var otherTail = *other.tail.Get()
+//line collection_immutable/list.gala:500
+	return consList[Tuple[T, U]](pair, List_Zip[U, T](lTail, otherTail))
 }
 
-//line collection_immutable/list.gala:499
+//line collection_immutable/list.gala:502
 
 // ZipWithIndex pairs each element with its index.
 func List_ZipWithIndex[T any](l List[T]) List[Tuple[T, int]] {
-//line collection_immutable/list.gala:502
-	var result = emptyList[Tuple[T, int]]()
-//line collection_immutable/list.gala:503
-	var current = l
-//line collection_immutable/list.gala:504
-	for i := 0; !current.isEmpty.Get(); i++ {
 //line collection_immutable/list.gala:505
-		result = consList[Tuple[T, int]](Tuple[T, int]{V1: NewImmutable(current.head.Get()), V2: NewImmutable(i)}, result)
+	var result = emptyList[Tuple[T, int]]()
 //line collection_immutable/list.gala:506
+	var current = l
+//line collection_immutable/list.gala:507
+	for i := 0; current.length.Get() > 0; i++ {
+//line collection_immutable/list.gala:508
+		result = consList[Tuple[T, int]](Tuple[T, int]{V1: NewImmutable(current.head.Get()), V2: NewImmutable(i)}, result)
+//line collection_immutable/list.gala:509
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:508
+//line collection_immutable/list.gala:511
 	return result.Reverse()
 }
 
-//line collection_immutable/list.gala:510
+//line collection_immutable/list.gala:513
 
 // Distinct returns a new list with duplicate elements removed, keeping the first
 // occurrence of each element in its original position (like Array.Distinct). O(n^2).
 func (l List[T]) Distinct() List[T] {
-//line collection_immutable/list.gala:515
-	var seen = emptyList[T]()
-//line collection_immutable/list.gala:516
-	var current = l
-//line collection_immutable/list.gala:517
-	for !current.isEmpty.Get() {
 //line collection_immutable/list.gala:518
-		if !seen.Contains(current.head.Get()) {
+	var seen = emptyList[T]()
 //line collection_immutable/list.gala:519
+	var current = l
+//line collection_immutable/list.gala:520
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:521
+		if !seen.Contains(current.head.Get()) {
+//line collection_immutable/list.gala:522
 			seen = consList[T](current.head.Get(), seen)
 		}
-//line collection_immutable/list.gala:521
+//line collection_immutable/list.gala:524
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:523
+//line collection_immutable/list.gala:526
 	return seen.Reverse()
 }
 
-//line collection_immutable/list.gala:525
+//line collection_immutable/list.gala:528
 
 // SplitAt splits the list at the given index.
 func (l List[T]) SplitAt(n int) Tuple[List[T], List[T]] {
 	return Tuple[List[T], List[T]]{V1: NewImmutable(l.Take(n)), V2: NewImmutable(l.Drop(n))}
 }
 
-//line collection_immutable/list.gala:528
+//line collection_immutable/list.gala:531
 
 // Slice returns elements from index start (inclusive) to end (exclusive).
 // Out-of-range bounds are clamped to [0, Length()], as for Array.Slice.
 func (l List[T]) Slice(start int, end int) List[T] {
-//line collection_immutable/list.gala:532
-	var from = NewImmutable(func() int {
+//line collection_immutable/list.gala:535
+	var from = func() int {
 		if start < 0 {
 			return 0
 		} else {
 			return start
 		}
-	}())
-//line collection_immutable/list.gala:533
-	return l.Drop(from.Get()).Take(end - from.Get())
+	}()
+//line collection_immutable/list.gala:536
+	return l.Drop(from).Take(end - from)
 }
 
-//line collection_immutable/list.gala:535
+//line collection_immutable/list.gala:538
 
 // Span splits the list into a prefix/suffix pair according to a predicate.
 // The first element contains the longest prefix of elements that satisfy p. O(n).
 func (l List[T]) Span(p func(T) bool) Tuple[List[T], List[T]] {
-//line collection_immutable/list.gala:540
-	var reversedPrefix = emptyList[T]()
-//line collection_immutable/list.gala:541
-	var current = l
-//line collection_immutable/list.gala:542
-	for !current.isEmpty.Get() && p(current.head.Get()) {
 //line collection_immutable/list.gala:543
-		reversedPrefix = consList[T](current.head.Get(), reversedPrefix)
+	var reversedPrefix = emptyList[T]()
 //line collection_immutable/list.gala:544
+	var current = l
+//line collection_immutable/list.gala:545
+	for current.length.Get() > 0 && p(current.head.Get()) {
+//line collection_immutable/list.gala:546
+		reversedPrefix = consList[T](current.head.Get(), reversedPrefix)
+//line collection_immutable/list.gala:547
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:547
+//line collection_immutable/list.gala:550
 	return Tuple[List[T], List[T]]{V1: NewImmutable(reversedPrefix.Reverse()), V2: NewImmutable(current)}
 }
 
-//line collection_immutable/list.gala:549
+//line collection_immutable/list.gala:552
 
 // PartitionMap applies a function to each element and partitions results into Left and Right. O(n).
 func List_PartitionMap[A any, B any, T any](l List[T], f func(T) Either[A, B]) Tuple[List[A], List[B]] {
-//line collection_immutable/list.gala:553
-	var lefts = emptyList[A]()
-//line collection_immutable/list.gala:554
-	var rights = emptyList[B]()
-//line collection_immutable/list.gala:555
-	var current = l
 //line collection_immutable/list.gala:556
-	for !current.isEmpty.Get() {
+	var lefts = emptyList[A]()
 //line collection_immutable/list.gala:557
+	var rights = emptyList[B]()
+//line collection_immutable/list.gala:558
+	var current = l
+//line collection_immutable/list.gala:559
+	for current.length.Get() > 0 {
+//line collection_immutable/list.gala:560
 		func(obj Either[A, B]) {
 			{
 				_tmp_5 := Left[A, B]{}.Unapply(obj)
@@ -1002,14 +1004,14 @@ func List_PartitionMap[A any, B any, T any](l List[T], f func(T) Either[A, B]) T
 				}
 			}
 		}(f(current.head.Get()))
-//line collection_immutable/list.gala:561
+//line collection_immutable/list.gala:564
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:563
+//line collection_immutable/list.gala:566
 	return Tuple[List[A], List[B]]{V1: NewImmutable(lefts.Reverse()), V2: NewImmutable(rights.Reverse())}
 }
 
-//line collection_immutable/list.gala:565
+//line collection_immutable/list.gala:568
 
 // GroupBy partitions this list into a map of lists according to a discriminator function.
 // Each group keeps the input order. f runs once per element, in order. O(n).
@@ -1019,221 +1021,211 @@ func List_GroupBy[K comparable, T any](l List[T], f func(T) K) map[K]List[T] {
 	})
 }
 
-//line collection_immutable/list.gala:569
+//line collection_immutable/list.gala:572
 
 // GroupMap partitions elements and maps values according to discriminator and value functions.
 // Each group keeps the input order. key and value run once per element, in order. O(n).
-//
-// A zero-valued List[V] returned by a missing-key map lookup has isEmpty=false
-// and tail=nil (Go zero values), so it must never be used as a group: branch on
-// MapContains and start a fresh emptyList for new keys.
 func List_GroupMap[K comparable, V any, T any](l List[T], key func(T) K, value func(T) V) map[K]List[V] {
+//line collection_immutable/list.gala:578
+	var result = go_interop.MapEmpty[K, List[V]]()
 //line collection_immutable/list.gala:579
-	var result = NewImmutable(go_interop.MapEmpty[K, List[V]]())
-//line collection_immutable/list.gala:580
 	var current = l
+//line collection_immutable/list.gala:580
+	for current.length.Get() > 0 {
 //line collection_immutable/list.gala:581
-	for !current.isEmpty.Get() {
+		var elem = current.head.Get()
 //line collection_immutable/list.gala:582
-		var elem = NewImmutable(current.head.Get())
+		var k = key(elem)
 //line collection_immutable/list.gala:583
-		var k = NewImmutable(key(elem.Get()))
+		var group = result[k]
 //line collection_immutable/list.gala:584
-		var group = NewImmutable(func() List[V] {
-			if go_interop.MapContains(result.Get(), k.Get()) {
-				return result.Get()[k.Get()]
-			} else {
-				return emptyList[V]()
-			}
-		}())
+		result[k] = consList[V](value(elem), group)
 //line collection_immutable/list.gala:585
-		result.Get()[k.Get()] = consList[V](value(elem.Get()), group.Get())
-//line collection_immutable/list.gala:586
 		current = *current.tail.Get()
 	}
+//line collection_immutable/list.gala:587
+	for k, group := range result {
 //line collection_immutable/list.gala:588
-	for k, group := range result.Get() {
-//line collection_immutable/list.gala:589
-		result.Get()[k] = group.Reverse()
+		result[k] = group.Reverse()
 	}
-//line collection_immutable/list.gala:591
-	return result.Get()
+//line collection_immutable/list.gala:590
+	return result
 }
 
-//line collection_immutable/list.gala:593
+//line collection_immutable/list.gala:592
 
 // GroupMapReduce partitions elements, maps values, and reduces them with a combining function.
 func List_GroupMapReduce[K comparable, V any, T any](l List[T], key func(T) K, value func(T) V, reduce func(V, V) V) map[K]V {
-//line collection_immutable/list.gala:596
+//line collection_immutable/list.gala:595
 	var result = go_interop.MapEmpty[K, V]()
-//line collection_immutable/list.gala:597
+//line collection_immutable/list.gala:596
 	var seen = go_interop.MapEmpty[K, bool]()
-//line collection_immutable/list.gala:598
+//line collection_immutable/list.gala:597
 	var current = l
+//line collection_immutable/list.gala:598
+	for current.length.Get() > 0 {
 //line collection_immutable/list.gala:599
-	for !current.isEmpty.Get() {
+		var elem = current.head.Get()
 //line collection_immutable/list.gala:600
-		var elem = NewImmutable(current.head.Get())
+		var k = key(elem)
 //line collection_immutable/list.gala:601
-		var k = NewImmutable(key(elem.Get()))
+		var v = value(elem)
 //line collection_immutable/list.gala:602
-		var v = NewImmutable(value(elem.Get()))
+		if seen[k] {
 //line collection_immutable/list.gala:603
-		if seen[k.Get()] {
-//line collection_immutable/list.gala:604
-			result[k.Get()] = reduce(result[k.Get()], v.Get())
+			result[k] = reduce(result[k], v)
 		} else {
+//line collection_immutable/list.gala:605
+			result[k] = v
 //line collection_immutable/list.gala:606
-			result[k.Get()] = v.Get()
-//line collection_immutable/list.gala:607
-			seen[k.Get()] = true
+			seen[k] = true
 		}
-//line collection_immutable/list.gala:609
+//line collection_immutable/list.gala:608
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:611
+//line collection_immutable/list.gala:610
 	return result
 }
 
-//line collection_immutable/list.gala:613
+//line collection_immutable/list.gala:612
 
 // Flatten flattens a list of lists.
 func Flatten[T any](ll List[List[T]]) List[T] {
+//line collection_immutable/list.gala:615
+	if ll.length.Get() == 0 {
 //line collection_immutable/list.gala:616
-	if ll.isEmpty.Get() {
-//line collection_immutable/list.gala:617
 		return emptyList[T]()
 	}
-//line collection_immutable/list.gala:619
+//line collection_immutable/list.gala:618
 	return ll.head.Get().AppendAll(Flatten[T](*ll.tail.Get()))
 }
 
-//line collection_immutable/list.gala:621
+//line collection_immutable/list.gala:620
 
 // ToGoSlice converts the list to a Go slice.
 func (l List[T]) ToGoSlice() []T {
-//line collection_immutable/list.gala:624
+//line collection_immutable/list.gala:623
 	var result []T
-//line collection_immutable/list.gala:625
+//line collection_immutable/list.gala:624
 	var current = l
+//line collection_immutable/list.gala:625
+	for current.length.Get() > 0 {
 //line collection_immutable/list.gala:626
-	for !current.isEmpty.Get() {
-//line collection_immutable/list.gala:627
 		result = go_interop.SliceAppend(result, current.head.Get())
-//line collection_immutable/list.gala:628
+//line collection_immutable/list.gala:627
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:630
+//line collection_immutable/list.gala:629
 	return result
 }
 
-//line collection_immutable/list.gala:632
+//line collection_immutable/list.gala:631
 
 // String returns a string representation of the list.
 func (l List[T]) String() string {
+//line collection_immutable/list.gala:634
+	if l.length.Get() == 0 {
 //line collection_immutable/list.gala:635
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:636
 		return "List()"
 	}
-//line collection_immutable/list.gala:638
+//line collection_immutable/list.gala:637
 	var result = "List("
-//line collection_immutable/list.gala:639
+//line collection_immutable/list.gala:638
 	var current = l
-//line collection_immutable/list.gala:640
+//line collection_immutable/list.gala:639
 	var first = true
+//line collection_immutable/list.gala:640
+	for current.length.Get() > 0 {
 //line collection_immutable/list.gala:641
-	for !current.isEmpty.Get() {
-//line collection_immutable/list.gala:642
 		if !first {
-//line collection_immutable/list.gala:643
+//line collection_immutable/list.gala:642
 			result = result + ", "
 		}
-//line collection_immutable/list.gala:645
+//line collection_immutable/list.gala:644
 		result = result + fmt.Sprintf("%v", current.head.Get())
-//line collection_immutable/list.gala:646
+//line collection_immutable/list.gala:645
 		current = *current.tail.Get()
-//line collection_immutable/list.gala:647
+//line collection_immutable/list.gala:646
 		first = false
 	}
-//line collection_immutable/list.gala:649
+//line collection_immutable/list.gala:648
 	return result + ")"
 }
 
-//line collection_immutable/list.gala:651
+//line collection_immutable/list.gala:650
 
 // MkString joins elements into a string with separator.
 func (l List[T]) MkString(sep string) string {
+//line collection_immutable/list.gala:653
+	if l.length.Get() == 0 {
 //line collection_immutable/list.gala:654
-	if l.isEmpty.Get() {
-//line collection_immutable/list.gala:655
 		return ""
 	}
-//line collection_immutable/list.gala:657
+//line collection_immutable/list.gala:656
 	var result = ""
-//line collection_immutable/list.gala:658
+//line collection_immutable/list.gala:657
 	var current = l
-//line collection_immutable/list.gala:659
+//line collection_immutable/list.gala:658
 	var first = true
+//line collection_immutable/list.gala:659
+	for current.length.Get() > 0 {
 //line collection_immutable/list.gala:660
-	for !current.isEmpty.Get() {
-//line collection_immutable/list.gala:661
 		if !first {
-//line collection_immutable/list.gala:662
+//line collection_immutable/list.gala:661
 			result = result + sep
 		}
-//line collection_immutable/list.gala:664
+//line collection_immutable/list.gala:663
 		result = result + fmt.Sprintf("%v", current.head.Get())
-//line collection_immutable/list.gala:665
+//line collection_immutable/list.gala:664
 		current = *current.tail.Get()
-//line collection_immutable/list.gala:666
+//line collection_immutable/list.gala:665
 		first = false
 	}
-//line collection_immutable/list.gala:668
+//line collection_immutable/list.gala:667
 	return result
 }
 
-//line collection_immutable/list.gala:670
+//line collection_immutable/list.gala:669
 
 // ToArray converts the list to an Array.
 func (l List[T]) ToArray() Array[T] {
-//line collection_immutable/list.gala:673
+//line collection_immutable/list.gala:672
 	var builder = newArrayBuilder[T]()
-//line collection_immutable/list.gala:674
+//line collection_immutable/list.gala:673
 	var current = l
+//line collection_immutable/list.gala:674
+	for current.length.Get() > 0 {
 //line collection_immutable/list.gala:675
-	for !current.isEmpty.Get() {
-//line collection_immutable/list.gala:676
 		builder.Add(current.head.Get())
-//line collection_immutable/list.gala:677
+//line collection_immutable/list.gala:676
 		current = *current.tail.Get()
 	}
-//line collection_immutable/list.gala:679
+//line collection_immutable/list.gala:678
 	return builder.Result()
 }
 
-//line collection_immutable/list.gala:683
+//line collection_immutable/list.gala:682
 
 // Sorted returns a new list with elements sorted in natural order.
 func (l List[T]) Sorted() List[T] {
 	return l.ToArray().Sorted().ToList()
 }
 
-//line collection_immutable/list.gala:686
+//line collection_immutable/list.gala:685
 
 // SortWith returns a new list sorted using the given comparison function.
 func (l List[T]) SortWith(less func(T, T) bool) List[T] {
 	return l.ToArray().SortWith(less).ToList()
 }
 
-//line collection_immutable/list.gala:689
+//line collection_immutable/list.gala:688
 
 // SortBy returns a new list sorted by a key extracted from each element.
 func List_SortBy[K comparable, T any](l List[T], f func(T) K) List[T] {
 	return Array_SortBy(l.ToArray(), f).ToList()
 }
 
-//line collection_immutable/list.gala:692
+//line collection_immutable/list.gala:691
 
 // SeqDrop implements the Seq interface for sequence pattern matching.
 // Returns the list with the first n elements removed.

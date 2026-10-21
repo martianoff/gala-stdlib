@@ -23,21 +23,21 @@ import (
 // panic is surfaced as the Future's Failure.
 func (p Process) ReadLineAsync() concurrent.Future[Try[string]] {
 //line subprocess/async.gala:38
-	var promise = NewImmutable(concurrent.NewPromise[Try[string]](nil))
+	var promise = concurrent.NewPromise[Try[string]](nil)
 //line subprocess/async.gala:39
-	var onRead = NewImmutable(func() {
+	var onRead = func() {
 //line subprocess/async.gala:39
-		promise.Get().Success(p.ReadLine())
-	})
+		promise.Success(p.ReadLine())
+	}
 //line subprocess/async.gala:40
-	var onPanic = NewImmutable(func(r any) {
+	var onPanic = func(r any) {
 //line subprocess/async.gala:40
-		promise.Get().Failure(go_interop.PanicToError(r))
-	})
+		promise.Failure(go_interop.PanicToError(r))
+	}
 //line subprocess/async.gala:41
-	go_interop.SpawnWithRecover(onRead.Get(), onPanic.Get())
+	go_interop.SpawnWithRecover(onRead, onPanic)
 //line subprocess/async.gala:42
-	return promise.Get().Future()
+	return promise.Future()
 }
 
 //line subprocess/async.gala:44
@@ -49,21 +49,21 @@ func (p Process) ReadLineAsync() concurrent.Future[Try[string]] {
 // fails the Future itself.
 func (p Process) ReadStderrLineAsync() concurrent.Future[Try[string]] {
 //line subprocess/async.gala:51
-	var promise = NewImmutable(concurrent.NewPromise[Try[string]](nil))
+	var promise = concurrent.NewPromise[Try[string]](nil)
 //line subprocess/async.gala:52
-	var onRead = NewImmutable(func() {
+	var onRead = func() {
 //line subprocess/async.gala:52
-		promise.Get().Success(p.ReadStderrLine())
-	})
+		promise.Success(p.ReadStderrLine())
+	}
 //line subprocess/async.gala:53
-	var onPanic = NewImmutable(func(r any) {
+	var onPanic = func(r any) {
 //line subprocess/async.gala:53
-		promise.Get().Failure(go_interop.PanicToError(r))
-	})
+		promise.Failure(go_interop.PanicToError(r))
+	}
 //line subprocess/async.gala:54
-	go_interop.SpawnWithRecover(onRead.Get(), onPanic.Get())
+	go_interop.SpawnWithRecover(onRead, onPanic)
 //line subprocess/async.gala:55
-	return promise.Get().Future()
+	return promise.Future()
 }
 
 //line subprocess/async.gala:57
@@ -76,21 +76,21 @@ func (p Process) ReadStderrLineAsync() concurrent.Future[Try[string]] {
 // goroutine fails the Future itself.
 func (p Process) WriteLineAsync(s string) concurrent.Future[Try[Void]] {
 //line subprocess/async.gala:65
-	var promise = NewImmutable(concurrent.NewPromise[Try[Void]](nil))
+	var promise = concurrent.NewPromise[Try[Void]](nil)
 //line subprocess/async.gala:66
-	var onWrite = NewImmutable(func() {
+	var onWrite = func() {
 //line subprocess/async.gala:66
-		promise.Get().Success(p.WriteLine(s))
-	})
+		promise.Success(p.WriteLine(s))
+	}
 //line subprocess/async.gala:67
-	var onPanic = NewImmutable(func(r any) {
+	var onPanic = func(r any) {
 //line subprocess/async.gala:67
-		promise.Get().Failure(go_interop.PanicToError(r))
-	})
+		promise.Failure(go_interop.PanicToError(r))
+	}
 //line subprocess/async.gala:68
-	go_interop.SpawnWithRecover(onWrite.Get(), onPanic.Get())
+	go_interop.SpawnWithRecover(onWrite, onPanic)
 //line subprocess/async.gala:69
-	return promise.Get().Future()
+	return promise.Future()
 }
 
 //line subprocess/async.gala:71
@@ -101,21 +101,21 @@ func (p Process) WriteLineAsync(s string) concurrent.Future[Try[Void]] {
 // mutex). Only a panic in the close goroutine fails the Future itself.
 func (p Process) CloseStdinAsync() concurrent.Future[Try[Void]] {
 //line subprocess/async.gala:77
-	var promise = NewImmutable(concurrent.NewPromise[Try[Void]](nil))
+	var promise = concurrent.NewPromise[Try[Void]](nil)
 //line subprocess/async.gala:78
-	var onClose = NewImmutable(func() {
+	var onClose = func() {
 //line subprocess/async.gala:78
-		promise.Get().Success(p.CloseStdin())
-	})
+		promise.Success(p.CloseStdin())
+	}
 //line subprocess/async.gala:79
-	var onPanic = NewImmutable(func(r any) {
+	var onPanic = func(r any) {
 //line subprocess/async.gala:79
-		promise.Get().Failure(go_interop.PanicToError(r))
-	})
+		promise.Failure(go_interop.PanicToError(r))
+	}
 //line subprocess/async.gala:80
-	go_interop.SpawnWithRecover(onClose.Get(), onPanic.Get())
+	go_interop.SpawnWithRecover(onClose, onPanic)
 //line subprocess/async.gala:81
-	return promise.Get().Future()
+	return promise.Future()
 }
 
 //line subprocess/async.gala:83
@@ -163,17 +163,17 @@ func (k KillTimer) Cancel() {
 // returned handle to abort the pending kill and let the goroutine exit promptly.
 func (p Process) KillAfter(d Duration) KillTimer {
 //line subprocess/async.gala:112
-	var signal = NewImmutable(go_interop.NewSignal())
+	var signal = go_interop.NewSignal()
 //line subprocess/async.gala:113
-	var watch = NewImmutable(func() {
+	var watch = func() {
 //line subprocess/async.gala:114
-		if !go_interop.WaitSignalTimeout(signal.Get(), d.ToGoDuration()) {
+		if !go_interop.WaitSignalTimeout(signal, d.ToGoDuration()) {
 //line subprocess/async.gala:115
 			p.Kill()
 		}
-	})
+	}
 //line subprocess/async.gala:118
-	go_interop.Spawn(watch.Get())
+	go_interop.Spawn(watch)
 //line subprocess/async.gala:119
-	return KillTimer{signal: NewImmutable(signal.Get())}
+	return KillTimer{signal: NewImmutable(signal)}
 }

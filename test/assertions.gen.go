@@ -258,14 +258,14 @@ func IsFailure[V any](t T, tr std.Try[V]) T {
 // Panics asserts that the function panics.
 func Panics(t T, f func()) T {
 //line test/assertions.gala:189
-	var result = std.NewImmutable(std.Try[bool]{}.Apply(func() bool {
+	var result = std.Try[bool]{}.Apply(func() bool {
 //line test/assertions.gala:190
 		f()
 //line test/assertions.gala:191
 		return true
-	}))
+	})
 //line test/assertions.gala:193
-	if result.Get().IsSuccess() {
+	if result.IsSuccess() {
 //line test/assertions.gala:194
 		return t.Error("expected panic but none occurred")
 	}
@@ -278,16 +278,16 @@ func Panics(t T, f func()) T {
 // NotPanics asserts that the function does not panic.
 func NotPanics(t T, f func()) T {
 //line test/assertions.gala:201
-	var result = std.NewImmutable(std.Try[bool]{}.Apply(func() bool {
+	var result = std.Try[bool]{}.Apply(func() bool {
 //line test/assertions.gala:202
 		f()
 //line test/assertions.gala:203
 		return true
-	}))
+	})
 //line test/assertions.gala:205
-	if result.Get().IsFailure() {
+	if result.IsFailure() {
 //line test/assertions.gala:206
-		return t.Error(fmt.Sprintf("expected no panic but got: %v", result.Get().GetError()))
+		return t.Error(fmt.Sprintf("expected no panic but got: %v", result.GetError()))
 	}
 //line test/assertions.gala:208
 	return t
