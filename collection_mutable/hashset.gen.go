@@ -6,19 +6,20 @@ import "fmt"
 import (
 	"go.gala.fyi/stdlib/go_interop"
 	. "go.gala.fyi/stdlib/std"
+	"math"
 )
 
-//line collection_mutable/hashset.gala:21
+//line collection_mutable/hashset.gala:22
 
 // Initial number of buckets
 var hashSetInitialBuckets Immutable[int] = NewImmutable[int](16)
 
-//line collection_mutable/hashset.gala:23
+//line collection_mutable/hashset.gala:24
 
 // Load factor threshold for resizing
 var hashSetLoadFactor Immutable[float64] = NewImmutable[float64](0.75)
 
-//line collection_mutable/hashset.gala:26
+//line collection_mutable/hashset.gala:27
 
 // hashSetEntry represents an entry in a bucket.
 type hashSetEntry[T comparable] struct {
@@ -42,7 +43,7 @@ func (_ hashSetEntry[T]) IshashSetEntry() bool {
 	return true
 }
 
-//line collection_mutable/hashset.gala:33
+//line collection_mutable/hashset.gala:34
 
 // HashSet represents a mutable hash-based set.
 type HashSet[T comparable] struct {
@@ -66,55 +67,55 @@ func (_ HashSet[T]) IsHashSet() bool {
 	return true
 }
 
-//line collection_mutable/hashset.gala:40
+//line collection_mutable/hashset.gala:41
 
 // EmptyHashSet returns a new empty HashSet.
 func EmptyHashSet[T comparable]() *HashSet[T] {
-//line collection_mutable/hashset.gala:43
-	var buckets = go_interop.SliceWithSize[OptionPtr[hashSetEntry[T]]](hashSetInitialBuckets.Get())
 //line collection_mutable/hashset.gala:44
+	var buckets = go_interop.SliceWithSize[OptionPtr[hashSetEntry[T]]](hashSetInitialBuckets.Get())
+//line collection_mutable/hashset.gala:45
 	return &HashSet[T]{buckets: buckets, size: 0, bucketMask: uint32(hashSetInitialBuckets.Get() - 1)}
 }
 
-//line collection_mutable/hashset.gala:46
+//line collection_mutable/hashset.gala:47
 
 // HashSetOf creates a HashSet from variadic arguments.
 // Example: HashSetOf[int](1, 2, 3) creates HashSet(1, 2, 3)
 func HashSetOf[T comparable](elements ...T) *HashSet[T] {
-//line collection_mutable/hashset.gala:50
-	var result = EmptyHashSet[T]()
 //line collection_mutable/hashset.gala:51
-	for i := 0; i < len(elements); i++ {
+	var result = EmptyHashSet[T]()
 //line collection_mutable/hashset.gala:52
+	for i := 0; i < len(elements); i++ {
+//line collection_mutable/hashset.gala:53
 		result.Add(elements[i])
 	}
-//line collection_mutable/hashset.gala:54
+//line collection_mutable/hashset.gala:55
 	return result
 }
 
-//line collection_mutable/hashset.gala:56
+//line collection_mutable/hashset.gala:57
 
 // HashSetFromSlice creates a HashSet from a slice.
 func HashSetFromSlice[T comparable](elements []T) *HashSet[T] {
-//line collection_mutable/hashset.gala:59
-	var result = EmptyHashSet[T]()
 //line collection_mutable/hashset.gala:60
-	for i := 0; i < len(elements); i++ {
+	var result = EmptyHashSet[T]()
 //line collection_mutable/hashset.gala:61
+	for i := 0; i < len(elements); i++ {
+//line collection_mutable/hashset.gala:62
 		result.Add(elements[i])
 	}
-//line collection_mutable/hashset.gala:63
+//line collection_mutable/hashset.gala:64
 	return result
 }
 
-//line collection_mutable/hashset.gala:65
+//line collection_mutable/hashset.gala:66
 
 // hashSetHash computes a hash code for a value.
 // Handles primitives automatically and calls Hash() for Hashable types.
 func hashSetHash[T comparable](value T) uint32 {
-//line collection_mutable/hashset.gala:69
+//line collection_mutable/hashset.gala:70
 	var v any = value
-//line collection_mutable/hashset.gala:71
+//line collection_mutable/hashset.gala:72
 	var result = func(obj any) uint32 {
 		{
 			i, _tmp_1 := As[int](obj)
@@ -167,11 +168,11 @@ func hashSetHash[T comparable](value T) uint32 {
 														} else {
 															f, _tmp_13 := As[float64](obj)
 															if _tmp_13 {
-																return HashUint(uint64(f))
+																return hashFloat(f)
 															} else {
 																f, _tmp_14 := As[float32](obj)
 																if _tmp_14 {
-																	return HashUint(uint64(f))
+																	return hashFloat(float64(f))
 																} else {
 																	h, _tmp_15 := As[Hashable](obj)
 																	if _tmp_15 {
@@ -195,19 +196,152 @@ func hashSetHash[T comparable](value T) uint32 {
 			}
 		}
 	}(v)
-//line collection_mutable/hashset.gala:89
+//line collection_mutable/hashset.gala:90
 	return result
 }
 
-//line collection_mutable/hashset.gala:91
+//line collection_mutable/hashset.gala:92
+
+// hashFloat hashes a float by its bits, so fractions spread over the buckets
+// instead of truncating to a handful of integers. The two zeros are == and
+// hash alike; a NaN equals nothing, so where it lands does not matter.
+func hashFloat(f float64) uint32 {
+	{
+		if f == 0 {
+			return HashUint(0)
+		} else {
+			return HashUint(math.Float64bits(f))
+		}
+	}
+}
+
+//line collection_mutable/hashset.gala:97
+
+// hashesByValue reports whether v is of a predeclared primitive type that
+// hashSetHash hashes by its value. For those types == is Equal, so a HashSet
+// holding them tells values apart exactly as Equal does. A named type is left
+// out: it may declare an Equal of its own.
+func hashesByValue(v any) bool {
+	return func(obj any) bool {
+		{
+			_, _tmp_16 := As[int](obj)
+			if _tmp_16 {
+				return true
+			} else {
+				_, _tmp_17 := As[string](obj)
+				if _tmp_17 {
+					return true
+				} else {
+					_, _tmp_18 := As[int64](obj)
+					if _tmp_18 {
+						return true
+					} else {
+						_, _tmp_19 := As[int32](obj)
+						if _tmp_19 {
+							return true
+						} else {
+							_, _tmp_20 := As[uint](obj)
+							if _tmp_20 {
+								return true
+							} else {
+								_, _tmp_21 := As[uint64](obj)
+								if _tmp_21 {
+									return true
+								} else {
+									_, _tmp_22 := As[uint32](obj)
+									if _tmp_22 {
+										return true
+									} else {
+										_, _tmp_23 := As[bool](obj)
+										if _tmp_23 {
+											return true
+										} else {
+											_, _tmp_24 := As[int8](obj)
+											if _tmp_24 {
+												return true
+											} else {
+												_, _tmp_25 := As[int16](obj)
+												if _tmp_25 {
+													return true
+												} else {
+													_, _tmp_26 := As[uint8](obj)
+													if _tmp_26 {
+														return true
+													} else {
+														_, _tmp_27 := As[uint16](obj)
+														if _tmp_27 {
+															return true
+														} else {
+															_, _tmp_28 := As[float64](obj)
+															if _tmp_28 {
+																return true
+															} else {
+																_, _tmp_29 := As[float32](obj)
+																if _tmp_29 {
+																	return true
+																} else {
+																	return false
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}(v)
+}
+
+//line collection_mutable/hashset.gala:119
+
+// firstOccurrence returns a predicate that holds for each element the first
+// time an Equal element is seen, for Distinct. It looks elements up in a
+// HashSet when T is a type hashesByValue covers, and otherwise compares each
+// one with Equal against the elements kept so far.
+func firstOccurrence[T any]() func(T) bool {
+//line collection_mutable/hashset.gala:125
+	var zero T
+//line collection_mutable/hashset.gala:126
+	if hashesByValue(zero) {
+//line collection_mutable/hashset.gala:127
+		var seen = EmptyHashSet[any]()
+//line collection_mutable/hashset.gala:128
+		return func(elem T) bool {
+			return seen.Add(elem)
+		}
+	}
+//line collection_mutable/hashset.gala:130
+	var kept = EmptyArray[T]()
+//line collection_mutable/hashset.gala:131
+	return func(elem T) bool {
+//line collection_mutable/hashset.gala:132
+		if kept.Contains(elem) {
+//line collection_mutable/hashset.gala:133
+			return false
+		}
+//line collection_mutable/hashset.gala:135
+		kept.Append(elem)
+//line collection_mutable/hashset.gala:136
+		return true
+	}
+}
+
+//line collection_mutable/hashset.gala:139
 
 // hashSetPanicNotHashable panics with a helpful error message.
 func hashSetPanicNotHashable(v any) uint32 {
-//line collection_mutable/hashset.gala:94
+//line collection_mutable/hashset.gala:142
 	panic(fmt.Sprintf("HashSet: type %T must implement std.Hashable interface", v))
 }
 
-//line collection_mutable/hashset.gala:98
+//line collection_mutable/hashset.gala:146
 
 // IsEmpty returns true if the set is empty.
 func (s *HashSet[T]) IsEmpty() bool {
@@ -217,7 +351,7 @@ func (s *HashSet[T]) IsEmpty() bool {
 	return s.size == 0
 }
 
-//line collection_mutable/hashset.gala:101
+//line collection_mutable/hashset.gala:149
 
 // NonEmpty returns true if the set is not empty.
 func (s *HashSet[T]) NonEmpty() bool {
@@ -227,7 +361,7 @@ func (s *HashSet[T]) NonEmpty() bool {
 	return s.size > 0
 }
 
-//line collection_mutable/hashset.gala:104
+//line collection_mutable/hashset.gala:152
 
 // Size returns the number of elements. O(1).
 func (s *HashSet[T]) Size() int {
@@ -237,7 +371,7 @@ func (s *HashSet[T]) Size() int {
 	return s.size
 }
 
-//line collection_mutable/hashset.gala:107
+//line collection_mutable/hashset.gala:155
 
 // Length is an alias for Size.
 func (s *HashSet[T]) Length() int {
@@ -247,7 +381,7 @@ func (s *HashSet[T]) Length() int {
 	return s.size
 }
 
-//line collection_mutable/hashset.gala:112
+//line collection_mutable/hashset.gala:160
 
 // Add adds an element to the set. O(1) amortized.
 // Returns true if the element was added (not already present).
@@ -255,88 +389,88 @@ func (s *HashSet[T]) Add(elem T) bool {
 	if s == nil {
 		panic("HashSet.Add: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:116
+//line collection_mutable/hashset.gala:164
 	var hashCode = hashSetHash[T](elem)
-//line collection_mutable/hashset.gala:117
+//line collection_mutable/hashset.gala:165
 	var idx = int(hashCode & s.bucketMask)
-//line collection_mutable/hashset.gala:120
+//line collection_mutable/hashset.gala:168
 	var entry = s.buckets[idx]
-//line collection_mutable/hashset.gala:121
+//line collection_mutable/hashset.gala:169
 	for entry.IsDefined() {
-//line collection_mutable/hashset.gala:122
+//line collection_mutable/hashset.gala:170
 		var node = entry.Get()
-//line collection_mutable/hashset.gala:123
+//line collection_mutable/hashset.gala:171
 		if node.hashCode.Get() == hashCode && node.value.Get() == elem {
-//line collection_mutable/hashset.gala:124
+//line collection_mutable/hashset.gala:172
 			return false
 		}
-//line collection_mutable/hashset.gala:126
+//line collection_mutable/hashset.gala:174
 		entry = node.next
 	}
-//line collection_mutable/hashset.gala:130
+//line collection_mutable/hashset.gala:178
 	s.buckets[idx] = SomePtr(&hashSetEntry[T]{value: NewImmutable(elem), hashCode: NewImmutable(hashCode), next: s.buckets[idx]})
-//line collection_mutable/hashset.gala:131
+//line collection_mutable/hashset.gala:179
 	s.size++
-//line collection_mutable/hashset.gala:134
+//line collection_mutable/hashset.gala:182
 	if float64(s.size) > float64(len(s.buckets))*hashSetLoadFactor.Get() {
-//line collection_mutable/hashset.gala:135
+//line collection_mutable/hashset.gala:183
 		s.resize()
 	}
-//line collection_mutable/hashset.gala:138
+//line collection_mutable/hashset.gala:186
 	return true
 }
 
-//line collection_mutable/hashset.gala:140
+//line collection_mutable/hashset.gala:188
 
 // resize doubles the bucket array and rehashes all entries.
 func (s *HashSet[T]) resize() {
-//line collection_mutable/hashset.gala:143
+//line collection_mutable/hashset.gala:191
 	var newSize = len(s.buckets) * 2
-//line collection_mutable/hashset.gala:144
+//line collection_mutable/hashset.gala:192
 	var newBuckets = go_interop.SliceWithSize[OptionPtr[hashSetEntry[T]]](newSize)
-//line collection_mutable/hashset.gala:145
+//line collection_mutable/hashset.gala:193
 	var newMask = uint32(newSize - 1)
-//line collection_mutable/hashset.gala:148
+//line collection_mutable/hashset.gala:196
 	for i := 0; i < len(s.buckets); i++ {
-//line collection_mutable/hashset.gala:149
+//line collection_mutable/hashset.gala:197
 		var entry = s.buckets[i]
-//line collection_mutable/hashset.gala:150
+//line collection_mutable/hashset.gala:198
 		for entry.IsDefined() {
-//line collection_mutable/hashset.gala:151
+//line collection_mutable/hashset.gala:199
 			var node = entry.Get()
-//line collection_mutable/hashset.gala:152
+//line collection_mutable/hashset.gala:200
 			var nextEntry = node.next
-//line collection_mutable/hashset.gala:153
+//line collection_mutable/hashset.gala:201
 			var newIdx = int(node.hashCode.Get() & newMask)
-//line collection_mutable/hashset.gala:154
+//line collection_mutable/hashset.gala:202
 			node.next = newBuckets[newIdx]
-//line collection_mutable/hashset.gala:155
+//line collection_mutable/hashset.gala:203
 			newBuckets[newIdx] = entry
-//line collection_mutable/hashset.gala:156
+//line collection_mutable/hashset.gala:204
 			entry = nextEntry
 		}
 	}
-//line collection_mutable/hashset.gala:160
+//line collection_mutable/hashset.gala:208
 	s.buckets = newBuckets
-//line collection_mutable/hashset.gala:161
+//line collection_mutable/hashset.gala:209
 	s.bucketMask = newMask
 }
 
-//line collection_mutable/hashset.gala:163
+//line collection_mutable/hashset.gala:211
 
 // AddAll adds all elements from a slice. O(m) where m = elements.Size().
 func (s *HashSet[T]) AddAll(elements []T) {
 	if s == nil {
 		panic("HashSet.AddAll: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:166
+//line collection_mutable/hashset.gala:214
 	for i := 0; i < len(elements); i++ {
-//line collection_mutable/hashset.gala:167
+//line collection_mutable/hashset.gala:215
 		s.Add(elements[i])
 	}
 }
 
-//line collection_mutable/hashset.gala:170
+//line collection_mutable/hashset.gala:218
 
 // AddFrom adds all elements from another HashSet.
 func (s *HashSet[T]) AddFrom(other *HashSet[T]) {
@@ -346,14 +480,14 @@ func (s *HashSet[T]) AddFrom(other *HashSet[T]) {
 	if other == nil {
 		panic("HashSet.AddFrom: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:173
+//line collection_mutable/hashset.gala:221
 	other.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:174
+//line collection_mutable/hashset.gala:222
 		s.Add(elem)
 	})
 }
 
-//line collection_mutable/hashset.gala:177
+//line collection_mutable/hashset.gala:225
 
 // Remove removes an element from the set. O(1) amortized.
 // Returns true if the element was removed (was present).
@@ -361,57 +495,57 @@ func (s *HashSet[T]) Remove(elem T) bool {
 	if s == nil {
 		panic("HashSet.Remove: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:181
+//line collection_mutable/hashset.gala:229
 	var hashCode = hashSetHash[T](elem)
-//line collection_mutable/hashset.gala:182
+//line collection_mutable/hashset.gala:230
 	var idx = int(hashCode & s.bucketMask)
-//line collection_mutable/hashset.gala:184
+//line collection_mutable/hashset.gala:232
 	var prev = EmptyOptionPtr[hashSetEntry[T]]()
-//line collection_mutable/hashset.gala:185
+//line collection_mutable/hashset.gala:233
 	var entry = s.buckets[idx]
-//line collection_mutable/hashset.gala:186
+//line collection_mutable/hashset.gala:234
 	for entry.IsDefined() {
-//line collection_mutable/hashset.gala:187
+//line collection_mutable/hashset.gala:235
 		var node = entry.Get()
-//line collection_mutable/hashset.gala:188
+//line collection_mutable/hashset.gala:236
 		if node.hashCode.Get() == hashCode && node.value.Get() == elem {
-//line collection_mutable/hashset.gala:189
+//line collection_mutable/hashset.gala:237
 			if prev.IsEmpty() {
-//line collection_mutable/hashset.gala:190
+//line collection_mutable/hashset.gala:238
 				s.buckets[idx] = node.next
 			} else {
-//line collection_mutable/hashset.gala:192
+//line collection_mutable/hashset.gala:240
 				prev.Get().next = node.next
 			}
-//line collection_mutable/hashset.gala:194
+//line collection_mutable/hashset.gala:242
 			s.size--
-//line collection_mutable/hashset.gala:195
+//line collection_mutable/hashset.gala:243
 			return true
 		}
-//line collection_mutable/hashset.gala:197
+//line collection_mutable/hashset.gala:245
 		prev = entry
-//line collection_mutable/hashset.gala:198
+//line collection_mutable/hashset.gala:246
 		entry = node.next
 	}
-//line collection_mutable/hashset.gala:200
+//line collection_mutable/hashset.gala:248
 	return false
 }
 
-//line collection_mutable/hashset.gala:202
+//line collection_mutable/hashset.gala:250
 
 // RemoveAll removes all elements from a slice.
 func (s *HashSet[T]) RemoveAll(elements []T) {
 	if s == nil {
 		panic("HashSet.RemoveAll: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:205
+//line collection_mutable/hashset.gala:253
 	for i := 0; i < len(elements); i++ {
-//line collection_mutable/hashset.gala:206
+//line collection_mutable/hashset.gala:254
 		s.Remove(elements[i])
 	}
 }
 
-//line collection_mutable/hashset.gala:209
+//line collection_mutable/hashset.gala:257
 
 // RemoveFrom removes all elements that are in another HashSet.
 func (s *HashSet[T]) RemoveFrom(other *HashSet[T]) {
@@ -421,77 +555,77 @@ func (s *HashSet[T]) RemoveFrom(other *HashSet[T]) {
 	if other == nil {
 		panic("HashSet.RemoveFrom: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:212
+//line collection_mutable/hashset.gala:260
 	other.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:213
+//line collection_mutable/hashset.gala:261
 		s.Remove(elem)
 	})
 }
 
-//line collection_mutable/hashset.gala:216
+//line collection_mutable/hashset.gala:264
 
 // Clear removes all elements. O(n) to clear buckets.
 func (s *HashSet[T]) Clear() {
 	if s == nil {
 		panic("HashSet.Clear: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:219
+//line collection_mutable/hashset.gala:267
 	s.buckets = go_interop.SliceWithSize[OptionPtr[hashSetEntry[T]]](hashSetInitialBuckets.Get())
-//line collection_mutable/hashset.gala:220
+//line collection_mutable/hashset.gala:268
 	s.size = 0
-//line collection_mutable/hashset.gala:221
+//line collection_mutable/hashset.gala:269
 	s.bucketMask = uint32(hashSetInitialBuckets.Get() - 1)
 }
 
-//line collection_mutable/hashset.gala:225
+//line collection_mutable/hashset.gala:273
 
 // Contains checks if the set contains the given element. O(1) average.
 func (s *HashSet[T]) Contains(elem T) bool {
 	if s == nil {
 		panic("HashSet.Contains: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:228
+//line collection_mutable/hashset.gala:276
 	var hashCode = hashSetHash[T](elem)
-//line collection_mutable/hashset.gala:229
+//line collection_mutable/hashset.gala:277
 	var idx = int(hashCode & s.bucketMask)
-//line collection_mutable/hashset.gala:231
+//line collection_mutable/hashset.gala:279
 	var entry = s.buckets[idx]
-//line collection_mutable/hashset.gala:232
+//line collection_mutable/hashset.gala:280
 	for entry.IsDefined() {
-//line collection_mutable/hashset.gala:233
+//line collection_mutable/hashset.gala:281
 		var node = entry.Get()
-//line collection_mutable/hashset.gala:234
+//line collection_mutable/hashset.gala:282
 		if node.hashCode.Get() == hashCode && node.value.Get() == elem {
-//line collection_mutable/hashset.gala:235
+//line collection_mutable/hashset.gala:283
 			return true
 		}
-//line collection_mutable/hashset.gala:237
+//line collection_mutable/hashset.gala:285
 		entry = node.next
 	}
-//line collection_mutable/hashset.gala:239
+//line collection_mutable/hashset.gala:287
 	return false
 }
 
-//line collection_mutable/hashset.gala:241
+//line collection_mutable/hashset.gala:289
 
 // ContainsAll returns true if the set contains all elements from a slice.
 func (s *HashSet[T]) ContainsAll(elements []T) bool {
 	if s == nil {
 		panic("HashSet.ContainsAll: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:244
+//line collection_mutable/hashset.gala:292
 	for i := 0; i < len(elements); i++ {
-//line collection_mutable/hashset.gala:245
+//line collection_mutable/hashset.gala:293
 		if !s.Contains(elements[i]) {
-//line collection_mutable/hashset.gala:246
+//line collection_mutable/hashset.gala:294
 			return false
 		}
 	}
-//line collection_mutable/hashset.gala:249
+//line collection_mutable/hashset.gala:297
 	return true
 }
 
-//line collection_mutable/hashset.gala:253
+//line collection_mutable/hashset.gala:301
 
 // Union returns a new set containing all elements from both sets.
 func (s *HashSet[T]) Union(other *HashSet[T]) *HashSet[T] {
@@ -501,15 +635,15 @@ func (s *HashSet[T]) Union(other *HashSet[T]) *HashSet[T] {
 	if other == nil {
 		panic("HashSet.Union: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:256
+//line collection_mutable/hashset.gala:304
 	var result = s.Clone()
-//line collection_mutable/hashset.gala:257
+//line collection_mutable/hashset.gala:305
 	result.AddFrom(other)
-//line collection_mutable/hashset.gala:258
+//line collection_mutable/hashset.gala:306
 	return result
 }
 
-//line collection_mutable/hashset.gala:260
+//line collection_mutable/hashset.gala:308
 
 // Intersect returns a new set containing only elements present in both sets.
 func (s *HashSet[T]) Intersect(other *HashSet[T]) *HashSet[T] {
@@ -519,32 +653,32 @@ func (s *HashSet[T]) Intersect(other *HashSet[T]) *HashSet[T] {
 	if other == nil {
 		panic("HashSet.Intersect: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:264
+//line collection_mutable/hashset.gala:312
 	if s.Size() <= other.Size() {
-//line collection_mutable/hashset.gala:265
+//line collection_mutable/hashset.gala:313
 		return HashSet_FoldLeft[*HashSet[T], T](s, EmptyHashSet[T](), func(acc *HashSet[T], elem T) *HashSet[T] {
-//line collection_mutable/hashset.gala:266
+//line collection_mutable/hashset.gala:314
 			if other.Contains(elem) {
-//line collection_mutable/hashset.gala:267
+//line collection_mutable/hashset.gala:315
 				acc.Add(elem)
 			}
-//line collection_mutable/hashset.gala:269
+//line collection_mutable/hashset.gala:317
 			return acc
 		})
 	}
-//line collection_mutable/hashset.gala:272
+//line collection_mutable/hashset.gala:320
 	return HashSet_FoldLeft[*HashSet[T], T](other, EmptyHashSet[T](), func(acc *HashSet[T], elem T) *HashSet[T] {
-//line collection_mutable/hashset.gala:273
+//line collection_mutable/hashset.gala:321
 		if s.Contains(elem) {
-//line collection_mutable/hashset.gala:274
+//line collection_mutable/hashset.gala:322
 			acc.Add(elem)
 		}
-//line collection_mutable/hashset.gala:276
+//line collection_mutable/hashset.gala:324
 		return acc
 	})
 }
 
-//line collection_mutable/hashset.gala:279
+//line collection_mutable/hashset.gala:327
 
 // Diff returns a new set containing elements in this set but not in other.
 func (s *HashSet[T]) Diff(other *HashSet[T]) *HashSet[T] {
@@ -554,19 +688,19 @@ func (s *HashSet[T]) Diff(other *HashSet[T]) *HashSet[T] {
 	if other == nil {
 		panic("HashSet.Diff: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:282
+//line collection_mutable/hashset.gala:330
 	return HashSet_FoldLeft[*HashSet[T], T](s, EmptyHashSet[T](), func(acc *HashSet[T], elem T) *HashSet[T] {
-//line collection_mutable/hashset.gala:283
+//line collection_mutable/hashset.gala:331
 		if !other.Contains(elem) {
-//line collection_mutable/hashset.gala:284
+//line collection_mutable/hashset.gala:332
 			acc.Add(elem)
 		}
-//line collection_mutable/hashset.gala:286
+//line collection_mutable/hashset.gala:334
 		return acc
 	})
 }
 
-//line collection_mutable/hashset.gala:289
+//line collection_mutable/hashset.gala:337
 
 // SymmetricDiff returns a new set containing elements in either set but not both.
 func (s *HashSet[T]) SymmetricDiff(other *HashSet[T]) *HashSet[T] {
@@ -576,29 +710,29 @@ func (s *HashSet[T]) SymmetricDiff(other *HashSet[T]) *HashSet[T] {
 	if other == nil {
 		panic("HashSet.SymmetricDiff: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:292
+//line collection_mutable/hashset.gala:340
 	var fromS = HashSet_FoldLeft[*HashSet[T], T](s, EmptyHashSet[T](), func(acc *HashSet[T], elem T) *HashSet[T] {
-//line collection_mutable/hashset.gala:293
+//line collection_mutable/hashset.gala:341
 		if !other.Contains(elem) {
-//line collection_mutable/hashset.gala:294
+//line collection_mutable/hashset.gala:342
 			acc.Add(elem)
 		}
-//line collection_mutable/hashset.gala:296
+//line collection_mutable/hashset.gala:344
 		return acc
 	})
-//line collection_mutable/hashset.gala:298
+//line collection_mutable/hashset.gala:346
 	return HashSet_FoldLeft[*HashSet[T], T](other, fromS, func(acc *HashSet[T], elem T) *HashSet[T] {
-//line collection_mutable/hashset.gala:299
+//line collection_mutable/hashset.gala:347
 		if !s.Contains(elem) {
-//line collection_mutable/hashset.gala:300
+//line collection_mutable/hashset.gala:348
 			acc.Add(elem)
 		}
-//line collection_mutable/hashset.gala:302
+//line collection_mutable/hashset.gala:350
 		return acc
 	})
 }
 
-//line collection_mutable/hashset.gala:305
+//line collection_mutable/hashset.gala:353
 
 // SubsetOf returns true if this set is a subset of other.
 func (s *HashSet[T]) SubsetOf(other *HashSet[T]) bool {
@@ -608,18 +742,18 @@ func (s *HashSet[T]) SubsetOf(other *HashSet[T]) bool {
 	if other == nil {
 		panic("HashSet.SubsetOf: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:308
+//line collection_mutable/hashset.gala:356
 	if s.Size() > other.Size() {
-//line collection_mutable/hashset.gala:309
+//line collection_mutable/hashset.gala:357
 		return false
 	}
-//line collection_mutable/hashset.gala:311
+//line collection_mutable/hashset.gala:359
 	return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
 		return acc && other.Contains(elem)
 	})
 }
 
-//line collection_mutable/hashset.gala:313
+//line collection_mutable/hashset.gala:361
 
 // SupersetOf returns true if this set is a superset of other.
 func (s *HashSet[T]) SupersetOf(other *HashSet[T]) bool {
@@ -632,7 +766,7 @@ func (s *HashSet[T]) SupersetOf(other *HashSet[T]) bool {
 	return other.SubsetOf(s)
 }
 
-//line collection_mutable/hashset.gala:316
+//line collection_mutable/hashset.gala:364
 
 // Disjoint returns true if the sets have no elements in common.
 func (s *HashSet[T]) Disjoint(other *HashSet[T]) bool {
@@ -642,20 +776,20 @@ func (s *HashSet[T]) Disjoint(other *HashSet[T]) bool {
 	if other == nil {
 		panic("HashSet.Disjoint: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:319
+//line collection_mutable/hashset.gala:367
 	if s.Size() <= other.Size() {
-//line collection_mutable/hashset.gala:320
+//line collection_mutable/hashset.gala:368
 		return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
 			return acc && !other.Contains(elem)
 		})
 	}
-//line collection_mutable/hashset.gala:322
+//line collection_mutable/hashset.gala:370
 	return HashSet_FoldLeft[bool, T](other, true, func(acc bool, elem T) bool {
 		return acc && !s.Contains(elem)
 	})
 }
 
-//line collection_mutable/hashset.gala:326
+//line collection_mutable/hashset.gala:374
 
 // UnionInPlace adds all elements from other to this set.
 func (s *HashSet[T]) UnionInPlace(other *HashSet[T]) {
@@ -665,11 +799,11 @@ func (s *HashSet[T]) UnionInPlace(other *HashSet[T]) {
 	if other == nil {
 		panic("HashSet.UnionInPlace: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:329
+//line collection_mutable/hashset.gala:377
 	s.AddFrom(other)
 }
 
-//line collection_mutable/hashset.gala:331
+//line collection_mutable/hashset.gala:379
 
 // IntersectInPlace removes elements not in other.
 func (s *HashSet[T]) IntersectInPlace(other *HashSet[T]) {
@@ -679,21 +813,21 @@ func (s *HashSet[T]) IntersectInPlace(other *HashSet[T]) {
 	if other == nil {
 		panic("HashSet.IntersectInPlace: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:334
+//line collection_mutable/hashset.gala:382
 	var toRemove []T
-//line collection_mutable/hashset.gala:335
+//line collection_mutable/hashset.gala:383
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:336
+//line collection_mutable/hashset.gala:384
 		if !other.Contains(elem) {
-//line collection_mutable/hashset.gala:337
+//line collection_mutable/hashset.gala:385
 			toRemove = go_interop.SliceAppend(toRemove, elem)
 		}
 	})
-//line collection_mutable/hashset.gala:340
+//line collection_mutable/hashset.gala:388
 	s.RemoveAll(toRemove)
 }
 
-//line collection_mutable/hashset.gala:342
+//line collection_mutable/hashset.gala:390
 
 // DiffInPlace removes elements that are in other.
 func (s *HashSet[T]) DiffInPlace(other *HashSet[T]) {
@@ -703,53 +837,53 @@ func (s *HashSet[T]) DiffInPlace(other *HashSet[T]) {
 	if other == nil {
 		panic("HashSet.DiffInPlace: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:345
+//line collection_mutable/hashset.gala:393
 	s.RemoveFrom(other)
 }
 
-//line collection_mutable/hashset.gala:349
+//line collection_mutable/hashset.gala:397
 
 // ForEach applies a function to each element for side effects.
 func (s *HashSet[T]) ForEach(f func(T)) {
 	if s == nil {
 		panic("HashSet.ForEach: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:352
+//line collection_mutable/hashset.gala:400
 	for i := 0; i < len(s.buckets); i++ {
-//line collection_mutable/hashset.gala:353
+//line collection_mutable/hashset.gala:401
 		var entry = s.buckets[i]
-//line collection_mutable/hashset.gala:354
+//line collection_mutable/hashset.gala:402
 		for entry.IsDefined() {
-//line collection_mutable/hashset.gala:355
+//line collection_mutable/hashset.gala:403
 			var node = entry.Get()
-//line collection_mutable/hashset.gala:356
+//line collection_mutable/hashset.gala:404
 			f(node.value.Get())
-//line collection_mutable/hashset.gala:357
+//line collection_mutable/hashset.gala:405
 			entry = node.next
 		}
 	}
 }
 
-//line collection_mutable/hashset.gala:363
+//line collection_mutable/hashset.gala:411
 
 // Filter returns a new HashSet with only elements that satisfy the predicate.
 func (s *HashSet[T]) Filter(p func(T) bool) *HashSet[T] {
 	if s == nil {
 		panic("HashSet.Filter: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:366
+//line collection_mutable/hashset.gala:414
 	return HashSet_FoldLeft[*HashSet[T], T](s, EmptyHashSet[T](), func(acc *HashSet[T], elem T) *HashSet[T] {
-//line collection_mutable/hashset.gala:367
+//line collection_mutable/hashset.gala:415
 		if p(elem) {
-//line collection_mutable/hashset.gala:368
+//line collection_mutable/hashset.gala:416
 			acc.Add(elem)
 		}
-//line collection_mutable/hashset.gala:370
+//line collection_mutable/hashset.gala:418
 		return acc
 	})
 }
 
-//line collection_mutable/hashset.gala:373
+//line collection_mutable/hashset.gala:421
 
 // FilterNot returns a new HashSet with elements that do not satisfy the predicate.
 func (s *HashSet[T]) FilterNot(p func(T) bool) *HashSet[T] {
@@ -761,7 +895,7 @@ func (s *HashSet[T]) FilterNot(p func(T) bool) *HashSet[T] {
 	})
 }
 
-//line collection_mutable/hashset.gala:376
+//line collection_mutable/hashset.gala:424
 
 // Collect applies a partial function to each element and collects the results.
 // Elements for which the function returns None are filtered out.
@@ -770,88 +904,88 @@ func HashSet_Collect[U any, T comparable](s *HashSet[T], pf func(T) Option[U]) *
 	if s == nil {
 		panic("HashSet.Collect: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:381
+//line collection_mutable/hashset.gala:429
 	var result = EmptyArray[U]()
-//line collection_mutable/hashset.gala:382
+//line collection_mutable/hashset.gala:430
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:383
+//line collection_mutable/hashset.gala:431
 		var opt = pf(elem)
-//line collection_mutable/hashset.gala:384
+//line collection_mutable/hashset.gala:432
 		if opt.IsDefined() {
-//line collection_mutable/hashset.gala:385
+//line collection_mutable/hashset.gala:433
 			result.Append(opt.Get())
 		}
 	})
-//line collection_mutable/hashset.gala:388
+//line collection_mutable/hashset.gala:436
 	return result
 }
 
-//line collection_mutable/hashset.gala:390
+//line collection_mutable/hashset.gala:438
 
 // Partition splits the set into two sets based on a predicate.
 func (s *HashSet[T]) Partition(p func(T) bool) Tuple[*HashSet[T], *HashSet[T]] {
 	if s == nil {
 		panic("HashSet.Partition: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:393
+//line collection_mutable/hashset.gala:441
 	var left = s.Filter(p)
-//line collection_mutable/hashset.gala:394
+//line collection_mutable/hashset.gala:442
 	var right = s.FilterNot(p)
-//line collection_mutable/hashset.gala:395
+//line collection_mutable/hashset.gala:443
 	return Tuple[*HashSet[T], *HashSet[T]]{V1: NewImmutable(left), V2: NewImmutable(right)}
 }
 
-//line collection_mutable/hashset.gala:397
+//line collection_mutable/hashset.gala:445
 
 // Map applies a function to each element and returns a new set.
 func HashSet_Map[U comparable, T comparable](s *HashSet[T], f func(T) U) *HashSet[U] {
 	if s == nil {
 		panic("HashSet.Map: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:400
+//line collection_mutable/hashset.gala:448
 	return HashSet_FoldLeft[*HashSet[U], T](s, EmptyHashSet[U](), func(acc *HashSet[U], elem T) *HashSet[U] {
-//line collection_mutable/hashset.gala:401
+//line collection_mutable/hashset.gala:449
 		acc.Add(f(elem))
-//line collection_mutable/hashset.gala:402
+//line collection_mutable/hashset.gala:450
 		return acc
 	})
 }
 
-//line collection_mutable/hashset.gala:405
+//line collection_mutable/hashset.gala:453
 
 // FlatMap applies a function that returns a set to each element and flattens.
 func HashSet_FlatMap[U comparable, T comparable](s *HashSet[T], f func(T) *HashSet[U]) *HashSet[U] {
 	if s == nil {
 		panic("HashSet.FlatMap: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:408
+//line collection_mutable/hashset.gala:456
 	return HashSet_FoldLeft[*HashSet[U], T](s, EmptyHashSet[U](), func(acc *HashSet[U], elem T) *HashSet[U] {
-//line collection_mutable/hashset.gala:409
+//line collection_mutable/hashset.gala:457
 		acc.AddFrom(f(elem))
-//line collection_mutable/hashset.gala:410
+//line collection_mutable/hashset.gala:458
 		return acc
 	})
 }
 
-//line collection_mutable/hashset.gala:415
+//line collection_mutable/hashset.gala:463
 
 // FoldLeft applies a binary operator from left to right.
 func HashSet_FoldLeft[U any, T comparable](s *HashSet[T], initial U, f func(U, T) U) U {
 	if s == nil {
 		panic("HashSet.FoldLeft: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:418
+//line collection_mutable/hashset.gala:466
 	var acc = initial
-//line collection_mutable/hashset.gala:419
+//line collection_mutable/hashset.gala:467
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:420
+//line collection_mutable/hashset.gala:468
 		acc = f(acc, elem)
 	})
-//line collection_mutable/hashset.gala:422
+//line collection_mutable/hashset.gala:470
 	return acc
 }
 
-//line collection_mutable/hashset.gala:424
+//line collection_mutable/hashset.gala:472
 
 // Reduce applies a binary operator, starting with the first element.
 // Panics if the set is empty.
@@ -859,113 +993,113 @@ func (s *HashSet[T]) Reduce(f func(T, T) T) T {
 	if s == nil {
 		panic("HashSet.Reduce: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:428
+//line collection_mutable/hashset.gala:476
 	if s.Size() == 0 {
-//line collection_mutable/hashset.gala:429
+//line collection_mutable/hashset.gala:477
 		panic("HashSet.Reduce on empty set")
 	}
-//line collection_mutable/hashset.gala:431
+//line collection_mutable/hashset.gala:479
 	var first = true
-//line collection_mutable/hashset.gala:432
+//line collection_mutable/hashset.gala:480
 	var acc T
-//line collection_mutable/hashset.gala:433
+//line collection_mutable/hashset.gala:481
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:434
+//line collection_mutable/hashset.gala:482
 		if first {
-//line collection_mutable/hashset.gala:435
+//line collection_mutable/hashset.gala:483
 			acc = elem
-//line collection_mutable/hashset.gala:436
+//line collection_mutable/hashset.gala:484
 			first = false
 		} else {
-//line collection_mutable/hashset.gala:438
+//line collection_mutable/hashset.gala:486
 			acc = f(acc, elem)
 		}
 	})
-//line collection_mutable/hashset.gala:441
+//line collection_mutable/hashset.gala:489
 	return acc
 }
 
-//line collection_mutable/hashset.gala:443
+//line collection_mutable/hashset.gala:491
 
 // ReduceOption is like Reduce but returns None for empty set.
 func (s *HashSet[T]) ReduceOption(f func(T, T) T) Option[T] {
 	if s == nil {
 		panic("HashSet.ReduceOption: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:446
+//line collection_mutable/hashset.gala:494
 	if s.Size() == 0 {
-//line collection_mutable/hashset.gala:447
+//line collection_mutable/hashset.gala:495
 		return None[T]{}.Apply()
 	}
-//line collection_mutable/hashset.gala:449
+//line collection_mutable/hashset.gala:497
 	return Some[T]{}.Apply(s.Reduce(f))
 }
 
-//line collection_mutable/hashset.gala:453
+//line collection_mutable/hashset.gala:501
 
 // Exists returns true if any element satisfies the predicate.
 func (s *HashSet[T]) Exists(p func(T) bool) bool {
 	if s == nil {
 		panic("HashSet.Exists: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:456
+//line collection_mutable/hashset.gala:504
 	return HashSet_FoldLeft[bool, T](s, false, func(acc bool, elem T) bool {
 		return acc || p(elem)
 	})
 }
 
-//line collection_mutable/hashset.gala:458
+//line collection_mutable/hashset.gala:506
 
 // ForAll returns true if all elements satisfy the predicate.
 func (s *HashSet[T]) ForAll(p func(T) bool) bool {
 	if s == nil {
 		panic("HashSet.ForAll: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:461
+//line collection_mutable/hashset.gala:509
 	return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
 		return acc && p(elem)
 	})
 }
 
-//line collection_mutable/hashset.gala:463
+//line collection_mutable/hashset.gala:511
 
 // Find returns the first element that satisfies the predicate.
 func (s *HashSet[T]) Find(p func(T) bool) Option[T] {
 	if s == nil {
 		panic("HashSet.Find: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:466
+//line collection_mutable/hashset.gala:514
 	return HashSet_FoldLeft[Option[T], T](s, None[T]{}.Apply(), func(acc Option[T], elem T) Option[T] {
-//line collection_mutable/hashset.gala:467
+//line collection_mutable/hashset.gala:515
 		if acc.IsEmpty() && p(elem) {
-//line collection_mutable/hashset.gala:468
+//line collection_mutable/hashset.gala:516
 			return Some[T]{}.Apply(elem)
 		}
-//line collection_mutable/hashset.gala:470
+//line collection_mutable/hashset.gala:518
 		return acc
 	})
 }
 
-//line collection_mutable/hashset.gala:473
+//line collection_mutable/hashset.gala:521
 
 // Count returns the number of elements satisfying the predicate.
 func (s *HashSet[T]) Count(p func(T) bool) int {
 	if s == nil {
 		panic("HashSet.Count: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:476
+//line collection_mutable/hashset.gala:524
 	return HashSet_FoldLeft[int, T](s, 0, func(acc int, elem T) int {
-//line collection_mutable/hashset.gala:477
+//line collection_mutable/hashset.gala:525
 		if p(elem) {
-//line collection_mutable/hashset.gala:478
+//line collection_mutable/hashset.gala:526
 			return acc + 1
 		}
-//line collection_mutable/hashset.gala:480
+//line collection_mutable/hashset.gala:528
 		return acc
 	})
 }
 
-//line collection_mutable/hashset.gala:485
+//line collection_mutable/hashset.gala:533
 
 // Head returns an arbitrary element from the set.
 // Panics if the set is empty.
@@ -973,182 +1107,182 @@ func (s *HashSet[T]) Head() T {
 	if s == nil {
 		panic("HashSet.Head: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:489
+//line collection_mutable/hashset.gala:537
 	if s.Size() == 0 {
-//line collection_mutable/hashset.gala:490
+//line collection_mutable/hashset.gala:538
 		panic("HashSet.Head on empty set")
 	}
-//line collection_mutable/hashset.gala:492
+//line collection_mutable/hashset.gala:540
 	var result T
-//line collection_mutable/hashset.gala:493
+//line collection_mutable/hashset.gala:541
 	var found = false
-//line collection_mutable/hashset.gala:494
+//line collection_mutable/hashset.gala:542
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:495
+//line collection_mutable/hashset.gala:543
 		if !found {
-//line collection_mutable/hashset.gala:496
+//line collection_mutable/hashset.gala:544
 			result = elem
-//line collection_mutable/hashset.gala:497
+//line collection_mutable/hashset.gala:545
 			found = true
 		}
 	})
-//line collection_mutable/hashset.gala:500
+//line collection_mutable/hashset.gala:548
 	return result
 }
 
-//line collection_mutable/hashset.gala:502
+//line collection_mutable/hashset.gala:550
 
 // HeadOption returns an arbitrary element wrapped in Option.
 func (s *HashSet[T]) HeadOption() Option[T] {
 	if s == nil {
 		panic("HashSet.HeadOption: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:505
+//line collection_mutable/hashset.gala:553
 	if s.Size() == 0 {
-//line collection_mutable/hashset.gala:506
+//line collection_mutable/hashset.gala:554
 		return None[T]{}.Apply()
 	}
-//line collection_mutable/hashset.gala:508
+//line collection_mutable/hashset.gala:556
 	return Some[T]{}.Apply(s.Head())
 }
 
-//line collection_mutable/hashset.gala:512
+//line collection_mutable/hashset.gala:560
 
 // ToGoSlice converts the set to a Go slice.
 func (s *HashSet[T]) ToGoSlice() []T {
 	if s == nil {
 		panic("HashSet.ToGoSlice: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:515
+//line collection_mutable/hashset.gala:563
 	var result []T
-//line collection_mutable/hashset.gala:516
+//line collection_mutable/hashset.gala:564
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:517
+//line collection_mutable/hashset.gala:565
 		result = go_interop.SliceAppend(result, elem)
 	})
-//line collection_mutable/hashset.gala:519
+//line collection_mutable/hashset.gala:567
 	return result
 }
 
-//line collection_mutable/hashset.gala:521
+//line collection_mutable/hashset.gala:569
 
 // ToArray converts the set to a mutable Array.
 func (s *HashSet[T]) ToArray() *Array[T] {
 	if s == nil {
 		panic("HashSet.ToArray: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:524
+//line collection_mutable/hashset.gala:572
 	var result = ArrayWithCapacity[T](s.Size())
-//line collection_mutable/hashset.gala:525
+//line collection_mutable/hashset.gala:573
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:526
+//line collection_mutable/hashset.gala:574
 		result.Append(elem)
 	})
-//line collection_mutable/hashset.gala:528
+//line collection_mutable/hashset.gala:576
 	return result
 }
 
-//line collection_mutable/hashset.gala:530
+//line collection_mutable/hashset.gala:578
 
 // ToList converts the set to a mutable List.
 func (s *HashSet[T]) ToList() *List[T] {
 	if s == nil {
 		panic("HashSet.ToList: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:533
+//line collection_mutable/hashset.gala:581
 	var result = EmptyList[T]()
-//line collection_mutable/hashset.gala:534
+//line collection_mutable/hashset.gala:582
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:535
+//line collection_mutable/hashset.gala:583
 		result.Append(elem)
 	})
-//line collection_mutable/hashset.gala:537
+//line collection_mutable/hashset.gala:585
 	return result
 }
 
-//line collection_mutable/hashset.gala:539
+//line collection_mutable/hashset.gala:587
 
 // Clone creates a shallow copy of the set.
 func (s *HashSet[T]) Clone() *HashSet[T] {
 	if s == nil {
 		panic("HashSet.Clone: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:542
+//line collection_mutable/hashset.gala:590
 	var result = EmptyHashSet[T]()
-//line collection_mutable/hashset.gala:543
+//line collection_mutable/hashset.gala:591
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:544
+//line collection_mutable/hashset.gala:592
 		result.Add(elem)
 	})
-//line collection_mutable/hashset.gala:546
+//line collection_mutable/hashset.gala:594
 	return result
 }
 
-//line collection_mutable/hashset.gala:548
+//line collection_mutable/hashset.gala:596
 
 // String returns a string representation of the set.
 func (s *HashSet[T]) String() string {
 	if s == nil {
 		panic("HashSet.String: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:551
+//line collection_mutable/hashset.gala:599
 	if s.Size() == 0 {
-//line collection_mutable/hashset.gala:552
+//line collection_mutable/hashset.gala:600
 		return "HashSet()"
 	}
-//line collection_mutable/hashset.gala:554
+//line collection_mutable/hashset.gala:602
 	var result = "HashSet("
-//line collection_mutable/hashset.gala:555
+//line collection_mutable/hashset.gala:603
 	var first = true
-//line collection_mutable/hashset.gala:556
+//line collection_mutable/hashset.gala:604
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:557
+//line collection_mutable/hashset.gala:605
 		if !first {
-//line collection_mutable/hashset.gala:558
+//line collection_mutable/hashset.gala:606
 			result = result + ", "
 		}
-//line collection_mutable/hashset.gala:560
+//line collection_mutable/hashset.gala:608
 		result = result + fmt.Sprintf("%v", elem)
-//line collection_mutable/hashset.gala:561
+//line collection_mutable/hashset.gala:609
 		first = false
 	})
-//line collection_mutable/hashset.gala:563
+//line collection_mutable/hashset.gala:611
 	return result + ")"
 }
 
-//line collection_mutable/hashset.gala:565
+//line collection_mutable/hashset.gala:613
 
 // MkString joins elements into a string with separator.
 func (s *HashSet[T]) MkString(sep string) string {
 	if s == nil {
 		panic("HashSet.MkString: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
-//line collection_mutable/hashset.gala:568
+//line collection_mutable/hashset.gala:616
 	if s.Size() == 0 {
-//line collection_mutable/hashset.gala:569
+//line collection_mutable/hashset.gala:617
 		return ""
 	}
-//line collection_mutable/hashset.gala:571
+//line collection_mutable/hashset.gala:619
 	var result = ""
-//line collection_mutable/hashset.gala:572
+//line collection_mutable/hashset.gala:620
 	var first = true
-//line collection_mutable/hashset.gala:573
+//line collection_mutable/hashset.gala:621
 	s.ForEach(func(elem T) {
-//line collection_mutable/hashset.gala:574
+//line collection_mutable/hashset.gala:622
 		if !first {
-//line collection_mutable/hashset.gala:575
+//line collection_mutable/hashset.gala:623
 			result = result + sep
 		}
-//line collection_mutable/hashset.gala:577
+//line collection_mutable/hashset.gala:625
 		result = result + fmt.Sprintf("%v", elem)
-//line collection_mutable/hashset.gala:578
+//line collection_mutable/hashset.gala:626
 		first = false
 	})
-//line collection_mutable/hashset.gala:580
+//line collection_mutable/hashset.gala:628
 	return result
 }
 
-//line collection_mutable/hashset.gala:584
+//line collection_mutable/hashset.gala:632
 
 // Sorted returns a mutable Array of elements sorted in natural order.
 func (s *HashSet[T]) Sorted() *Array[T] {
@@ -1158,7 +1292,7 @@ func (s *HashSet[T]) Sorted() *Array[T] {
 	return s.ToArray().Sorted()
 }
 
-//line collection_mutable/hashset.gala:587
+//line collection_mutable/hashset.gala:635
 
 // SortWith returns a mutable Array of elements sorted using the given comparison function.
 func (s *HashSet[T]) SortWith(less func(T, T) bool) *Array[T] {
@@ -1168,7 +1302,7 @@ func (s *HashSet[T]) SortWith(less func(T, T) bool) *Array[T] {
 	return s.ToArray().SortWith(less)
 }
 
-//line collection_mutable/hashset.gala:590
+//line collection_mutable/hashset.gala:638
 
 // SortBy returns a mutable Array of elements sorted by a key extracted from each element.
 func HashSet_SortBy[K comparable, T comparable](s *HashSet[T], f func(T) K) *Array[T] {

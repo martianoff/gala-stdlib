@@ -283,6 +283,22 @@ func (o Option[T]) Filter(p func(T) bool) Option[T] {
 
 //line std/option.gala:113
 
+// Exists reports whether this option is nonempty and p holds for its value.
+// None never satisfies it.
+func (o Option[T]) Exists(p func(T) bool) bool {
+	return o.isSome() && p(o.Value.Get())
+}
+
+//line std/option.gala:117
+
+// ForAll reports whether p holds for this option's value, if it has one.
+// None satisfies it vacuously.
+func (o Option[T]) ForAll(p func(T) bool) bool {
+	return o.isNone() || p(o.Value.Get())
+}
+
+//line std/option.gala:121
+
 // When returns Some(value) if condition is true, None otherwise.
 func When[T any](condition bool, value T) Option[T] {
 	{
@@ -294,7 +310,7 @@ func When[T any](condition bool, value T) Option[T] {
 	}
 }
 
-//line std/option.gala:116
+//line std/option.gala:124
 
 // Unless returns Some(value) if condition is false, None otherwise.
 func Unless[T any](condition bool, value T) Option[T] {

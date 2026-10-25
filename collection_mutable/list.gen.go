@@ -1346,205 +1346,191 @@ func List_ZipWithIndex[T any](l *List[T]) *List[Tuple[T, int]] {
 
 //line collection_mutable/list.gala:714
 
-// Distinct returns a new list with duplicate elements removed.
+// Distinct returns a new list with duplicate elements removed, keeping the
+// first occurrence of each element in its original position. Elements are
+// compared with Equal: through a HashSet when T is a primitive type (a number,
+// string or bool), and against each kept element otherwise.
 func (l *List[T]) Distinct() *List[T] {
 	if l == nil {
 		panic("List.Distinct: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
-//line collection_mutable/list.gala:717
-	var result = EmptyList[T]()
-//line collection_mutable/list.gala:718
-	var current = l.head
-//line collection_mutable/list.gala:719
-	for current.IsDefined() {
-//line collection_mutable/list.gala:720
-		var node = current.Get()
-//line collection_mutable/list.gala:721
-		if !result.Contains(node.value) {
-//line collection_mutable/list.gala:722
-			result.Append(node.value)
-		}
-//line collection_mutable/list.gala:724
-		current = node.next
-	}
-//line collection_mutable/list.gala:726
-	return result
+	return l.Filter(firstOccurrence[T]())
 }
 
-//line collection_mutable/list.gala:728
+//line collection_mutable/list.gala:720
 
 // SplitAt splits the list at the given index.
 func (l *List[T]) SplitAt(n int) Tuple[*List[T], *List[T]] {
 	if l == nil {
 		panic("List.SplitAt: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
-//line collection_mutable/list.gala:731
+//line collection_mutable/list.gala:723
 	return Tuple[*List[T], *List[T]]{V1: NewImmutable(l.Take(n)), V2: NewImmutable(l.Drop(n))}
 }
 
-//line collection_mutable/list.gala:733
+//line collection_mutable/list.gala:725
 
 // GroupBy partitions this list into a map of lists according to a discriminator function.
 func List_GroupBy[K comparable, T any](l *List[T], f func(T) K) map[K]*List[T] {
 	if l == nil {
 		panic("List.GroupBy: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
-//line collection_mutable/list.gala:736
+//line collection_mutable/list.gala:728
 	var result = go_interop.MapEmpty[K, *List[T]]()
-//line collection_mutable/list.gala:737
+//line collection_mutable/list.gala:729
 	var current = l.head
-//line collection_mutable/list.gala:738
+//line collection_mutable/list.gala:730
 	for current.IsDefined() {
-//line collection_mutable/list.gala:739
+//line collection_mutable/list.gala:731
 		var node = current.Get()
-//line collection_mutable/list.gala:740
+//line collection_mutable/list.gala:732
 		var key = f(node.value)
-//line collection_mutable/list.gala:741
+//line collection_mutable/list.gala:733
 		var existing, ok = go_interop.MapGet(result, key)
-//line collection_mutable/list.gala:742
+//line collection_mutable/list.gala:734
 		if ok {
-//line collection_mutable/list.gala:743
+//line collection_mutable/list.gala:735
 			existing.Append(node.value)
 		} else {
-//line collection_mutable/list.gala:745
+//line collection_mutable/list.gala:737
 			var group = EmptyList[T]()
-//line collection_mutable/list.gala:746
+//line collection_mutable/list.gala:738
 			group.Append(node.value)
-//line collection_mutable/list.gala:747
+//line collection_mutable/list.gala:739
 			result[key] = group
 		}
-//line collection_mutable/list.gala:749
+//line collection_mutable/list.gala:741
 		current = node.next
 	}
-//line collection_mutable/list.gala:751
+//line collection_mutable/list.gala:743
 	return result
 }
 
-//line collection_mutable/list.gala:755
+//line collection_mutable/list.gala:747
 
 // ToGoSlice converts the list to a Go slice.
 func (l *List[T]) ToGoSlice() []T {
 	if l == nil {
 		panic("List.ToGoSlice: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
-//line collection_mutable/list.gala:758
+//line collection_mutable/list.gala:750
 	var result []T
-//line collection_mutable/list.gala:759
+//line collection_mutable/list.gala:751
 	var current = l.head
-//line collection_mutable/list.gala:760
+//line collection_mutable/list.gala:752
 	for current.IsDefined() {
-//line collection_mutable/list.gala:761
+//line collection_mutable/list.gala:753
 		var node = current.Get()
-//line collection_mutable/list.gala:762
+//line collection_mutable/list.gala:754
 		result = go_interop.SliceAppend(result, node.value)
-//line collection_mutable/list.gala:763
+//line collection_mutable/list.gala:755
 		current = node.next
 	}
-//line collection_mutable/list.gala:765
+//line collection_mutable/list.gala:757
 	return result
 }
 
-//line collection_mutable/list.gala:767
+//line collection_mutable/list.gala:759
 
 // ToArray converts the list to a Array.
 func (l *List[T]) ToArray() *Array[T] {
 	if l == nil {
 		panic("List.ToArray: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
-//line collection_mutable/list.gala:770
+//line collection_mutable/list.gala:762
 	var result = ArrayWithCapacity[T](l.length)
-//line collection_mutable/list.gala:771
+//line collection_mutable/list.gala:763
 	var current = l.head
-//line collection_mutable/list.gala:772
+//line collection_mutable/list.gala:764
 	for current.IsDefined() {
-//line collection_mutable/list.gala:773
+//line collection_mutable/list.gala:765
 		var node = current.Get()
-//line collection_mutable/list.gala:774
+//line collection_mutable/list.gala:766
 		result.Append(node.value)
-//line collection_mutable/list.gala:775
+//line collection_mutable/list.gala:767
 		current = node.next
 	}
-//line collection_mutable/list.gala:777
+//line collection_mutable/list.gala:769
 	return result
 }
 
-//line collection_mutable/list.gala:779
+//line collection_mutable/list.gala:771
 
 // String returns a string representation of the list.
 func (l *List[T]) String() string {
 	if l == nil {
 		panic("List.String: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
-//line collection_mutable/list.gala:782
+//line collection_mutable/list.gala:774
 	if l.length == 0 {
-//line collection_mutable/list.gala:783
+//line collection_mutable/list.gala:775
 		return "List()"
 	}
-//line collection_mutable/list.gala:785
+//line collection_mutable/list.gala:777
 	var result = "List("
-//line collection_mutable/list.gala:786
+//line collection_mutable/list.gala:778
 	var current = l.head
-//line collection_mutable/list.gala:787
+//line collection_mutable/list.gala:779
 	var first = true
-//line collection_mutable/list.gala:788
+//line collection_mutable/list.gala:780
 	for current.IsDefined() {
-//line collection_mutable/list.gala:789
+//line collection_mutable/list.gala:781
 		var node = current.Get()
-//line collection_mutable/list.gala:790
+//line collection_mutable/list.gala:782
 		if !first {
-//line collection_mutable/list.gala:791
+//line collection_mutable/list.gala:783
 			result = result + ", "
 		}
-//line collection_mutable/list.gala:793
+//line collection_mutable/list.gala:785
 		result = result + fmt.Sprintf("%v", node.value)
-//line collection_mutable/list.gala:794
+//line collection_mutable/list.gala:786
 		current = node.next
-//line collection_mutable/list.gala:795
+//line collection_mutable/list.gala:787
 		first = false
 	}
-//line collection_mutable/list.gala:797
+//line collection_mutable/list.gala:789
 	return result + ")"
 }
 
-//line collection_mutable/list.gala:799
+//line collection_mutable/list.gala:791
 
 // MkString joins elements into a string with separator.
 func (l *List[T]) MkString(sep string) string {
 	if l == nil {
 		panic("List.MkString: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
-//line collection_mutable/list.gala:802
+//line collection_mutable/list.gala:794
 	if l.length == 0 {
-//line collection_mutable/list.gala:803
+//line collection_mutable/list.gala:795
 		return ""
 	}
-//line collection_mutable/list.gala:805
+//line collection_mutable/list.gala:797
 	var result = ""
-//line collection_mutable/list.gala:806
+//line collection_mutable/list.gala:798
 	var current = l.head
-//line collection_mutable/list.gala:807
+//line collection_mutable/list.gala:799
 	var first = true
-//line collection_mutable/list.gala:808
+//line collection_mutable/list.gala:800
 	for current.IsDefined() {
-//line collection_mutable/list.gala:809
+//line collection_mutable/list.gala:801
 		var node = current.Get()
-//line collection_mutable/list.gala:810
+//line collection_mutable/list.gala:802
 		if !first {
-//line collection_mutable/list.gala:811
+//line collection_mutable/list.gala:803
 			result = result + sep
 		}
-//line collection_mutable/list.gala:813
+//line collection_mutable/list.gala:805
 		result = result + fmt.Sprintf("%v", node.value)
-//line collection_mutable/list.gala:814
+//line collection_mutable/list.gala:806
 		current = node.next
-//line collection_mutable/list.gala:815
+//line collection_mutable/list.gala:807
 		first = false
 	}
-//line collection_mutable/list.gala:817
+//line collection_mutable/list.gala:809
 	return result
 }
 
-//line collection_mutable/list.gala:821
+//line collection_mutable/list.gala:813
 
 // Sorted returns a new List with elements sorted in natural order.
 func (l *List[T]) Sorted() *List[T] {
@@ -1554,7 +1540,7 @@ func (l *List[T]) Sorted() *List[T] {
 	return l.ToArray().Sorted().ToList()
 }
 
-//line collection_mutable/list.gala:824
+//line collection_mutable/list.gala:816
 
 // SortWith returns a new List sorted using the given comparison function.
 func (l *List[T]) SortWith(less func(T, T) bool) *List[T] {
@@ -1564,7 +1550,7 @@ func (l *List[T]) SortWith(less func(T, T) bool) *List[T] {
 	return l.ToArray().SortWith(less).ToList()
 }
 
-//line collection_mutable/list.gala:827
+//line collection_mutable/list.gala:819
 
 // SortBy returns a new List sorted by a key extracted from each element.
 func List_SortBy[K comparable, T any](l *List[T], f func(T) K) *List[T] {
@@ -1574,7 +1560,7 @@ func List_SortBy[K comparable, T any](l *List[T], f func(T) K) *List[T] {
 	return Array_SortBy(l.ToArray(), f).ToList()
 }
 
-//line collection_mutable/list.gala:830
+//line collection_mutable/list.gala:822
 
 // SeqDrop implements the Seq interface for sequence pattern matching.
 func (l *List[T]) SeqDrop(n int) any {

@@ -82,8 +82,12 @@ func unwrapImmutable(obj any) any {
 func Copy[T any](v T) T {
 	val := reflect.ValueOf(v)
 
-	// Handle nil pointers early - return nil as-is
-	if val.Kind() == reflect.Ptr && val.IsNil() {
+	// Handle nil pointers early - return nil as-is. A pointer whose Copy is
+	// its pointee's value-receiver Copy is returned as-is too: that Copy
+	// copies the pointee, not the pointer, so calling it copied the whole
+	// pointee (for a linked structure, every node behind the pointer) only to
+	// discard the result or put the pointee where the pointer belongs.
+	if val.Kind() == reflect.Ptr && (val.IsNil() || copiesPointee(val.Type())) {
 		return v
 	}
 
@@ -96,10 +100,12 @@ func Copy[T any](v T) T {
 		return c.Copy()
 	}
 
-	// Fallback to check Copy method via reflection if T is any or interface mismatch
-	if val.IsValid() {
-		copyMeth := val.MethodByName("Copy")
-		if copyMeth.IsValid() && copyMeth.Type().NumIn() == 0 && copyMeth.Type().NumOut() == 1 {
+	// Fallback to check Copy method via reflection if T is any or interface
+	// mismatch. A Copy whose concrete result is not the value's own type is
+	// skipped, since it would replace the value with one of a different type.
+	if copyMeth := val.MethodByName("Copy"); copyMeth.IsValid() {
+		mt := copyMeth.Type()
+		if mt.NumIn() == 0 && mt.NumOut() == 1 && (mt.Out(0) == val.Type() || mt.Out(0).Kind() == reflect.Interface) {
 			res := copyMeth.Call(nil)[0].Interface()
 			if r, ok := res.(T); ok {
 				return r
@@ -124,8 +130,20 @@ func Copy[T any](v T) T {
 	return newStruct.Interface().(T)
 }
 
+// copiesPointee reports whether the pointer type ptr's Copy is its pointee's
+// value-receiver Copy and does not return ptr itself. Go forbids declaring
+// Copy on both T and *T, so a Copy in the pointee's method set is the one the
+// pointer has.
+func copiesPointee(ptr reflect.Type) bool {
+	m, ok := ptr.Elem().MethodByName("Copy")
+	return ok && !(m.Type.NumOut() == 1 && m.Type.Out(0) == ptr)
+}
+
 func Equal[T any](v1, v2 T) bool {
 	v1, v2 = unwrapPanic(v1), unwrapPanic(v2)
+	if eq, ok := equalPrimitive(v1, v2); ok {
+		return eq
+	}
 	if e, ok := any(v1).(Equatable[T]); ok {
 		return e.Equal(v2)
 	}
@@ -161,6 +179,24 @@ func Equal[T any](v1, v2 T) bool {
 		}
 	}
 	return true
+}
+
+// equalPrimitive compares v1 and v2 with == when v1's dynamic type is a
+// predeclared primitive type, reporting ok; that is what Equal's reflective
+// path concludes for them (a NaN equals nothing, and values of different
+// types differ), without its reflection. A named type is left out: it may
+// declare an Equal of its own.
+func equalPrimitive[T any](v1, v2 T) (eq bool, ok bool) {
+	// The predeclared primitive types; the collection packages' HashSet
+	// hashes the same ones but uintptr and the complex types (hashesByValue).
+	switch a := any(v1).(type) {
+	case bool, string,
+		int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64, uintptr,
+		float32, float64, complex64, complex128:
+		return a == any(v2), true
+	}
+	return false, false
 }
 
 // tryRecover executes f with panic recovery, returning a Try.

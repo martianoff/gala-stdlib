@@ -6,9 +6,10 @@ import "fmt"
 import (
 	"go.gala.fyi/stdlib/go_interop"
 	. "go.gala.fyi/stdlib/std"
+	"math"
 )
 
-//line collection_immutable/hashset.gala:23
+//line collection_immutable/hashset.gala:24
 
 // hashSetNode represents a node in the HAMT structure.
 // Uses bitmap to track which children exist.
@@ -34,7 +35,7 @@ func (_ hashSetNode[T]) IshashSetNode() bool {
 	return true
 }
 
-//line collection_immutable/hashset.gala:32
+//line collection_immutable/hashset.gala:33
 
 // HashSet represents an immutable set.
 //
@@ -59,73 +60,73 @@ func (_ HashSet[T]) IsHashSet() bool {
 	return true
 }
 
-//line collection_immutable/hashset.gala:40
+//line collection_immutable/hashset.gala:41
 
 // EmptyHashSet returns an empty HashSet.
 func EmptyHashSet[T comparable]() HashSet[T] {
 	return HashSet[T]{root: EmptyOptionPtr[hashSetNode[T]](), size: NewImmutable(0)}
 }
 
-//line collection_immutable/hashset.gala:43
+//line collection_immutable/hashset.gala:44
 
 // HashSetOf creates a HashSet from variadic arguments.
 // Example: HashSetOf[int](1, 2, 3) creates HashSet(1, 2, 3)
 func HashSetOf[T comparable](elements ...T) HashSet[T] {
-//line collection_immutable/hashset.gala:47
-	var result = EmptyHashSet[T]()
 //line collection_immutable/hashset.gala:48
-	for i := 0; i < len(elements); i++ {
+	var result = EmptyHashSet[T]()
 //line collection_immutable/hashset.gala:49
+	for i := 0; i < len(elements); i++ {
+//line collection_immutable/hashset.gala:50
 		result = result.Add(elements[i])
 	}
-//line collection_immutable/hashset.gala:51
+//line collection_immutable/hashset.gala:52
 	return result
 }
 
-//line collection_immutable/hashset.gala:53
+//line collection_immutable/hashset.gala:54
 
 // HashSetFromSlice creates a HashSet from a slice.
 func HashSetFromSlice[T comparable](elements []T) HashSet[T] {
-//line collection_immutable/hashset.gala:56
-	var result = EmptyHashSet[T]()
 //line collection_immutable/hashset.gala:57
-	for i := 0; i < len(elements); i++ {
+	var result = EmptyHashSet[T]()
 //line collection_immutable/hashset.gala:58
+	for i := 0; i < len(elements); i++ {
+//line collection_immutable/hashset.gala:59
 		result = result.Add(elements[i])
 	}
-//line collection_immutable/hashset.gala:60
+//line collection_immutable/hashset.gala:61
 	return result
 }
 
-//line collection_immutable/hashset.gala:62
+//line collection_immutable/hashset.gala:63
 
 // IsEmpty returns true if the set is empty.
 func (s HashSet[T]) IsEmpty() bool {
 	return s.size.Get() == 0
 }
 
-//line collection_immutable/hashset.gala:65
+//line collection_immutable/hashset.gala:66
 
 // NonEmpty returns true if the set is not empty.
 func (s HashSet[T]) NonEmpty() bool {
 	return s.size.Get() > 0
 }
 
-//line collection_immutable/hashset.gala:68
+//line collection_immutable/hashset.gala:69
 
 // Size returns the number of elements. O(1) - cached.
 func (s HashSet[T]) Size() int {
 	return s.size.Get()
 }
 
-//line collection_immutable/hashset.gala:71
+//line collection_immutable/hashset.gala:72
 
 // Length is an alias for Size.
 func (s HashSet[T]) Length() int {
 	return s.size.Get()
 }
 
-//line collection_immutable/hashset.gala:74
+//line collection_immutable/hashset.gala:75
 
 // hash computes a hash code for a value.
 // Priority:
@@ -133,9 +134,9 @@ func (s HashSet[T]) Length() int {
 // 2. If the value implements Hashable, use its Hash() method
 // 3. For other types, panic - they must implement Hashable
 func hash[T comparable](value T) uint32 {
-//line collection_immutable/hashset.gala:81
+//line collection_immutable/hashset.gala:82
 	var v any = value
-//line collection_immutable/hashset.gala:84
+//line collection_immutable/hashset.gala:85
 	var result = func(obj any) uint32 {
 		{
 			i, _tmp_1 := As[int](obj)
@@ -188,11 +189,11 @@ func hash[T comparable](value T) uint32 {
 														} else {
 															f, _tmp_13 := As[float64](obj)
 															if _tmp_13 {
-																return HashUint(uint64(f))
+																return hashFloat(f)
 															} else {
 																f, _tmp_14 := As[float32](obj)
 																if _tmp_14 {
-																	return HashUint(uint64(f))
+																	return hashFloat(float64(f))
 																} else {
 																	h, _tmp_15 := As[Hashable](obj)
 																	if _tmp_15 {
@@ -216,506 +217,644 @@ func hash[T comparable](value T) uint32 {
 			}
 		}
 	}(v)
-//line collection_immutable/hashset.gala:102
+//line collection_immutable/hashset.gala:103
 	return result
 }
 
-//line collection_immutable/hashset.gala:104
+//line collection_immutable/hashset.gala:105
+
+// hashFloat hashes a float by its bits, so fractions spread over the buckets
+// instead of truncating to a handful of integers. The two zeros are == and
+// hash alike; a NaN equals nothing, so where it lands does not matter.
+func hashFloat(f float64) uint32 {
+	{
+		if f == 0 {
+			return HashUint(0)
+		} else {
+			return HashUint(math.Float64bits(f))
+		}
+	}
+}
+
+//line collection_immutable/hashset.gala:110
+
+// hashesByValue reports whether v is of a predeclared primitive type that hash
+// hashes by its value. For those types == is Equal, so a HashSet holding them
+// tells values apart exactly as Equal does. A named type is left out: it may
+// declare an Equal of its own.
+func hashesByValue(v any) bool {
+	return func(obj any) bool {
+		{
+			_, _tmp_16 := As[int](obj)
+			if _tmp_16 {
+				return true
+			} else {
+				_, _tmp_17 := As[string](obj)
+				if _tmp_17 {
+					return true
+				} else {
+					_, _tmp_18 := As[int64](obj)
+					if _tmp_18 {
+						return true
+					} else {
+						_, _tmp_19 := As[int32](obj)
+						if _tmp_19 {
+							return true
+						} else {
+							_, _tmp_20 := As[uint](obj)
+							if _tmp_20 {
+								return true
+							} else {
+								_, _tmp_21 := As[uint64](obj)
+								if _tmp_21 {
+									return true
+								} else {
+									_, _tmp_22 := As[uint32](obj)
+									if _tmp_22 {
+										return true
+									} else {
+										_, _tmp_23 := As[bool](obj)
+										if _tmp_23 {
+											return true
+										} else {
+											_, _tmp_24 := As[int8](obj)
+											if _tmp_24 {
+												return true
+											} else {
+												_, _tmp_25 := As[int16](obj)
+												if _tmp_25 {
+													return true
+												} else {
+													_, _tmp_26 := As[uint8](obj)
+													if _tmp_26 {
+														return true
+													} else {
+														_, _tmp_27 := As[uint16](obj)
+														if _tmp_27 {
+															return true
+														} else {
+															_, _tmp_28 := As[float64](obj)
+															if _tmp_28 {
+																return true
+															} else {
+																_, _tmp_29 := As[float32](obj)
+																if _tmp_29 {
+																	return true
+																} else {
+																	return false
+																}
+															}
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}(v)
+}
+
+//line collection_immutable/hashset.gala:132
+
+// firstOccurrence returns a predicate that holds for each element the first
+// time an Equal element is seen, for Distinct. It looks elements up in a
+// HashSet when T is a type hashesByValue covers, and otherwise compares each
+// one with Equal against the elements kept so far.
+func firstOccurrence[T any]() func(T) bool {
+//line collection_immutable/hashset.gala:138
+	var zero T
+//line collection_immutable/hashset.gala:139
+	if hashesByValue(zero) {
+//line collection_immutable/hashset.gala:140
+		var seen = EmptyHashSet[any]()
+//line collection_immutable/hashset.gala:141
+		return func(elem T) bool {
+//line collection_immutable/hashset.gala:142
+			var before = seen.Size()
+//line collection_immutable/hashset.gala:143
+			seen = seen.Add(elem)
+//line collection_immutable/hashset.gala:144
+			return seen.Size() > before
+		}
+	}
+//line collection_immutable/hashset.gala:147
+	var kept = EmptyArray[T]()
+//line collection_immutable/hashset.gala:148
+	return func(elem T) bool {
+//line collection_immutable/hashset.gala:149
+		if kept.Contains(elem) {
+//line collection_immutable/hashset.gala:150
+			return false
+		}
+//line collection_immutable/hashset.gala:152
+		kept = kept.Append(elem)
+//line collection_immutable/hashset.gala:153
+		return true
+	}
+}
+
+//line collection_immutable/hashset.gala:156
 
 // panicNotHashable panics with a helpful error message for types that don't implement Hashable.
 func panicNotHashable(v any) uint32 {
-//line collection_immutable/hashset.gala:107
-	panic(fmt.Sprintf("HashSet: type %T must implement std.Hashable interface", v))
-}
-
-//line collection_immutable/hashset.gala:109
-
-// bitpos returns the bit position for a hash at a given level.
-func bitpos(hashCode uint32, level int) uint32 {
-//line collection_immutable/hashset.gala:112
-	var shift = uint(level * 5)
-//line collection_immutable/hashset.gala:113
-	var idx = (hashCode >> shift) & 31
-//line collection_immutable/hashset.gala:114
-	return uint32(1) << idx
-}
-
-//line collection_immutable/hashset.gala:116
-
-// index returns the array index for a bit position in a bitmap.
-func index(bitmap uint32, bit uint32) int {
-//line collection_immutable/hashset.gala:119
-	return popcount(bitmap & (bit - 1))
-}
-
-//line collection_immutable/hashset.gala:121
-
-// popcount returns the number of set bits in a uint32.
-func popcount(x uint32) int {
-//line collection_immutable/hashset.gala:124
-	var count = 0
-//line collection_immutable/hashset.gala:125
-	for x != 0 {
-//line collection_immutable/hashset.gala:126
-		count++
-//line collection_immutable/hashset.gala:127
-		x = x & (x - 1)
-	}
-//line collection_immutable/hashset.gala:129
-	return count
-}
-
-//line collection_immutable/hashset.gala:131
-
-// Contains checks if the set contains the given element. O(eC).
-func (s HashSet[T]) Contains(elem T) bool {
-//line collection_immutable/hashset.gala:134
-	if s.root.IsEmpty() {
-//line collection_immutable/hashset.gala:135
-		return false
-	}
-//line collection_immutable/hashset.gala:137
-	var hashCode = hash[T](elem)
-//line collection_immutable/hashset.gala:138
-	return containsInNode[T](s.root.Get(), elem, hashCode, 0)
-}
-
-//line collection_immutable/hashset.gala:140
-
-// containsInNode searches for an element in a node.
-func containsInNode[T comparable](node *hashSetNode[T], elem T, hashCode uint32, level int) bool {
-//line collection_immutable/hashset.gala:143
-	if node.isLeaf.Get() {
-//line collection_immutable/hashset.gala:145
-		for i := 0; i < len(node.entries.Get()); i++ {
-//line collection_immutable/hashset.gala:146
-			if node.entries.Get()[i] == elem {
-//line collection_immutable/hashset.gala:147
-				return true
-			}
-		}
-//line collection_immutable/hashset.gala:150
-		return false
-	}
-//line collection_immutable/hashset.gala:153
-	var bit = bitpos(hashCode, level)
-//line collection_immutable/hashset.gala:154
-	if (node.bitmap.Get() & bit) == 0 {
-//line collection_immutable/hashset.gala:155
-		return false
-	}
-//line collection_immutable/hashset.gala:158
-	var idx = index(node.bitmap.Get(), bit)
 //line collection_immutable/hashset.gala:159
-	return containsInNode[T](node.children.Get()[idx], elem, hashCode, level+1)
+	panic(fmt.Sprintf("HashSet: type %T must implement std.Hashable interface", v))
 }
 
 //line collection_immutable/hashset.gala:161
 
-// Add adds an element to the set. Returns a new set with the element. O(eC).
-func (s HashSet[T]) Add(elem T) HashSet[T] {
+// bitpos returns the bit position for a hash at a given level.
+func bitpos(hashCode uint32, level int) uint32 {
 //line collection_immutable/hashset.gala:164
-	if s.root.IsEmpty() {
+	var shift = uint(level * 5)
+//line collection_immutable/hashset.gala:165
+	var idx = (hashCode >> shift) & 31
 //line collection_immutable/hashset.gala:166
-		var leaf = &hashSetNode[T]{entries: NewImmutable(go_interop.SliceOf(elem)), isLeaf: NewImmutable(true)}
-//line collection_immutable/hashset.gala:167
-		return HashSet[T]{root: SomePtr(leaf), size: NewImmutable(s.size.Get() + 1)}
-	}
-//line collection_immutable/hashset.gala:169
-	var root = s.root.Get()
-//line collection_immutable/hashset.gala:170
-	var hashCode = hash[T](elem)
-//line collection_immutable/hashset.gala:173
-	if containsInNode[T](root, elem, hashCode, 0) {
-//line collection_immutable/hashset.gala:174
-		return s
-	}
-//line collection_immutable/hashset.gala:176
-	return HashSet[T]{root: SomePtr(addToNode[T](root, elem, hashCode, 0)), size: NewImmutable(s.size.Get() + 1)}
+	return uint32(1) << idx
 }
 
-//line collection_immutable/hashset.gala:178
+//line collection_immutable/hashset.gala:168
 
-// addToNode adds an element to a node, returning a new node.
-func addToNode[T comparable](node *hashSetNode[T], elem T, hashCode uint32, level int) *hashSetNode[T] {
+// index returns the array index for a bit position in a bitmap.
+func index(bitmap uint32, bit uint32) int {
+//line collection_immutable/hashset.gala:171
+	return popcount(bitmap & (bit - 1))
+}
+
+//line collection_immutable/hashset.gala:173
+
+// popcount returns the number of set bits in a uint32.
+func popcount(x uint32) int {
+//line collection_immutable/hashset.gala:176
+	var count = 0
+//line collection_immutable/hashset.gala:177
+	for x != 0 {
+//line collection_immutable/hashset.gala:178
+		count++
+//line collection_immutable/hashset.gala:179
+		x = x & (x - 1)
+	}
 //line collection_immutable/hashset.gala:181
-	if node.isLeaf.Get() {
+	return count
+}
+
 //line collection_immutable/hashset.gala:183
-		if level >= 6 {
-//line collection_immutable/hashset.gala:185
-			var newEntries []T
+
+// Contains checks if the set contains the given element. O(eC).
+func (s HashSet[T]) Contains(elem T) bool {
 //line collection_immutable/hashset.gala:186
-			for i := 0; i < len(node.entries.Get()); i++ {
+	if s.root.IsEmpty() {
 //line collection_immutable/hashset.gala:187
-				newEntries = go_interop.SliceAppend(newEntries, node.entries.Get()[i])
-			}
+		return false
+	}
 //line collection_immutable/hashset.gala:189
-			newEntries = go_interop.SliceAppend(newEntries, elem)
+	var hashCode = hash[T](elem)
 //line collection_immutable/hashset.gala:190
-			return &hashSetNode[T]{entries: NewImmutable(newEntries), isLeaf: NewImmutable(true)}
-		}
-//line collection_immutable/hashset.gala:194
-		var newNode *hashSetNode[T] = &hashSetNode[T]{bitmap: NewImmutable(uint32(0)), isLeaf: NewImmutable(false)}
+	return containsInNode[T](s.root.Get(), elem, hashCode, 0)
+}
+
+//line collection_immutable/hashset.gala:192
+
+// containsInNode searches for an element in a node.
+func containsInNode[T comparable](node *hashSetNode[T], elem T, hashCode uint32, level int) bool {
+//line collection_immutable/hashset.gala:195
+	if node.isLeaf.Get() {
 //line collection_immutable/hashset.gala:197
 		for i := 0; i < len(node.entries.Get()); i++ {
 //line collection_immutable/hashset.gala:198
-			var existingHash = hash[T](node.entries.Get()[i])
+			if node.entries.Get()[i] == elem {
 //line collection_immutable/hashset.gala:199
+				return true
+			}
+		}
+//line collection_immutable/hashset.gala:202
+		return false
+	}
+//line collection_immutable/hashset.gala:205
+	var bit = bitpos(hashCode, level)
+//line collection_immutable/hashset.gala:206
+	if (node.bitmap.Get() & bit) == 0 {
+//line collection_immutable/hashset.gala:207
+		return false
+	}
+//line collection_immutable/hashset.gala:210
+	var idx = index(node.bitmap.Get(), bit)
+//line collection_immutable/hashset.gala:211
+	return containsInNode[T](node.children.Get()[idx], elem, hashCode, level+1)
+}
+
+//line collection_immutable/hashset.gala:213
+
+// Add adds an element to the set. Returns a new set with the element. O(eC).
+func (s HashSet[T]) Add(elem T) HashSet[T] {
+//line collection_immutable/hashset.gala:216
+	if s.root.IsEmpty() {
+//line collection_immutable/hashset.gala:218
+		var leaf = &hashSetNode[T]{entries: NewImmutable(go_interop.SliceOf(elem)), isLeaf: NewImmutable(true)}
+//line collection_immutable/hashset.gala:219
+		return HashSet[T]{root: SomePtr(leaf), size: NewImmutable(s.size.Get() + 1)}
+	}
+//line collection_immutable/hashset.gala:221
+	var root = s.root.Get()
+//line collection_immutable/hashset.gala:222
+	var hashCode = hash[T](elem)
+//line collection_immutable/hashset.gala:225
+	if containsInNode[T](root, elem, hashCode, 0) {
+//line collection_immutable/hashset.gala:226
+		return s
+	}
+//line collection_immutable/hashset.gala:228
+	return HashSet[T]{root: SomePtr(addToNode[T](root, elem, hashCode, 0)), size: NewImmutable(s.size.Get() + 1)}
+}
+
+//line collection_immutable/hashset.gala:230
+
+// addToNode adds an element to a node, returning a new node.
+func addToNode[T comparable](node *hashSetNode[T], elem T, hashCode uint32, level int) *hashSetNode[T] {
+//line collection_immutable/hashset.gala:233
+	if node.isLeaf.Get() {
+//line collection_immutable/hashset.gala:235
+		if level >= 6 {
+//line collection_immutable/hashset.gala:237
+			var newEntries []T
+//line collection_immutable/hashset.gala:238
+			for i := 0; i < len(node.entries.Get()); i++ {
+//line collection_immutable/hashset.gala:239
+				newEntries = go_interop.SliceAppend(newEntries, node.entries.Get()[i])
+			}
+//line collection_immutable/hashset.gala:241
+			newEntries = go_interop.SliceAppend(newEntries, elem)
+//line collection_immutable/hashset.gala:242
+			return &hashSetNode[T]{entries: NewImmutable(newEntries), isLeaf: NewImmutable(true)}
+		}
+//line collection_immutable/hashset.gala:246
+		var newNode *hashSetNode[T] = &hashSetNode[T]{bitmap: NewImmutable(uint32(0)), isLeaf: NewImmutable(false)}
+//line collection_immutable/hashset.gala:249
+		for i := 0; i < len(node.entries.Get()); i++ {
+//line collection_immutable/hashset.gala:250
+			var existingHash = hash[T](node.entries.Get()[i])
+//line collection_immutable/hashset.gala:251
 			newNode = insertIntoInternalNode[T](newNode, node.entries.Get()[i], existingHash, level)
 		}
-//line collection_immutable/hashset.gala:203
+//line collection_immutable/hashset.gala:255
 		return insertIntoInternalNode[T](newNode, elem, hashCode, level)
 	}
-//line collection_immutable/hashset.gala:207
+//line collection_immutable/hashset.gala:259
 	var bit = bitpos(hashCode, level)
-//line collection_immutable/hashset.gala:208
+//line collection_immutable/hashset.gala:260
 	var idx = index(node.bitmap.Get(), bit)
-//line collection_immutable/hashset.gala:210
+//line collection_immutable/hashset.gala:262
 	if (node.bitmap.Get() & bit) == 0 {
-//line collection_immutable/hashset.gala:212
+//line collection_immutable/hashset.gala:264
 		var newEntries []T
-//line collection_immutable/hashset.gala:213
+//line collection_immutable/hashset.gala:265
 		newEntries = go_interop.SliceAppend(newEntries, elem)
-//line collection_immutable/hashset.gala:214
+//line collection_immutable/hashset.gala:266
 		var newLeaf = &hashSetNode[T]{entries: NewImmutable(newEntries), isLeaf: NewImmutable(true)}
-//line collection_immutable/hashset.gala:217
+//line collection_immutable/hashset.gala:269
 		var newChildren []*hashSetNode[T]
-//line collection_immutable/hashset.gala:218
+//line collection_immutable/hashset.gala:270
 		for i := 0; i < idx; i++ {
-//line collection_immutable/hashset.gala:219
+//line collection_immutable/hashset.gala:271
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
-//line collection_immutable/hashset.gala:221
+//line collection_immutable/hashset.gala:273
 		newChildren = go_interop.SliceAppend(newChildren, newLeaf)
-//line collection_immutable/hashset.gala:222
+//line collection_immutable/hashset.gala:274
 		for i := idx; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashset.gala:223
+//line collection_immutable/hashset.gala:275
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
-//line collection_immutable/hashset.gala:226
+//line collection_immutable/hashset.gala:278
 		return &hashSetNode[T]{bitmap: NewImmutable(node.bitmap.Get() | bit), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
 	}
-//line collection_immutable/hashset.gala:230
+//line collection_immutable/hashset.gala:282
 	var newChild = addToNode[T](node.children.Get()[idx], elem, hashCode, level+1)
-//line collection_immutable/hashset.gala:233
+//line collection_immutable/hashset.gala:285
 	var newChildren []*hashSetNode[T]
-//line collection_immutable/hashset.gala:234
+//line collection_immutable/hashset.gala:286
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashset.gala:235
+//line collection_immutable/hashset.gala:287
 		if i == idx {
-//line collection_immutable/hashset.gala:236
+//line collection_immutable/hashset.gala:288
 			newChildren = go_interop.SliceAppend(newChildren, newChild)
 		} else {
-//line collection_immutable/hashset.gala:238
+//line collection_immutable/hashset.gala:290
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
 	}
-//line collection_immutable/hashset.gala:242
+//line collection_immutable/hashset.gala:294
 	return &hashSetNode[T]{bitmap: NewImmutable(node.bitmap.Get()), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
 }
 
-//line collection_immutable/hashset.gala:244
+//line collection_immutable/hashset.gala:296
 
 // insertIntoInternalNode inserts an element into an internal node.
 func insertIntoInternalNode[T comparable](node *hashSetNode[T], elem T, hashCode uint32, level int) *hashSetNode[T] {
-//line collection_immutable/hashset.gala:247
+//line collection_immutable/hashset.gala:299
 	var bit = bitpos(hashCode, level)
-//line collection_immutable/hashset.gala:248
+//line collection_immutable/hashset.gala:300
 	var idx = index(node.bitmap.Get(), bit)
-//line collection_immutable/hashset.gala:250
+//line collection_immutable/hashset.gala:302
 	if (node.bitmap.Get() & bit) == 0 {
-//line collection_immutable/hashset.gala:252
+//line collection_immutable/hashset.gala:304
 		var newEntries []T
-//line collection_immutable/hashset.gala:253
+//line collection_immutable/hashset.gala:305
 		newEntries = go_interop.SliceAppend(newEntries, elem)
-//line collection_immutable/hashset.gala:254
+//line collection_immutable/hashset.gala:306
 		var newLeaf = &hashSetNode[T]{entries: NewImmutable(newEntries), isLeaf: NewImmutable(true)}
-//line collection_immutable/hashset.gala:257
+//line collection_immutable/hashset.gala:309
 		var newChildren []*hashSetNode[T]
-//line collection_immutable/hashset.gala:258
+//line collection_immutable/hashset.gala:310
 		for i := 0; i < idx; i++ {
-//line collection_immutable/hashset.gala:259
+//line collection_immutable/hashset.gala:311
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
-//line collection_immutable/hashset.gala:261
+//line collection_immutable/hashset.gala:313
 		newChildren = go_interop.SliceAppend(newChildren, newLeaf)
-//line collection_immutable/hashset.gala:262
+//line collection_immutable/hashset.gala:314
 		for i := idx; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashset.gala:263
+//line collection_immutable/hashset.gala:315
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
-//line collection_immutable/hashset.gala:266
+//line collection_immutable/hashset.gala:318
 		return &hashSetNode[T]{bitmap: NewImmutable(node.bitmap.Get() | bit), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
 	}
-//line collection_immutable/hashset.gala:270
+//line collection_immutable/hashset.gala:322
 	var newChild = addToNode[T](node.children.Get()[idx], elem, hashCode, level+1)
-//line collection_immutable/hashset.gala:273
+//line collection_immutable/hashset.gala:325
 	var newChildren []*hashSetNode[T]
-//line collection_immutable/hashset.gala:274
+//line collection_immutable/hashset.gala:326
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashset.gala:275
+//line collection_immutable/hashset.gala:327
 		if i == idx {
-//line collection_immutable/hashset.gala:276
+//line collection_immutable/hashset.gala:328
 			newChildren = go_interop.SliceAppend(newChildren, newChild)
 		} else {
-//line collection_immutable/hashset.gala:278
+//line collection_immutable/hashset.gala:330
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
 	}
-//line collection_immutable/hashset.gala:282
+//line collection_immutable/hashset.gala:334
 	return &hashSetNode[T]{bitmap: NewImmutable(node.bitmap.Get()), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)}
 }
 
-//line collection_immutable/hashset.gala:284
+//line collection_immutable/hashset.gala:336
 
 // Remove removes an element from the set. Returns a new set without the element. O(eC).
 func (s HashSet[T]) Remove(elem T) HashSet[T] {
-//line collection_immutable/hashset.gala:287
+//line collection_immutable/hashset.gala:339
 	if s.root.IsEmpty() {
-//line collection_immutable/hashset.gala:288
+//line collection_immutable/hashset.gala:340
 		return s
 	}
-//line collection_immutable/hashset.gala:290
+//line collection_immutable/hashset.gala:342
 	var root = s.root.Get()
-//line collection_immutable/hashset.gala:291
+//line collection_immutable/hashset.gala:343
 	var hashCode = hash[T](elem)
-//line collection_immutable/hashset.gala:294
+//line collection_immutable/hashset.gala:346
 	if !containsInNode[T](root, elem, hashCode, 0) {
-//line collection_immutable/hashset.gala:295
+//line collection_immutable/hashset.gala:347
 		return s
 	}
-//line collection_immutable/hashset.gala:298
+//line collection_immutable/hashset.gala:350
 	if s.size.Get() == 1 {
-//line collection_immutable/hashset.gala:299
+//line collection_immutable/hashset.gala:351
 		return EmptyHashSet[T]()
 	}
-//line collection_immutable/hashset.gala:302
+//line collection_immutable/hashset.gala:354
 	return HashSet[T]{root: removeFromNode[T](root, elem, hashCode, 0), size: NewImmutable(s.size.Get() - 1)}
 }
 
-//line collection_immutable/hashset.gala:304
+//line collection_immutable/hashset.gala:356
 
 // removeFromNode removes an element from a node, returning the new node, or
 // empty when no element is left under it.
 func removeFromNode[T comparable](node *hashSetNode[T], elem T, hashCode uint32, level int) OptionPtr[hashSetNode[T]] {
-//line collection_immutable/hashset.gala:308
+//line collection_immutable/hashset.gala:360
 	if node.isLeaf.Get() {
-//line collection_immutable/hashset.gala:309
+//line collection_immutable/hashset.gala:361
 		var newEntries []T
-//line collection_immutable/hashset.gala:310
+//line collection_immutable/hashset.gala:362
 		for i := 0; i < len(node.entries.Get()); i++ {
-//line collection_immutable/hashset.gala:311
+//line collection_immutable/hashset.gala:363
 			if node.entries.Get()[i] != elem {
-//line collection_immutable/hashset.gala:312
+//line collection_immutable/hashset.gala:364
 				newEntries = go_interop.SliceAppend(newEntries, node.entries.Get()[i])
 			}
 		}
-//line collection_immutable/hashset.gala:315
+//line collection_immutable/hashset.gala:367
 		if len(newEntries) == 0 {
-//line collection_immutable/hashset.gala:316
+//line collection_immutable/hashset.gala:368
 			return EmptyOptionPtr[hashSetNode[T]]()
 		}
-//line collection_immutable/hashset.gala:318
+//line collection_immutable/hashset.gala:370
 		return SomePtr(&hashSetNode[T]{entries: NewImmutable(newEntries), isLeaf: NewImmutable(true)})
 	}
-//line collection_immutable/hashset.gala:321
+//line collection_immutable/hashset.gala:373
 	var bit = bitpos(hashCode, level)
-//line collection_immutable/hashset.gala:322
+//line collection_immutable/hashset.gala:374
 	var idx = index(node.bitmap.Get(), bit)
-//line collection_immutable/hashset.gala:324
+//line collection_immutable/hashset.gala:376
 	if (node.bitmap.Get() & bit) == 0 {
-//line collection_immutable/hashset.gala:325
+//line collection_immutable/hashset.gala:377
 		return SomePtr(node)
 	}
-//line collection_immutable/hashset.gala:328
+//line collection_immutable/hashset.gala:380
 	var newChild = removeFromNode[T](node.children.Get()[idx], elem, hashCode, level+1)
-//line collection_immutable/hashset.gala:330
+//line collection_immutable/hashset.gala:382
 	if newChild.IsEmpty() {
-//line collection_immutable/hashset.gala:332
+//line collection_immutable/hashset.gala:384
 		if popcount(node.bitmap.Get()) == 1 {
-//line collection_immutable/hashset.gala:333
+//line collection_immutable/hashset.gala:385
 			return EmptyOptionPtr[hashSetNode[T]]()
 		}
-//line collection_immutable/hashset.gala:336
+//line collection_immutable/hashset.gala:388
 		var newChildren []*hashSetNode[T]
-//line collection_immutable/hashset.gala:337
+//line collection_immutable/hashset.gala:389
 		for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashset.gala:338
+//line collection_immutable/hashset.gala:390
 			if i != idx {
-//line collection_immutable/hashset.gala:339
+//line collection_immutable/hashset.gala:391
 				newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 			}
 		}
-//line collection_immutable/hashset.gala:342
+//line collection_immutable/hashset.gala:394
 		return SomePtr(&hashSetNode[T]{bitmap: NewImmutable(node.bitmap.Get() & (^bit)), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)})
 	}
-//line collection_immutable/hashset.gala:346
+//line collection_immutable/hashset.gala:398
 	var newChildren []*hashSetNode[T]
-//line collection_immutable/hashset.gala:347
+//line collection_immutable/hashset.gala:399
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashset.gala:348
+//line collection_immutable/hashset.gala:400
 		if i == idx {
-//line collection_immutable/hashset.gala:349
+//line collection_immutable/hashset.gala:401
 			newChildren = go_interop.SliceAppend(newChildren, newChild.Get())
 		} else {
-//line collection_immutable/hashset.gala:351
+//line collection_immutable/hashset.gala:403
 			newChildren = go_interop.SliceAppend(newChildren, node.children.Get()[i])
 		}
 	}
-//line collection_immutable/hashset.gala:355
+//line collection_immutable/hashset.gala:407
 	return SomePtr(&hashSetNode[T]{bitmap: NewImmutable(node.bitmap.Get()), children: NewImmutable(newChildren), isLeaf: NewImmutable(false)})
 }
 
-//line collection_immutable/hashset.gala:357
+//line collection_immutable/hashset.gala:409
 
 // AddAll adds all elements from another set. Returns a new set.
 func (s HashSet[T]) AddAll(other HashSet[T]) HashSet[T] {
-//line collection_immutable/hashset.gala:360
+//line collection_immutable/hashset.gala:412
 	return HashSet_FoldLeft[HashSet[T], T](other, s, func(acc HashSet[T], elem T) HashSet[T] {
 		return acc.Add(elem)
 	})
 }
 
-//line collection_immutable/hashset.gala:362
+//line collection_immutable/hashset.gala:414
 
 // Union returns a new set containing all elements from both sets.
 func (s HashSet[T]) Union(other HashSet[T]) HashSet[T] {
 	return s.AddAll(other)
 }
 
-//line collection_immutable/hashset.gala:365
+//line collection_immutable/hashset.gala:417
 
 // Intersect returns a new set containing only elements present in both sets.
 func (s HashSet[T]) Intersect(other HashSet[T]) HashSet[T] {
-//line collection_immutable/hashset.gala:369
+//line collection_immutable/hashset.gala:421
 	var smaller HashSet[T]
-//line collection_immutable/hashset.gala:370
+//line collection_immutable/hashset.gala:422
 	var larger HashSet[T]
-//line collection_immutable/hashset.gala:371
+//line collection_immutable/hashset.gala:423
 	if s.size.Get() <= other.size.Get() {
-//line collection_immutable/hashset.gala:372
+//line collection_immutable/hashset.gala:424
 		smaller = s
-//line collection_immutable/hashset.gala:373
+//line collection_immutable/hashset.gala:425
 		larger = other
 	} else {
-//line collection_immutable/hashset.gala:375
+//line collection_immutable/hashset.gala:427
 		smaller = other
-//line collection_immutable/hashset.gala:376
+//line collection_immutable/hashset.gala:428
 		larger = s
 	}
-//line collection_immutable/hashset.gala:379
+//line collection_immutable/hashset.gala:431
 	return HashSet_FoldLeft[HashSet[T], T](smaller, EmptyHashSet[T](), func(acc HashSet[T], elem T) HashSet[T] {
-//line collection_immutable/hashset.gala:380
+//line collection_immutable/hashset.gala:432
 		if larger.Contains(elem) {
-//line collection_immutable/hashset.gala:381
+//line collection_immutable/hashset.gala:433
 			return acc.Add(elem)
 		}
-//line collection_immutable/hashset.gala:383
+//line collection_immutable/hashset.gala:435
 		return acc
 	})
 }
 
-//line collection_immutable/hashset.gala:386
+//line collection_immutable/hashset.gala:438
 
 // Diff returns a new set containing elements in this set but not in other.
 func (s HashSet[T]) Diff(other HashSet[T]) HashSet[T] {
-//line collection_immutable/hashset.gala:389
+//line collection_immutable/hashset.gala:441
 	return HashSet_FoldLeft[HashSet[T], T](s, EmptyHashSet[T](), func(acc HashSet[T], elem T) HashSet[T] {
-//line collection_immutable/hashset.gala:390
+//line collection_immutable/hashset.gala:442
 		if !other.Contains(elem) {
-//line collection_immutable/hashset.gala:391
+//line collection_immutable/hashset.gala:443
 			return acc.Add(elem)
 		}
-//line collection_immutable/hashset.gala:393
+//line collection_immutable/hashset.gala:445
 		return acc
 	})
 }
 
-//line collection_immutable/hashset.gala:396
+//line collection_immutable/hashset.gala:448
 
 // SubsetOf returns true if this set is a subset of other.
 func (s HashSet[T]) SubsetOf(other HashSet[T]) bool {
-//line collection_immutable/hashset.gala:399
+//line collection_immutable/hashset.gala:451
 	if s.size.Get() > other.size.Get() {
-//line collection_immutable/hashset.gala:400
+//line collection_immutable/hashset.gala:452
 		return false
 	}
-//line collection_immutable/hashset.gala:402
+//line collection_immutable/hashset.gala:454
 	return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
 		return acc && other.Contains(elem)
 	})
 }
 
-//line collection_immutable/hashset.gala:404
+//line collection_immutable/hashset.gala:456
 
 // ForEach applies a function to each element for side effects.
 func (s HashSet[T]) ForEach(f func(T)) {
-//line collection_immutable/hashset.gala:407
+//line collection_immutable/hashset.gala:459
 	s.root.ForEach(func(root *hashSetNode[T]) {
 		forEachInNode[T](root, f)
 	})
 }
 
-//line collection_immutable/hashset.gala:409
+//line collection_immutable/hashset.gala:461
 
 // forEachInNode traverses a node and applies f to each element.
 func forEachInNode[T comparable](node *hashSetNode[T], f func(T)) {
-//line collection_immutable/hashset.gala:412
+//line collection_immutable/hashset.gala:464
 	if node.isLeaf.Get() {
-//line collection_immutable/hashset.gala:413
+//line collection_immutable/hashset.gala:465
 		for i := 0; i < len(node.entries.Get()); i++ {
-//line collection_immutable/hashset.gala:414
+//line collection_immutable/hashset.gala:466
 			f(node.entries.Get()[i])
 		}
-//line collection_immutable/hashset.gala:416
+//line collection_immutable/hashset.gala:468
 		return
 	}
-//line collection_immutable/hashset.gala:419
+//line collection_immutable/hashset.gala:471
 	for i := 0; i < len(node.children.Get()); i++ {
-//line collection_immutable/hashset.gala:420
+//line collection_immutable/hashset.gala:472
 		forEachInNode[T](node.children.Get()[i], f)
 	}
 }
 
-//line collection_immutable/hashset.gala:423
+//line collection_immutable/hashset.gala:475
 
 // MapHashSet applies a function to each element and returns a new set.
 // Note: Defined as standalone function to preserve type constraints.
 func MapHashSet[T comparable, U comparable](s HashSet[T], f func(T) U) HashSet[U] {
-//line collection_immutable/hashset.gala:427
+//line collection_immutable/hashset.gala:479
 	return HashSet_FoldLeft[HashSet[U], T](s, EmptyHashSet[U](), func(acc HashSet[U], elem T) HashSet[U] {
 		return acc.Add(f(elem))
 	})
 }
 
-//line collection_immutable/hashset.gala:429
+//line collection_immutable/hashset.gala:481
 
 // FlatMapHashSet applies a function that returns a set to each element and flattens.
 // Note: Defined as standalone function to preserve type constraints.
 func FlatMapHashSet[T comparable, U comparable](s HashSet[T], f func(T) HashSet[U]) HashSet[U] {
-//line collection_immutable/hashset.gala:433
+//line collection_immutable/hashset.gala:485
 	return HashSet_FoldLeft[HashSet[U], T](s, EmptyHashSet[U](), func(acc HashSet[U], elem T) HashSet[U] {
 		return acc.AddAll(f(elem))
 	})
 }
 
-//line collection_immutable/hashset.gala:435
+//line collection_immutable/hashset.gala:487
 
 // Filter returns a new set with only elements that satisfy the predicate.
 func (s HashSet[T]) Filter(p func(T) bool) HashSet[T] {
-//line collection_immutable/hashset.gala:438
+//line collection_immutable/hashset.gala:490
 	return HashSet_FoldLeft[HashSet[T], T](s, EmptyHashSet[T](), func(acc HashSet[T], elem T) HashSet[T] {
-//line collection_immutable/hashset.gala:439
+//line collection_immutable/hashset.gala:491
 		if p(elem) {
-//line collection_immutable/hashset.gala:440
+//line collection_immutable/hashset.gala:492
 			return acc.Add(elem)
 		}
-//line collection_immutable/hashset.gala:442
+//line collection_immutable/hashset.gala:494
 		return acc
 	})
 }
 
-//line collection_immutable/hashset.gala:445
+//line collection_immutable/hashset.gala:497
 
 // FilterNot returns a new set with elements that do not satisfy the predicate.
 func (s HashSet[T]) FilterNot(p func(T) bool) HashSet[T] {
@@ -724,307 +863,307 @@ func (s HashSet[T]) FilterNot(p func(T) bool) HashSet[T] {
 	})
 }
 
-//line collection_immutable/hashset.gala:448
+//line collection_immutable/hashset.gala:500
 
 // Collect applies a partial function to each element and collects the results.
 // Elements for which the function returns None are filtered out.
 // Returns an Array since the result type may not be Hashable.
 func HashSet_Collect[U any, T comparable](s HashSet[T], pf func(T) Option[U]) Array[U] {
-//line collection_immutable/hashset.gala:453
+//line collection_immutable/hashset.gala:505
 	var builder = newArrayBuilder[U]()
-//line collection_immutable/hashset.gala:454
+//line collection_immutable/hashset.gala:506
 	s.ForEach(func(elem T) {
-//line collection_immutable/hashset.gala:455
+//line collection_immutable/hashset.gala:507
 		var opt = pf(elem)
-//line collection_immutable/hashset.gala:456
+//line collection_immutable/hashset.gala:508
 		if opt.IsDefined() {
-//line collection_immutable/hashset.gala:457
+//line collection_immutable/hashset.gala:509
 			builder.Add(opt.Get())
 		}
 	})
-//line collection_immutable/hashset.gala:460
+//line collection_immutable/hashset.gala:512
 	return builder.Result()
 }
 
-//line collection_immutable/hashset.gala:462
+//line collection_immutable/hashset.gala:514
 
 // Partition splits the set into two sets based on a predicate.
 func (s HashSet[T]) Partition(p func(T) bool) Tuple[HashSet[T], HashSet[T]] {
-//line collection_immutable/hashset.gala:465
+//line collection_immutable/hashset.gala:517
 	var left = s.Filter(p)
-//line collection_immutable/hashset.gala:466
+//line collection_immutable/hashset.gala:518
 	var right = s.FilterNot(p)
-//line collection_immutable/hashset.gala:467
+//line collection_immutable/hashset.gala:519
 	return Tuple[HashSet[T], HashSet[T]]{V1: NewImmutable(left), V2: NewImmutable(right)}
 }
 
-//line collection_immutable/hashset.gala:469
+//line collection_immutable/hashset.gala:521
 
 // FoldLeft applies a binary operator from left to right.
 func HashSet_FoldLeft[U any, T comparable](s HashSet[T], initial U, f func(U, T) U) U {
-//line collection_immutable/hashset.gala:472
+//line collection_immutable/hashset.gala:524
 	var acc = initial
-//line collection_immutable/hashset.gala:473
+//line collection_immutable/hashset.gala:525
 	s.ForEach(func(elem T) {
-//line collection_immutable/hashset.gala:474
+//line collection_immutable/hashset.gala:526
 		acc = f(acc, elem)
 	})
-//line collection_immutable/hashset.gala:476
+//line collection_immutable/hashset.gala:528
 	return acc
 }
 
-//line collection_immutable/hashset.gala:478
+//line collection_immutable/hashset.gala:530
 
 // Reduce applies a binary operator, starting with the first element.
 // Panics if the set is empty.
 func (s HashSet[T]) Reduce(f func(T, T) T) T {
-//line collection_immutable/hashset.gala:482
+//line collection_immutable/hashset.gala:534
 	if s.size.Get() == 0 {
-//line collection_immutable/hashset.gala:483
+//line collection_immutable/hashset.gala:535
 		panic("HashSet.Reduce on empty set")
 	}
-//line collection_immutable/hashset.gala:485
+//line collection_immutable/hashset.gala:537
 	var first = true
-//line collection_immutable/hashset.gala:486
+//line collection_immutable/hashset.gala:538
 	var acc T
-//line collection_immutable/hashset.gala:487
+//line collection_immutable/hashset.gala:539
 	s.ForEach(func(elem T) {
-//line collection_immutable/hashset.gala:488
+//line collection_immutable/hashset.gala:540
 		if first {
-//line collection_immutable/hashset.gala:489
+//line collection_immutable/hashset.gala:541
 			acc = elem
-//line collection_immutable/hashset.gala:490
+//line collection_immutable/hashset.gala:542
 			first = false
 		} else {
-//line collection_immutable/hashset.gala:492
+//line collection_immutable/hashset.gala:544
 			acc = f(acc, elem)
 		}
 	})
-//line collection_immutable/hashset.gala:495
+//line collection_immutable/hashset.gala:547
 	return acc
 }
 
-//line collection_immutable/hashset.gala:497
+//line collection_immutable/hashset.gala:549
 
 // ReduceOption is like Reduce but returns None for empty set.
 func (s HashSet[T]) ReduceOption(f func(T, T) T) Option[T] {
-//line collection_immutable/hashset.gala:500
+//line collection_immutable/hashset.gala:552
 	if s.size.Get() == 0 {
-//line collection_immutable/hashset.gala:501
+//line collection_immutable/hashset.gala:553
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/hashset.gala:503
+//line collection_immutable/hashset.gala:555
 	return Some[T]{}.Apply(s.Reduce(f))
 }
 
-//line collection_immutable/hashset.gala:505
+//line collection_immutable/hashset.gala:557
 
 // Exists returns true if any element satisfies the predicate.
 func (s HashSet[T]) Exists(p func(T) bool) bool {
-//line collection_immutable/hashset.gala:508
+//line collection_immutable/hashset.gala:560
 	return HashSet_FoldLeft[bool, T](s, false, func(acc bool, elem T) bool {
 		return acc || p(elem)
 	})
 }
 
-//line collection_immutable/hashset.gala:510
+//line collection_immutable/hashset.gala:562
 
 // ForAll returns true if all elements satisfy the predicate.
 func (s HashSet[T]) ForAll(p func(T) bool) bool {
-//line collection_immutable/hashset.gala:513
+//line collection_immutable/hashset.gala:565
 	return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
 		return acc && p(elem)
 	})
 }
 
-//line collection_immutable/hashset.gala:515
+//line collection_immutable/hashset.gala:567
 
 // Find returns the first element that satisfies the predicate.
 func (s HashSet[T]) Find(p func(T) bool) Option[T] {
-//line collection_immutable/hashset.gala:518
+//line collection_immutable/hashset.gala:570
 	return HashSet_FoldLeft[Option[T], T](s, None[T]{}.Apply(), func(acc Option[T], elem T) Option[T] {
-//line collection_immutable/hashset.gala:519
+//line collection_immutable/hashset.gala:571
 		if acc.IsEmpty() && p(elem) {
-//line collection_immutable/hashset.gala:520
+//line collection_immutable/hashset.gala:572
 			return Some[T]{}.Apply(elem)
 		}
-//line collection_immutable/hashset.gala:522
+//line collection_immutable/hashset.gala:574
 		return acc
 	})
 }
 
-//line collection_immutable/hashset.gala:525
+//line collection_immutable/hashset.gala:577
 
 // Count returns the number of elements satisfying the predicate.
 func (s HashSet[T]) Count(p func(T) bool) int {
-//line collection_immutable/hashset.gala:528
+//line collection_immutable/hashset.gala:580
 	return HashSet_FoldLeft[int, T](s, 0, func(acc int, elem T) int {
-//line collection_immutable/hashset.gala:529
+//line collection_immutable/hashset.gala:581
 		if p(elem) {
-//line collection_immutable/hashset.gala:530
+//line collection_immutable/hashset.gala:582
 			return acc + 1
 		}
-//line collection_immutable/hashset.gala:532
+//line collection_immutable/hashset.gala:584
 		return acc
 	})
 }
 
-//line collection_immutable/hashset.gala:535
+//line collection_immutable/hashset.gala:587
 
 // Head returns an arbitrary element from the set.
 // Panics if the set is empty.
 func (s HashSet[T]) Head() T {
-//line collection_immutable/hashset.gala:539
+//line collection_immutable/hashset.gala:591
 	if s.size.Get() == 0 {
-//line collection_immutable/hashset.gala:540
+//line collection_immutable/hashset.gala:592
 		panic("HashSet.Head on empty set")
 	}
-//line collection_immutable/hashset.gala:542
+//line collection_immutable/hashset.gala:594
 	var result T
-//line collection_immutable/hashset.gala:543
+//line collection_immutable/hashset.gala:595
 	var found = false
-//line collection_immutable/hashset.gala:544
+//line collection_immutable/hashset.gala:596
 	s.ForEach(func(elem T) {
-//line collection_immutable/hashset.gala:545
+//line collection_immutable/hashset.gala:597
 		if !found {
-//line collection_immutable/hashset.gala:546
+//line collection_immutable/hashset.gala:598
 			result = elem
-//line collection_immutable/hashset.gala:547
+//line collection_immutable/hashset.gala:599
 			found = true
 		}
 	})
-//line collection_immutable/hashset.gala:550
+//line collection_immutable/hashset.gala:602
 	return result
 }
 
-//line collection_immutable/hashset.gala:552
+//line collection_immutable/hashset.gala:604
 
 // HeadOption returns an arbitrary element wrapped in Option.
 func (s HashSet[T]) HeadOption() Option[T] {
-//line collection_immutable/hashset.gala:555
+//line collection_immutable/hashset.gala:607
 	if s.size.Get() == 0 {
-//line collection_immutable/hashset.gala:556
+//line collection_immutable/hashset.gala:608
 		return None[T]{}.Apply()
 	}
-//line collection_immutable/hashset.gala:558
+//line collection_immutable/hashset.gala:610
 	return Some[T]{}.Apply(s.Head())
 }
 
-//line collection_immutable/hashset.gala:560
+//line collection_immutable/hashset.gala:612
 
 // ToGoSlice converts the set to a Go slice.
 func (s HashSet[T]) ToGoSlice() []T {
-//line collection_immutable/hashset.gala:563
+//line collection_immutable/hashset.gala:615
 	var result []T
-//line collection_immutable/hashset.gala:564
+//line collection_immutable/hashset.gala:616
 	s.ForEach(func(elem T) {
-//line collection_immutable/hashset.gala:565
+//line collection_immutable/hashset.gala:617
 		result = go_interop.SliceAppend(result, elem)
 	})
-//line collection_immutable/hashset.gala:567
+//line collection_immutable/hashset.gala:619
 	return result
 }
 
-//line collection_immutable/hashset.gala:569
+//line collection_immutable/hashset.gala:621
 
 // ToList converts the set to a List.
 func (s HashSet[T]) ToList() List[T] {
-//line collection_immutable/hashset.gala:572
+//line collection_immutable/hashset.gala:624
 	return HashSet_FoldLeft[List[T], T](s, emptyList[T](), func(acc List[T], elem T) List[T] {
 		return consList[T](elem, acc)
 	})
 }
 
-//line collection_immutable/hashset.gala:574
+//line collection_immutable/hashset.gala:626
 
 // ToArray converts the set to an Array.
 func (s HashSet[T]) ToArray() Array[T] {
-//line collection_immutable/hashset.gala:577
+//line collection_immutable/hashset.gala:629
 	return HashSet_FoldLeft[Array[T], T](s, EmptyArray[T](), func(acc Array[T], elem T) Array[T] {
 		return acc.Append(elem)
 	})
 }
 
-//line collection_immutable/hashset.gala:579
+//line collection_immutable/hashset.gala:631
 
 // String returns a string representation of the set.
 func (s HashSet[T]) String() string {
-//line collection_immutable/hashset.gala:582
+//line collection_immutable/hashset.gala:634
 	if s.size.Get() == 0 {
-//line collection_immutable/hashset.gala:583
+//line collection_immutable/hashset.gala:635
 		return "HashSet()"
 	}
-//line collection_immutable/hashset.gala:585
+//line collection_immutable/hashset.gala:637
 	var result = "HashSet("
-//line collection_immutable/hashset.gala:586
+//line collection_immutable/hashset.gala:638
 	var first = true
-//line collection_immutable/hashset.gala:587
+//line collection_immutable/hashset.gala:639
 	s.ForEach(func(elem T) {
-//line collection_immutable/hashset.gala:588
+//line collection_immutable/hashset.gala:640
 		if !first {
-//line collection_immutable/hashset.gala:589
+//line collection_immutable/hashset.gala:641
 			result = result + ", "
 		}
-//line collection_immutable/hashset.gala:591
+//line collection_immutable/hashset.gala:643
 		result = result + fmt.Sprintf("%v", elem)
-//line collection_immutable/hashset.gala:592
+//line collection_immutable/hashset.gala:644
 		first = false
 	})
-//line collection_immutable/hashset.gala:594
+//line collection_immutable/hashset.gala:646
 	return result + ")"
 }
 
-//line collection_immutable/hashset.gala:596
+//line collection_immutable/hashset.gala:648
 
 // MkString joins elements into a string with separator.
 func (s HashSet[T]) MkString(sep string) string {
-//line collection_immutable/hashset.gala:599
+//line collection_immutable/hashset.gala:651
 	if s.size.Get() == 0 {
-//line collection_immutable/hashset.gala:600
+//line collection_immutable/hashset.gala:652
 		return ""
 	}
-//line collection_immutable/hashset.gala:602
+//line collection_immutable/hashset.gala:654
 	var result = ""
-//line collection_immutable/hashset.gala:603
+//line collection_immutable/hashset.gala:655
 	var first = true
-//line collection_immutable/hashset.gala:604
+//line collection_immutable/hashset.gala:656
 	s.ForEach(func(elem T) {
-//line collection_immutable/hashset.gala:605
+//line collection_immutable/hashset.gala:657
 		if !first {
-//line collection_immutable/hashset.gala:606
+//line collection_immutable/hashset.gala:658
 			result = result + sep
 		}
-//line collection_immutable/hashset.gala:608
+//line collection_immutable/hashset.gala:660
 		result = result + fmt.Sprintf("%v", elem)
-//line collection_immutable/hashset.gala:609
+//line collection_immutable/hashset.gala:661
 		first = false
 	})
-//line collection_immutable/hashset.gala:611
+//line collection_immutable/hashset.gala:663
 	return result
 }
 
-//line collection_immutable/hashset.gala:615
+//line collection_immutable/hashset.gala:667
 
 // Sorted returns an array of elements sorted in natural order.
 func (s HashSet[T]) Sorted() Array[T] {
 	return s.ToArray().Sorted()
 }
 
-//line collection_immutable/hashset.gala:618
+//line collection_immutable/hashset.gala:670
 
 // SortWith returns an array of elements sorted using the given comparison function.
 func (s HashSet[T]) SortWith(less func(T, T) bool) Array[T] {
 	return s.ToArray().SortWith(less)
 }
 
-//line collection_immutable/hashset.gala:621
+//line collection_immutable/hashset.gala:673
 
 // SortBy returns an array of elements sorted by a key extracted from each element.
 func HashSet_SortBy[K comparable, T comparable](s HashSet[T], f func(T) K) Array[T] {
 	return Array_SortBy(s.ToArray(), f)
 }
 
-//line collection_immutable/hashset.gala:624
+//line collection_immutable/hashset.gala:676
 
 // HashSetEmpty extractor for pattern matching on empty sets.
 type HashSetEmpty struct {
@@ -1037,12 +1176,12 @@ func (s HashSetEmpty) Equal(other HashSetEmpty) bool {
 	return true
 }
 
-//line collection_immutable/hashset.gala:627
+//line collection_immutable/hashset.gala:679
 func (hse HashSetEmpty) Unapply(s any) Option[bool] {
 	return func(obj any) Option[bool] {
 		{
-			set, _tmp_16 := As[HashSet[any]](obj)
-			if _tmp_16 && set.size.Get() == 0 {
+			set, _tmp_30 := As[HashSet[any]](obj)
+			if _tmp_30 && set.size.Get() == 0 {
 				return Some[bool]{}.Apply(true)
 			} else {
 				return None[bool]{}.Apply()
@@ -1051,7 +1190,7 @@ func (hse HashSetEmpty) Unapply(s any) Option[bool] {
 	}(s)
 }
 
-//line collection_immutable/hashset.gala:631
+//line collection_immutable/hashset.gala:683
 
 // HashSetNonEmpty extractor for pattern matching on non-empty sets.
 type HashSetNonEmpty struct {
@@ -1064,12 +1203,12 @@ func (s HashSetNonEmpty) Equal(other HashSetNonEmpty) bool {
 	return true
 }
 
-//line collection_immutable/hashset.gala:634
+//line collection_immutable/hashset.gala:686
 func (hsne HashSetNonEmpty) Unapply(s any) Option[any] {
 	return func(obj any) Option[any] {
 		{
-			set, _tmp_17 := As[HashSet[any]](obj)
-			if _tmp_17 && set.size.Get() > 0 {
+			set, _tmp_31 := As[HashSet[any]](obj)
+			if _tmp_31 && set.size.Get() > 0 {
 				return Some[any]{}.Apply(set)
 			} else {
 				return None[any]{}.Apply()

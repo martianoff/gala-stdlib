@@ -1369,62 +1369,48 @@ func Array_ZipWithIndex[T any](a Array[T]) Array[Tuple[T, int]] {
 
 //line collection_immutable/array.gala:852
 
-// Distinct returns a new array with duplicate elements removed.
+// Distinct returns a new array with duplicate elements removed, keeping the
+// first occurrence of each element in its original position. Elements are
+// compared with Equal: through a HashSet when T is a primitive type (a number,
+// string or bool), and against each kept element otherwise.
 func (a Array[T]) Distinct() Array[T] {
-//line collection_immutable/array.gala:855
-	var builder = newArrayBuilder[T]()
-//line collection_immutable/array.gala:856
-	var seen = EmptyArray[T]()
-//line collection_immutable/array.gala:857
-	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:858
-		var elem = a.Get(i)
-//line collection_immutable/array.gala:859
-		if !seen.Contains(elem) {
-//line collection_immutable/array.gala:860
-			builder.Add(elem)
-//line collection_immutable/array.gala:861
-			seen = seen.Append(elem)
-		}
-	}
-//line collection_immutable/array.gala:864
-	return builder.Result()
+	return a.Filter(firstOccurrence[T]())
 }
 
-//line collection_immutable/array.gala:866
+//line collection_immutable/array.gala:858
 
 // SplitAt splits the array at the given index.
 func (a Array[T]) SplitAt(n int) Tuple[Array[T], Array[T]] {
 	return Tuple[Array[T], Array[T]]{V1: NewImmutable(a.Take(n)), V2: NewImmutable(a.Drop(n))}
 }
 
-//line collection_immutable/array.gala:869
+//line collection_immutable/array.gala:861
 
 // Span splits the array into a prefix/suffix pair according to a predicate.
 // The first element contains the longest prefix of elements that satisfy p.
 func (a Array[T]) Span(p func(T) bool) Tuple[Array[T], Array[T]] {
-//line collection_immutable/array.gala:873
+//line collection_immutable/array.gala:865
 	var idx = 0
-//line collection_immutable/array.gala:874
+//line collection_immutable/array.gala:866
 	for idx < a.length.Get() && p(a.Get(idx)) {
-//line collection_immutable/array.gala:875
+//line collection_immutable/array.gala:867
 		idx++
 	}
-//line collection_immutable/array.gala:877
+//line collection_immutable/array.gala:869
 	return a.SplitAt(idx)
 }
 
-//line collection_immutable/array.gala:879
+//line collection_immutable/array.gala:871
 
 // PartitionMap applies a function to each element and partitions results into Left and Right.
 func Array_PartitionMap[A any, B any, T any](a Array[T], f func(T) Either[A, B]) Tuple[Array[A], Array[B]] {
-//line collection_immutable/array.gala:882
+//line collection_immutable/array.gala:874
 	var leftBuilder = newArrayBuilder[A]()
-//line collection_immutable/array.gala:883
+//line collection_immutable/array.gala:875
 	var rightBuilder = newArrayBuilder[B]()
-//line collection_immutable/array.gala:884
+//line collection_immutable/array.gala:876
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:885
+//line collection_immutable/array.gala:877
 		func(obj Either[A, B]) {
 			{
 				_tmp_1 := Left[A, B]{}.Unapply(obj)
@@ -1455,146 +1441,146 @@ func Array_PartitionMap[A any, B any, T any](a Array[T], f func(T) Either[A, B])
 			}
 		}(f(a.Get(i)))
 	}
-//line collection_immutable/array.gala:890
+//line collection_immutable/array.gala:882
 	return Tuple[Array[A], Array[B]]{V1: NewImmutable(leftBuilder.Result()), V2: NewImmutable(rightBuilder.Result())}
 }
 
-//line collection_immutable/array.gala:892
+//line collection_immutable/array.gala:884
 
 // GroupBy partitions this array into a map of arrays according to a discriminator function.
 func Array_GroupBy[K comparable, T any](a Array[T], f func(T) K) map[K]Array[T] {
-//line collection_immutable/array.gala:895
+//line collection_immutable/array.gala:887
 	var result = go_interop.MapEmpty[K, Array[T]]()
-//line collection_immutable/array.gala:896
+//line collection_immutable/array.gala:888
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:897
+//line collection_immutable/array.gala:889
 		var elem = a.Get(i)
-//line collection_immutable/array.gala:898
+//line collection_immutable/array.gala:890
 		var key = f(elem)
-//line collection_immutable/array.gala:899
+//line collection_immutable/array.gala:891
 		var existing = result[key]
-//line collection_immutable/array.gala:900
+//line collection_immutable/array.gala:892
 		result[key] = existing.Append(elem)
 	}
-//line collection_immutable/array.gala:902
+//line collection_immutable/array.gala:894
 	return result
 }
 
-//line collection_immutable/array.gala:904
+//line collection_immutable/array.gala:896
 
 // GroupMap partitions elements and maps values according to discriminator and value functions.
 func Array_GroupMap[K comparable, V any, T any](a Array[T], key func(T) K, value func(T) V) map[K]Array[V] {
-//line collection_immutable/array.gala:907
+//line collection_immutable/array.gala:899
 	var result = go_interop.MapEmpty[K, Array[V]]()
-//line collection_immutable/array.gala:908
+//line collection_immutable/array.gala:900
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:909
+//line collection_immutable/array.gala:901
 		var elem = a.Get(i)
-//line collection_immutable/array.gala:910
+//line collection_immutable/array.gala:902
 		var k = key(elem)
-//line collection_immutable/array.gala:911
+//line collection_immutable/array.gala:903
 		var v = value(elem)
-//line collection_immutable/array.gala:912
+//line collection_immutable/array.gala:904
 		var existing = result[k]
-//line collection_immutable/array.gala:913
+//line collection_immutable/array.gala:905
 		result[k] = existing.Append(v)
 	}
-//line collection_immutable/array.gala:915
+//line collection_immutable/array.gala:907
 	return result
 }
 
-//line collection_immutable/array.gala:917
+//line collection_immutable/array.gala:909
 
 // GroupMapReduce partitions elements, maps values, and reduces them with a combining function.
 func Array_GroupMapReduce[K comparable, V any, T any](a Array[T], key func(T) K, value func(T) V, reduce func(V, V) V) map[K]V {
-//line collection_immutable/array.gala:920
+//line collection_immutable/array.gala:912
 	var result = go_interop.MapEmpty[K, V]()
-//line collection_immutable/array.gala:921
+//line collection_immutable/array.gala:913
 	var seen = go_interop.MapEmpty[K, bool]()
-//line collection_immutable/array.gala:922
+//line collection_immutable/array.gala:914
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:923
+//line collection_immutable/array.gala:915
 		var elem = a.Get(i)
-//line collection_immutable/array.gala:924
+//line collection_immutable/array.gala:916
 		var k = key(elem)
-//line collection_immutable/array.gala:925
+//line collection_immutable/array.gala:917
 		var v = value(elem)
-//line collection_immutable/array.gala:926
+//line collection_immutable/array.gala:918
 		if seen[k] {
-//line collection_immutable/array.gala:927
+//line collection_immutable/array.gala:919
 			result[k] = reduce(result[k], v)
 		} else {
-//line collection_immutable/array.gala:929
+//line collection_immutable/array.gala:921
 			result[k] = v
-//line collection_immutable/array.gala:930
+//line collection_immutable/array.gala:922
 			seen[k] = true
 		}
 	}
-//line collection_immutable/array.gala:933
+//line collection_immutable/array.gala:925
 	return result
 }
 
-//line collection_immutable/array.gala:935
+//line collection_immutable/array.gala:927
 
 // Grouped splits the array into groups of size n.
 func Array_Grouped[T any](a Array[T], n int) Array[Array[T]] {
-//line collection_immutable/array.gala:938
+//line collection_immutable/array.gala:930
 	if n <= 0 {
-//line collection_immutable/array.gala:939
+//line collection_immutable/array.gala:931
 		panic("Array.Grouped: group size must be positive")
 	}
-//line collection_immutable/array.gala:941
+//line collection_immutable/array.gala:933
 	var builder = newArrayBuilder[Array[T]]()
-//line collection_immutable/array.gala:942
+//line collection_immutable/array.gala:934
 	for i := 0; i < a.length.Get(); i += n {
-//line collection_immutable/array.gala:943
+//line collection_immutable/array.gala:935
 		var end = i + n
-//line collection_immutable/array.gala:944
+//line collection_immutable/array.gala:936
 		if end > a.length.Get() {
-//line collection_immutable/array.gala:945
+//line collection_immutable/array.gala:937
 			end = a.length.Get()
 		}
-//line collection_immutable/array.gala:947
+//line collection_immutable/array.gala:939
 		builder.Add(a.Slice(i, end))
 	}
-//line collection_immutable/array.gala:949
+//line collection_immutable/array.gala:941
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:951
+//line collection_immutable/array.gala:943
 
 // Sliding returns a sliding window over the array.
 func Array_Sliding[T any](a Array[T], size int) Array[Array[T]] {
-//line collection_immutable/array.gala:954
+//line collection_immutable/array.gala:946
 	if size <= 0 {
-//line collection_immutable/array.gala:955
+//line collection_immutable/array.gala:947
 		panic("Array.Sliding: window size must be positive")
 	}
-//line collection_immutable/array.gala:957
+//line collection_immutable/array.gala:949
 	if a.length.Get() < size {
-//line collection_immutable/array.gala:958
+//line collection_immutable/array.gala:950
 		return EmptyArray[Array[T]]()
 	}
-//line collection_immutable/array.gala:960
+//line collection_immutable/array.gala:952
 	var builder = newArrayBuilder[Array[T]]()
-//line collection_immutable/array.gala:961
+//line collection_immutable/array.gala:953
 	var limit = a.length.Get() - size
-//line collection_immutable/array.gala:962
+//line collection_immutable/array.gala:954
 	for i := 0; i <= limit; i++ {
-//line collection_immutable/array.gala:963
+//line collection_immutable/array.gala:955
 		builder.Add(a.Slice(i, i+size))
 	}
-//line collection_immutable/array.gala:965
+//line collection_immutable/array.gala:957
 	return builder.Result()
 }
 
-//line collection_immutable/array.gala:967
+//line collection_immutable/array.gala:959
 
 // ToGoSlice converts the array to a Go slice. The slice is a fresh copy the caller owns.
 func (a Array[T]) ToGoSlice() []T {
-//line collection_immutable/array.gala:970
+//line collection_immutable/array.gala:962
 	var withPrefix = go_interop.SliceAppendAll(go_interop.SliceWithCapacity[T](a.length.Get()), a.prefix.Get())
-//line collection_immutable/array.gala:971
+//line collection_immutable/array.gala:963
 	return func(obj Option[*arrayNode[T]]) []T {
 		{
 			_tmp_7 := Some[*arrayNode[T]]{}.Unapply(obj)
@@ -1619,93 +1605,93 @@ func (a Array[T]) ToGoSlice() []T {
 	}(a.root.MatchView())
 }
 
-//line collection_immutable/array.gala:976
+//line collection_immutable/array.gala:968
 
 // appendLeaves appends every element under node to dst in index order, a whole
 // leaf at a time rather than descending from the root once per element.
 func appendLeaves[T any](dst []T, node *arrayNode[T]) []T {
-//line collection_immutable/array.gala:980
+//line collection_immutable/array.gala:972
 	if node.isLeaf.Get() {
-//line collection_immutable/array.gala:981
+//line collection_immutable/array.gala:973
 		return go_interop.SliceAppendAll(dst, node.values)
 	}
-//line collection_immutable/array.gala:983
+//line collection_immutable/array.gala:975
 	var out = dst
-//line collection_immutable/array.gala:984
+//line collection_immutable/array.gala:976
 	for i := 0; i < len(node.children); i++ {
-//line collection_immutable/array.gala:985
+//line collection_immutable/array.gala:977
 		out = appendLeaves(out, node.children[i])
 	}
-//line collection_immutable/array.gala:987
+//line collection_immutable/array.gala:979
 	return out
 }
 
-//line collection_immutable/array.gala:989
+//line collection_immutable/array.gala:981
 
 // ToList converts the array to a List.
 func (a Array[T]) ToList() List[T] {
-//line collection_immutable/array.gala:992
+//line collection_immutable/array.gala:984
 	var result = emptyList[T]()
-//line collection_immutable/array.gala:993
+//line collection_immutable/array.gala:985
 	for i := a.length.Get() - 1; i >= 0; i-- {
-//line collection_immutable/array.gala:994
+//line collection_immutable/array.gala:986
 		result = consList[T](a.Get(i), result)
 	}
-//line collection_immutable/array.gala:996
+//line collection_immutable/array.gala:988
 	return result
 }
 
-//line collection_immutable/array.gala:998
+//line collection_immutable/array.gala:990
 
 // String returns a string representation of the array.
 func (a Array[T]) String() string {
-//line collection_immutable/array.gala:1001
+//line collection_immutable/array.gala:993
 	if a.length.Get() == 0 {
-//line collection_immutable/array.gala:1002
+//line collection_immutable/array.gala:994
 		return "Array()"
 	}
-//line collection_immutable/array.gala:1004
+//line collection_immutable/array.gala:996
 	var result = "Array("
-//line collection_immutable/array.gala:1005
+//line collection_immutable/array.gala:997
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:1006
+//line collection_immutable/array.gala:998
 		if i > 0 {
-//line collection_immutable/array.gala:1007
+//line collection_immutable/array.gala:999
 			result = result + ", "
 		}
-//line collection_immutable/array.gala:1009
+//line collection_immutable/array.gala:1001
 		result = result + fmt.Sprintf("%v", a.Get(i))
 	}
-//line collection_immutable/array.gala:1011
+//line collection_immutable/array.gala:1003
 	return result + ")"
 }
 
-//line collection_immutable/array.gala:1013
+//line collection_immutable/array.gala:1005
 
 // MkString joins elements into a string with separator.
 func (a Array[T]) MkString(sep string) string {
-//line collection_immutable/array.gala:1016
+//line collection_immutable/array.gala:1008
 	if a.length.Get() == 0 {
-//line collection_immutable/array.gala:1017
+//line collection_immutable/array.gala:1009
 		return ""
 	}
-//line collection_immutable/array.gala:1019
+//line collection_immutable/array.gala:1011
 	var result = ""
-//line collection_immutable/array.gala:1020
+//line collection_immutable/array.gala:1012
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:1021
+//line collection_immutable/array.gala:1013
 		if i > 0 {
-//line collection_immutable/array.gala:1022
+//line collection_immutable/array.gala:1014
 			result = result + sep
 		}
-//line collection_immutable/array.gala:1024
+//line collection_immutable/array.gala:1016
 		result = result + fmt.Sprintf("%v", a.Get(i))
 	}
-//line collection_immutable/array.gala:1026
+//line collection_immutable/array.gala:1018
 	return result
 }
 
-//line collection_immutable/array.gala:1030
+//line collection_immutable/array.gala:1022
 
 // lessToCompare orders x and y by less as a three-way comparison. If less reports
 // true both ways (a non-strict comparator such as <=), x and y count as equal, so
@@ -1732,79 +1718,79 @@ func lessToCompare[T any](less func(T, T) bool, x T, y T) int {
 	}
 }
 
-//line collection_immutable/array.gala:1036
+//line collection_immutable/array.gala:1028
 
 // Sorted returns a new array with elements sorted in natural order.
 // Elements must be primitive types or implement std.Ordered[T].
 // The sort is stable: equal elements keep their original relative order.
 func (a Array[T]) Sorted() Array[T] {
-//line collection_immutable/array.gala:1041
+//line collection_immutable/array.gala:1033
 	if a.length.Get() <= 1 {
-//line collection_immutable/array.gala:1042
+//line collection_immutable/array.gala:1034
 		return a
 	}
-//line collection_immutable/array.gala:1044
+//line collection_immutable/array.gala:1036
 	var elements = a.ToGoSlice()
-//line collection_immutable/array.gala:1045
+//line collection_immutable/array.gala:1037
 	go_interop.SliceSortStable(elements, func(i int, j int) int {
 		return CompareValues(elements[i], elements[j])
 	})
-//line collection_immutable/array.gala:1046
+//line collection_immutable/array.gala:1038
 	return arrayFromOwnedSlice(elements)
 }
 
-//line collection_immutable/array.gala:1048
+//line collection_immutable/array.gala:1040
 
 // SortWith returns a new array sorted using the given comparison function.
 // The function should return true if x should come before y; it should be a strict
 // ordering (use <, not <=).
 // The sort is stable: elements that compare equal keep their original relative order.
 func (a Array[T]) SortWith(less func(T, T) bool) Array[T] {
-//line collection_immutable/array.gala:1054
+//line collection_immutable/array.gala:1046
 	if a.length.Get() <= 1 {
-//line collection_immutable/array.gala:1055
+//line collection_immutable/array.gala:1047
 		return a
 	}
-//line collection_immutable/array.gala:1057
+//line collection_immutable/array.gala:1049
 	var elements = a.ToGoSlice()
-//line collection_immutable/array.gala:1058
+//line collection_immutable/array.gala:1050
 	go_interop.SliceSortStable(elements, func(i int, j int) int {
 		return lessToCompare(less, elements[i], elements[j])
 	})
-//line collection_immutable/array.gala:1059
+//line collection_immutable/array.gala:1051
 	return arrayFromOwnedSlice(elements)
 }
 
-//line collection_immutable/array.gala:1061
+//line collection_immutable/array.gala:1053
 
 // SortBy returns a new array sorted by a key extracted from each element.
 // Keys must be primitive types or implement std.Ordered.
 // The sort is stable: elements with equal keys keep their original relative order.
 // f runs once per element: keys are computed up front, not on every comparison.
 func Array_SortBy[K comparable, T any](a Array[T], f func(T) K) Array[T] {
-//line collection_immutable/array.gala:1067
+//line collection_immutable/array.gala:1059
 	if a.length.Get() <= 1 {
-//line collection_immutable/array.gala:1068
+//line collection_immutable/array.gala:1060
 		return a
 	}
-//line collection_immutable/array.gala:1070
+//line collection_immutable/array.gala:1062
 	var elements = a.ToGoSlice()
-//line collection_immutable/array.gala:1071
+//line collection_immutable/array.gala:1063
 	var keys = go_interop.SliceWithSize[K](a.length.Get())
-//line collection_immutable/array.gala:1072
+//line collection_immutable/array.gala:1064
 	for i := 0; i < a.length.Get(); i++ {
-//line collection_immutable/array.gala:1073
+//line collection_immutable/array.gala:1065
 		NewImmutable(keys).Get()[i] = f(elements[i])
 	}
-//line collection_immutable/array.gala:1075
+//line collection_immutable/array.gala:1067
 	go_interop.SliceSortStable(elements, func(i int, j int) int {
 		return CompareValues(keys[i], keys[j])
 	})
-//line collection_immutable/array.gala:1076
+//line collection_immutable/array.gala:1068
 	return arrayFromOwnedSlice(elements)
 }
 
-//line collection_immutable/array.gala:1078
+//line collection_immutable/array.gala:1070
 
 // SeqDrop implements the Seq interface for sequence pattern matching.
 // Returns the array with the first n elements removed.
@@ -1812,7 +1798,7 @@ func (a Array[T]) SeqDrop(n int) any {
 	return a.Drop(n)
 }
 
-//line collection_immutable/array.gala:1082
+//line collection_immutable/array.gala:1074
 
 // ArrayEmpty extractor for pattern matching
 type ArrayEmpty struct {
@@ -1825,7 +1811,7 @@ func (s ArrayEmpty) Equal(other ArrayEmpty) bool {
 	return true
 }
 
-//line collection_immutable/array.gala:1085
+//line collection_immutable/array.gala:1077
 func (ae ArrayEmpty) Unapply(a any) Option[bool] {
 	return func(obj any) Option[bool] {
 		{
@@ -1839,7 +1825,7 @@ func (ae ArrayEmpty) Unapply(a any) Option[bool] {
 	}(a)
 }
 
-//line collection_immutable/array.gala:1089
+//line collection_immutable/array.gala:1081
 
 // ArrayNonEmpty extractor for pattern matching
 type ArrayNonEmpty struct {
@@ -1852,7 +1838,7 @@ func (s ArrayNonEmpty) Equal(other ArrayNonEmpty) bool {
 	return true
 }
 
-//line collection_immutable/array.gala:1092
+//line collection_immutable/array.gala:1084
 func (ane ArrayNonEmpty) Unapply(a any) Option[any] {
 	return func(obj any) Option[any] {
 		{
