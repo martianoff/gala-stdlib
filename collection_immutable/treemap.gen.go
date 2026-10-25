@@ -687,20 +687,18 @@ func (m TreeMap[K, V]) GetOrElse(key K, defaultValue V) V {
 // Apply returns the value for a key. Panics if key not found. O(log n).
 func (m TreeMap[K, V]) Apply(key K) V {
 //line collection_immutable/treemap.gala:273
-	return func(obj Option[V]) V {
+	{
+		obj := m.Get(key)
 		{
-			_tmp_28 := Some[V]{}.Unapply(obj)
+			_tmp_28 := _unapply_Some_ee831ca6(obj)
 			_tmp_29 := _tmp_28.IsDefined()
-			var _tmp_30 V
-			if _tmp_29 {
-				_tmp_30 = _tmp_28.Get()
-			}
+			_tmp_30 := _tmp_28.Value.Get()
 			_ = _tmp_30
 			v := _tmp_30
 			if _tmp_29 {
 				return v
 			} else {
-				_tmp_31 := None[V]{}.Unapply(obj)
+				_tmp_31 := _unapply_None_ee831ca6(obj)
 				if _tmp_31 {
 					panic(fmt.Sprintf("TreeMap: key not found: %v", key))
 				} else {
@@ -708,7 +706,7 @@ func (m TreeMap[K, V]) Apply(key K) V {
 				}
 			}
 		}
-	}(m.Get(key))
+	}
 }
 
 //line collection_immutable/treemap.gala:280
@@ -1051,14 +1049,12 @@ func treeMapMk[K comparable, V any](entry *treeMapNode[K, V], color int, left Op
 
 // treeMapBlacken returns a red node recolored black, and any other tree as is.
 func treeMapBlacken[K comparable, V any](tree OptionPtr[treeMapNode[K, V]]) OptionPtr[treeMapNode[K, V]] {
-	return func(obj Option[*treeMapNode[K, V]]) OptionPtr[treeMapNode[K, V]] {
+	{
+		obj := tree.MatchView()
 		{
-			_tmp_39 := Some[*treeMapNode[K, V]]{}.Unapply(obj)
+			_tmp_39 := _unapply_Some_ee831ca6(obj)
 			_tmp_40 := _tmp_39.IsDefined()
-			var _tmp_41 *treeMapNode[K, V]
-			if _tmp_40 {
-				_tmp_41 = _tmp_39.Get()
-			}
+			_tmp_41 := _tmp_39.Value.Get()
 			_ = _tmp_41
 			node := _tmp_41
 			if _tmp_40 && node.color.Get() == treeMapRed.Get() {
@@ -1067,7 +1063,7 @@ func treeMapBlacken[K comparable, V any](tree OptionPtr[treeMapNode[K, V]]) Opti
 				return tree
 			}
 		}
-	}(tree.MatchView())
+	}
 }
 
 //line collection_immutable/treemap.gala:504
@@ -1643,20 +1639,18 @@ func (m TreeMap[K, V]) Merge(other TreeMap[K, V], f func(V, V) V) TreeMap[K, V] 
 //line collection_immutable/treemap.gala:862
 	return TreeMap_FoldLeftKV[TreeMap[K, V], K, V](other, m, func(acc TreeMap[K, V], k K, v V) TreeMap[K, V] {
 //line collection_immutable/treemap.gala:863
-		return func(obj Option[V]) TreeMap[K, V] {
+		{
+			obj := acc.Get(k)
 			{
-				_tmp_42 := Some[V]{}.Unapply(obj)
+				_tmp_42 := _unapply_Some_ee831ca6(obj)
 				_tmp_43 := _tmp_42.IsDefined()
-				var _tmp_44 V
-				if _tmp_43 {
-					_tmp_44 = _tmp_42.Get()
-				}
+				_tmp_44 := _tmp_42.Value.Get()
 				_ = _tmp_44
 				existing := _tmp_44
 				if _tmp_43 {
 					return acc.Put(k, f(existing, v))
 				} else {
-					_tmp_45 := None[V]{}.Unapply(obj)
+					_tmp_45 := _unapply_None_ee831ca6(obj)
 					if _tmp_45 {
 						return acc.Put(k, v)
 					} else {
@@ -1664,7 +1658,7 @@ func (m TreeMap[K, V]) Merge(other TreeMap[K, V], f func(V, V) V) TreeMap[K, V] 
 					}
 				}
 			}
-		}(acc.Get(k))
+		}
 	})
 }
 
@@ -1841,4 +1835,10 @@ func (m TreeMap[K, V]) SortWith(less func(Tuple[K, V], Tuple[K, V]) bool) Array[
 // SortBy returns an array of key-value tuples sorted by a key extracted from each entry.
 func TreeMap_SortBy[S comparable, K comparable, V any](m TreeMap[K, V], f func(Tuple[K, V]) S) Array[Tuple[K, V]] {
 	return Array_SortBy(m.ToArray(), f)
+}
+func _unapply_Some_ee831ca6[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
+}
+func _unapply_None_ee831ca6[_T0 any](v Option[_T0]) bool {
+	return None[_T0]{}.Unapply(v)
 }

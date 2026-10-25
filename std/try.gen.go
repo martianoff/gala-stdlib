@@ -341,20 +341,18 @@ func (t Try[T]) ToEither() Either[error, T] {
 // FromOption creates a Try from an Option.
 // Returns Success if the Option is Some, Failure with NoSuchElementError if None.
 func FromOption[T any](o Option[T]) Try[T] {
-	return func(obj Option[T]) Try[T] {
+	{
+		obj := o
 		{
-			_tmp_1 := Some[T]{}.Unapply(obj)
+			_tmp_1 := _unapply_Some_cb8598b3(obj)
 			_tmp_2 := _tmp_1.IsDefined()
-			var _tmp_3 T
-			if _tmp_2 {
-				_tmp_3 = _tmp_1.Get()
-			}
+			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
 			v := _tmp_3
 			if _tmp_2 {
 				return Success[T]{}.Apply(v)
 			} else {
-				_tmp_4 := None[T]{}.Unapply(obj)
+				_tmp_4 := _unapply_None_cb8598b3(obj)
 				if _tmp_4 {
 					return Failure[T]{}.Apply(NoSuchElementError{Message: NewImmutable("Option is None")})
 				} else {
@@ -362,7 +360,7 @@ func FromOption[T any](o Option[T]) Try[T] {
 				}
 			}
 		}
-	}(o)
+	}
 }
 
 //line std/try.gala:175
@@ -370,25 +368,20 @@ func FromOption[T any](o Option[T]) Try[T] {
 // FromEitherError creates a Try from an Either[error, T].
 // Returns Success if Right, Failure if Left.
 func FromEitherError[T any](e Either[error, T]) Try[T] {
-	return func(obj Either[error, T]) Try[T] {
+	{
+		obj := e
 		{
-			_tmp_5 := Right[error, T]{}.Unapply(obj)
+			_tmp_5 := _unapply_Right_cb8598b3(obj)
 			_tmp_6 := _tmp_5.IsDefined()
-			var _tmp_7 T
-			if _tmp_6 {
-				_tmp_7 = _tmp_5.Get()
-			}
+			_tmp_7 := _tmp_5.Value.Get()
 			_ = _tmp_7
 			v := _tmp_7
 			if _tmp_6 {
 				return Success[T]{}.Apply(v)
 			} else {
-				_tmp_8 := Left[error, T]{}.Unapply(obj)
+				_tmp_8 := _unapply_Left_cb8598b3(obj)
 				_tmp_9 := _tmp_8.IsDefined()
-				var _tmp_10 error
-				if _tmp_9 {
-					_tmp_10 = _tmp_8.Get()
-				}
+				_tmp_10 := _tmp_8.Value.Get()
 				_ = _tmp_10
 				err := _tmp_10
 				if _tmp_9 {
@@ -398,7 +391,7 @@ func FromEitherError[T any](e Either[error, T]) Try[T] {
 				}
 			}
 		}
-	}(e)
+	}
 }
 
 //line std/try.gala:182
@@ -628,4 +621,16 @@ func GoTry10[A any, B any, C any, D any, E any, F any, G any, H any, I any, J an
 	}
 //line std/try.gala:326
 	return Success[Tuple10[A, B, C, D, E, F, G, H, I, J]]{}.Apply(Tuple10[A, B, C, D, E, F, G, H, I, J]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f), V7: NewImmutable(g), V8: NewImmutable(h), V9: NewImmutable(i), V10: NewImmutable(j)})
+}
+func _unapply_Some_cb8598b3[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
+}
+func _unapply_None_cb8598b3[_T0 any](v Option[_T0]) bool {
+	return None[_T0]{}.Unapply(v)
+}
+func _unapply_Right_cb8598b3[_T0 any, _T1 any](v Either[_T0, _T1]) Option[_T1] {
+	return Right[_T0, _T1]{}.Unapply(v)
+}
+func _unapply_Left_cb8598b3[_T0 any, _T1 any](v Either[_T0, _T1]) Option[_T0] {
+	return Left[_T0, _T1]{}.Unapply(v)
 }

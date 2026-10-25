@@ -697,20 +697,18 @@ func (m *TreeMap[K, V]) Apply(key K) V {
 		panic("TreeMap.Apply: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/treemap.gala:263
-	return func(obj Option[V]) V {
+	{
+		obj := m.Get(key)
 		{
-			_tmp_28 := Some[V]{}.Unapply(obj)
+			_tmp_28 := _unapply_Some_ee831ca6(obj)
 			_tmp_29 := _tmp_28.IsDefined()
-			var _tmp_30 V
-			if _tmp_29 {
-				_tmp_30 = _tmp_28.Get()
-			}
+			_tmp_30 := _tmp_28.Value.Get()
 			_ = _tmp_30
 			v := _tmp_30
 			if _tmp_29 {
 				return v
 			} else {
-				_tmp_31 := None[V]{}.Unapply(obj)
+				_tmp_31 := _unapply_None_ee831ca6(obj)
 				if _tmp_31 {
 					panic(fmt.Sprintf("TreeMap: key not found: %v", key))
 				} else {
@@ -718,7 +716,7 @@ func (m *TreeMap[K, V]) Apply(key K) V {
 				}
 			}
 		}
-	}(m.Get(key))
+	}
 }
 
 //line collection_mutable/treemap.gala:270
@@ -2006,20 +2004,18 @@ func (m *TreeMap[K, V]) Merge(other *TreeMap[K, V], f func(V, V) V) {
 //line collection_mutable/treemap.gala:991
 	other.ForEachKV(func(k K, v V) {
 //line collection_mutable/treemap.gala:992
-		func(obj Option[V]) {
+		func() {
+			obj := m.Get(k)
 			{
-				_tmp_32 := Some[V]{}.Unapply(obj)
+				_tmp_32 := _unapply_Some_ee831ca6(obj)
 				_tmp_33 := _tmp_32.IsDefined()
-				var _tmp_34 V
-				if _tmp_33 {
-					_tmp_34 = _tmp_32.Get()
-				}
+				_tmp_34 := _tmp_32.Value.Get()
 				_ = _tmp_34
 				e := _tmp_34
 				if _tmp_33 {
 					m.Put(k, f(e, v))
 				} else {
-					_tmp_35 := None[V]{}.Unapply(obj)
+					_tmp_35 := _unapply_None_ee831ca6(obj)
 					if _tmp_35 {
 						m.Put(k, v)
 					} else {
@@ -2027,7 +2023,7 @@ func (m *TreeMap[K, V]) Merge(other *TreeMap[K, V], f func(V, V) V) {
 					}
 				}
 			}
-		}(m.Get(k))
+		}()
 	})
 }
 
@@ -2288,4 +2284,10 @@ func TreeMap_SortBy[S comparable, K comparable, V any](m *TreeMap[K, V], f func(
 		panic("TreeMap.SortBy: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
 	return Array_SortBy(m.ToArray(), f)
+}
+func _unapply_Some_ee831ca6[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
+}
+func _unapply_None_ee831ca6[_T0 any](v Option[_T0]) bool {
+	return None[_T0]{}.Unapply(v)
 }

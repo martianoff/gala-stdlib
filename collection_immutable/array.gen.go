@@ -1411,25 +1411,20 @@ func Array_PartitionMap[A any, B any, T any](a Array[T], f func(T) Either[A, B])
 //line collection_immutable/array.gala:876
 	for i := 0; i < a.length.Get(); i++ {
 //line collection_immutable/array.gala:877
-		func(obj Either[A, B]) {
+		func() {
+			obj := f(a.Get(i))
 			{
-				_tmp_1 := Left[A, B]{}.Unapply(obj)
+				_tmp_1 := _unapply_Left_2e41107b(obj)
 				_tmp_2 := _tmp_1.IsDefined()
-				var _tmp_3 A
-				if _tmp_2 {
-					_tmp_3 = _tmp_1.Get()
-				}
+				_tmp_3 := _tmp_1.Value.Get()
 				_ = _tmp_3
 				l := _tmp_3
 				if _tmp_2 {
 					leftBuilder.Add(l)
 				} else {
-					_tmp_4 := Right[A, B]{}.Unapply(obj)
+					_tmp_4 := _unapply_Right_2e41107b(obj)
 					_tmp_5 := _tmp_4.IsDefined()
-					var _tmp_6 B
-					if _tmp_5 {
-						_tmp_6 = _tmp_4.Get()
-					}
+					_tmp_6 := _tmp_4.Value.Get()
 					_ = _tmp_6
 					r := _tmp_6
 					if _tmp_5 {
@@ -1439,7 +1434,7 @@ func Array_PartitionMap[A any, B any, T any](a Array[T], f func(T) Either[A, B])
 					}
 				}
 			}
-		}(f(a.Get(i)))
+		}()
 	}
 //line collection_immutable/array.gala:882
 	return Tuple[Array[A], Array[B]]{V1: NewImmutable(leftBuilder.Result()), V2: NewImmutable(rightBuilder.Result())}
@@ -1581,20 +1576,18 @@ func (a Array[T]) ToGoSlice() []T {
 //line collection_immutable/array.gala:962
 	var withPrefix = go_interop.SliceAppendAll(go_interop.SliceWithCapacity[T](a.length.Get()), a.prefix.Get())
 //line collection_immutable/array.gala:963
-	return func(obj Option[*arrayNode[T]]) []T {
+	{
+		obj := a.root.MatchView()
 		{
-			_tmp_7 := Some[*arrayNode[T]]{}.Unapply(obj)
+			_tmp_7 := _unapply_Some_2e41107b(obj)
 			_tmp_8 := _tmp_7.IsDefined()
-			var _tmp_9 *arrayNode[T]
-			if _tmp_8 {
-				_tmp_9 = _tmp_7.Get()
-			}
+			_tmp_9 := _tmp_7.Value.Get()
 			_ = _tmp_9
 			root := _tmp_9
 			if _tmp_8 {
 				return appendLeaves(withPrefix, root)
 			} else {
-				_tmp_10 := None[*arrayNode[T]]{}.Unapply(obj)
+				_tmp_10 := _unapply_None_2e41107b(obj)
 				if _tmp_10 {
 					return withPrefix
 				} else {
@@ -1602,7 +1595,7 @@ func (a Array[T]) ToGoSlice() []T {
 				}
 			}
 		}
-	}(a.root.MatchView())
+	}
 }
 
 //line collection_immutable/array.gala:968
@@ -1850,4 +1843,16 @@ func (ane ArrayNonEmpty) Unapply(a any) Option[any] {
 			}
 		}
 	}(a)
+}
+func _unapply_Left_2e41107b[_T0 any, _T1 any](v Either[_T0, _T1]) Option[_T0] {
+	return Left[_T0, _T1]{}.Unapply(v)
+}
+func _unapply_Right_2e41107b[_T0 any, _T1 any](v Either[_T0, _T1]) Option[_T1] {
+	return Right[_T0, _T1]{}.Unapply(v)
+}
+func _unapply_Some_2e41107b[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
+}
+func _unapply_None_2e41107b[_T0 any](v Option[_T0]) bool {
+	return None[_T0]{}.Unapply(v)
 }

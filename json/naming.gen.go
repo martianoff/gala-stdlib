@@ -161,7 +161,8 @@ func NewNaming() Naming {
 
 // ApplyNaming converts a single PascalCase field name using the given naming strategy.
 func ApplyNaming(fieldName string, naming Naming) string {
-	return func(obj Naming) string {
+	{
+		obj := naming
 		{
 			_tmp_1 := CamelCase{}.Unapply(obj)
 			if _tmp_1 {
@@ -185,7 +186,7 @@ func ApplyNaming(fieldName string, naming Naming) string {
 				}
 			}
 		}
-	}(naming)
+	}
 }
 
 //line json/naming.gala:32

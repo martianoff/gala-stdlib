@@ -519,20 +519,18 @@ func (m *HashMap[K, V]) Apply(key K) V {
 		panic("HashMap.Apply: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/hashmap.gala:266
-	return func(obj Option[V]) V {
+	{
+		obj := m.Get(key)
 		{
-			_tmp_16 := Some[V]{}.Unapply(obj)
+			_tmp_16 := _unapply_Some_7e6d5682(obj)
 			_tmp_17 := _tmp_16.IsDefined()
-			var _tmp_18 V
-			if _tmp_17 {
-				_tmp_18 = _tmp_16.Get()
-			}
+			_tmp_18 := _tmp_16.Value.Get()
 			_ = _tmp_18
 			v := _tmp_18
 			if _tmp_17 {
 				return v
 			} else {
-				_tmp_19 := None[V]{}.Unapply(obj)
+				_tmp_19 := _unapply_None_7e6d5682(obj)
 				if _tmp_19 {
 					panic(fmt.Sprintf("HashMap: key not found: %v", key))
 				} else {
@@ -540,7 +538,7 @@ func (m *HashMap[K, V]) Apply(key K) V {
 				}
 			}
 		}
-	}(m.Get(key))
+	}
 }
 
 //line collection_mutable/hashmap.gala:271
@@ -1140,20 +1138,18 @@ func (m *HashMap[K, V]) Merge(other *HashMap[K, V], f func(V, V) V) {
 //line collection_mutable/hashmap.gala:583
 	other.ForEachKV(func(k K, v V) {
 //line collection_mutable/hashmap.gala:584
-		func(obj Option[V]) {
+		func() {
+			obj := m.Get(k)
 			{
-				_tmp_20 := Some[V]{}.Unapply(obj)
+				_tmp_20 := _unapply_Some_7e6d5682(obj)
 				_tmp_21 := _tmp_20.IsDefined()
-				var _tmp_22 V
-				if _tmp_21 {
-					_tmp_22 = _tmp_20.Get()
-				}
+				_tmp_22 := _tmp_20.Value.Get()
 				_ = _tmp_22
 				e := _tmp_22
 				if _tmp_21 {
 					m.Put(k, f(e, v))
 				} else {
-					_tmp_23 := None[V]{}.Unapply(obj)
+					_tmp_23 := _unapply_None_7e6d5682(obj)
 					if _tmp_23 {
 						m.Put(k, v)
 					} else {
@@ -1161,7 +1157,7 @@ func (m *HashMap[K, V]) Merge(other *HashMap[K, V], f func(V, V) V) {
 					}
 				}
 			}
-		}(m.Get(k))
+		}()
 	})
 }
 
@@ -1209,20 +1205,18 @@ func (m *HashMap[K, V]) Head() Tuple[K, V] {
 		panic("HashMap.Head: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/hashmap.gala:612
-	return func(obj Option[Tuple[K, V]]) Tuple[K, V] {
+	{
+		obj := m.HeadOption()
 		{
-			_tmp_24 := Some[Tuple[K, V]]{}.Unapply(obj)
+			_tmp_24 := _unapply_Some_7e6d5682(obj)
 			_tmp_25 := _tmp_24.IsDefined()
-			var _tmp_26 Tuple[K, V]
-			if _tmp_25 {
-				_tmp_26 = _tmp_24.Get()
-			}
+			_tmp_26 := _tmp_24.Value.Get()
 			_ = _tmp_26
 			v := _tmp_26
 			if _tmp_25 {
 				return v
 			} else {
-				_tmp_27 := None[Tuple[K, V]]{}.Unapply(obj)
+				_tmp_27 := _unapply_None_7e6d5682(obj)
 				if _tmp_27 {
 					panic("HashMap: head of empty map")
 				} else {
@@ -1230,7 +1224,7 @@ func (m *HashMap[K, V]) Head() Tuple[K, V] {
 				}
 			}
 		}
-	}(m.HeadOption())
+	}
 }
 
 //line collection_mutable/hashmap.gala:617
@@ -1324,4 +1318,10 @@ func HashMapFromGoMap[K comparable, V any](m map[K]V) *HashMap[K, V] {
 	}
 //line collection_mutable/hashmap.gala:670
 	return result
+}
+func _unapply_Some_7e6d5682[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
+}
+func _unapply_None_7e6d5682[_T0 any](v Option[_T0]) bool {
+	return None[_T0]{}.Unapply(v)
 }

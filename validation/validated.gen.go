@@ -106,24 +106,19 @@ func InvalidOf[E any, A any](err E) Validated[E, A] {
 
 // IsValid returns true if this is a Valid.
 func (v Validated[E, A]) IsValid() bool {
-	return func(obj Validated[E, A]) bool {
+	{
+		obj := v
 		{
-			_tmp_1 := Valid[E, A]{}.Unapply(obj)
+			_tmp_1 := _unapply_Valid_e1455672(obj)
 			_tmp_2 := _tmp_1.IsDefined()
-			var _tmp_3 A
-			if _tmp_2 {
-				_tmp_3 = _tmp_1.Get()
-			}
+			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
 			if _tmp_2 {
 				return true
 			} else {
-				_tmp_4 := Invalid[E, A]{}.Unapply(obj)
+				_tmp_4 := _unapply_Invalid_e1455672(obj)
 				_tmp_5 := _tmp_4.IsDefined()
-				var _tmp_6 Array[E]
-				if _tmp_5 {
-					_tmp_6 = _tmp_4.Get()
-				}
+				_tmp_6 := _tmp_4.Value.Get()
 				_ = _tmp_6
 				if _tmp_5 {
 					return false
@@ -132,7 +127,7 @@ func (v Validated[E, A]) IsValid() bool {
 				}
 			}
 		}
-	}(v)
+	}
 }
 
 //line validation/validated.gala:28
@@ -146,25 +141,20 @@ func (v Validated[E, A]) IsInvalid() bool {
 
 // GetOrElse returns the valid value, or defaultValue if invalid.
 func (v Validated[E, A]) GetOrElse(defaultValue A) A {
-	return func(obj Validated[E, A]) A {
+	{
+		obj := v
 		{
-			_tmp_7 := Valid[E, A]{}.Unapply(obj)
+			_tmp_7 := _unapply_Valid_e1455672(obj)
 			_tmp_8 := _tmp_7.IsDefined()
-			var _tmp_9 A
-			if _tmp_8 {
-				_tmp_9 = _tmp_7.Get()
-			}
+			_tmp_9 := _tmp_7.Value.Get()
 			_ = _tmp_9
 			a := _tmp_9
 			if _tmp_8 {
 				return a
 			} else {
-				_tmp_10 := Invalid[E, A]{}.Unapply(obj)
+				_tmp_10 := _unapply_Invalid_e1455672(obj)
 				_tmp_11 := _tmp_10.IsDefined()
-				var _tmp_12 Array[E]
-				if _tmp_11 {
-					_tmp_12 = _tmp_10.Get()
-				}
+				_tmp_12 := _tmp_10.Value.Get()
 				_ = _tmp_12
 				if _tmp_11 {
 					return defaultValue
@@ -173,31 +163,26 @@ func (v Validated[E, A]) GetOrElse(defaultValue A) A {
 				}
 			}
 		}
-	}(v)
+	}
 }
 
 //line validation/validated.gala:37
 
 // Errors returns the accumulated errors, or an empty Array if valid.
 func (v Validated[E, A]) GetErrors() Array[E] {
-	return func(obj Validated[E, A]) Array[E] {
+	{
+		obj := v
 		{
-			_tmp_13 := Valid[E, A]{}.Unapply(obj)
+			_tmp_13 := _unapply_Valid_e1455672(obj)
 			_tmp_14 := _tmp_13.IsDefined()
-			var _tmp_15 A
-			if _tmp_14 {
-				_tmp_15 = _tmp_13.Get()
-			}
+			_tmp_15 := _tmp_13.Value.Get()
 			_ = _tmp_15
 			if _tmp_14 {
 				return ArrayOf[E]()
 			} else {
-				_tmp_16 := Invalid[E, A]{}.Unapply(obj)
+				_tmp_16 := _unapply_Invalid_e1455672(obj)
 				_tmp_17 := _tmp_16.IsDefined()
-				var _tmp_18 Array[E]
-				if _tmp_17 {
-					_tmp_18 = _tmp_16.Get()
-				}
+				_tmp_18 := _tmp_16.Value.Get()
 				_ = _tmp_18
 				errs := _tmp_18
 				if _tmp_17 {
@@ -207,32 +192,27 @@ func (v Validated[E, A]) GetErrors() Array[E] {
 				}
 			}
 		}
-	}(v)
+	}
 }
 
 //line validation/validated.gala:43
 
 // Map transforms the valid value; an Invalid passes through unchanged.
 func Validated_Map[B any, E any, A any](v Validated[E, A], f func(A) B) Validated[E, B] {
-	return func(obj Validated[E, A]) Validated[E, B] {
+	{
+		obj := v
 		{
-			_tmp_19 := Valid[E, A]{}.Unapply(obj)
+			_tmp_19 := _unapply_Valid_e1455672(obj)
 			_tmp_20 := _tmp_19.IsDefined()
-			var _tmp_21 A
-			if _tmp_20 {
-				_tmp_21 = _tmp_19.Get()
-			}
+			_tmp_21 := _tmp_19.Value.Get()
 			_ = _tmp_21
 			a := _tmp_21
 			if _tmp_20 {
 				return Valid[E, B]{}.Apply(f(a))
 			} else {
-				_tmp_22 := Invalid[E, A]{}.Unapply(obj)
+				_tmp_22 := _unapply_Invalid_e1455672(obj)
 				_tmp_23 := _tmp_22.IsDefined()
-				var _tmp_24 Array[E]
-				if _tmp_23 {
-					_tmp_24 = _tmp_22.Get()
-				}
+				_tmp_24 := _tmp_22.Value.Get()
 				_ = _tmp_24
 				errs := _tmp_24
 				if _tmp_23 {
@@ -242,7 +222,7 @@ func Validated_Map[B any, E any, A any](v Validated[E, A], f func(A) B) Validate
 				}
 			}
 		}
-	}(v)
+	}
 }
 
 //line validation/validated.gala:49
@@ -250,25 +230,20 @@ func Validated_Map[B any, E any, A any](v Validated[E, A], f func(A) B) Validate
 // FlatMap is the monadic (fail-fast) bind — it does NOT accumulate. Error
 // accumulation is the job of Zip2/Zip3 (reached through `also`).
 func Validated_FlatMap[B any, E any, A any](v Validated[E, A], f func(A) Validated[E, B]) Validated[E, B] {
-	return func(obj Validated[E, A]) Validated[E, B] {
+	{
+		obj := v
 		{
-			_tmp_25 := Valid[E, A]{}.Unapply(obj)
+			_tmp_25 := _unapply_Valid_e1455672(obj)
 			_tmp_26 := _tmp_25.IsDefined()
-			var _tmp_27 A
-			if _tmp_26 {
-				_tmp_27 = _tmp_25.Get()
-			}
+			_tmp_27 := _tmp_25.Value.Get()
 			_ = _tmp_27
 			a := _tmp_27
 			if _tmp_26 {
 				return f(a)
 			} else {
-				_tmp_28 := Invalid[E, A]{}.Unapply(obj)
+				_tmp_28 := _unapply_Invalid_e1455672(obj)
 				_tmp_29 := _tmp_28.IsDefined()
-				var _tmp_30 Array[E]
-				if _tmp_29 {
-					_tmp_30 = _tmp_28.Get()
-				}
+				_tmp_30 := _tmp_28.Value.Get()
 				_ = _tmp_30
 				errs := _tmp_30
 				if _tmp_29 {
@@ -278,7 +253,7 @@ func Validated_FlatMap[B any, E any, A any](v Validated[E, A], f func(A) Validat
 				}
 			}
 		}
-	}(v)
+	}
 }
 
 //line validation/validated.gala:63
@@ -510,25 +485,20 @@ func Validated_Zip10[B any, C any, D any, F any, G any, H any, I any, J any, K a
 
 // ToEither converts to Either: Valid → Right, Invalid → Left(errors).
 func (v Validated[E, A]) ToEither() Either[Array[E], A] {
-	return func(obj Validated[E, A]) Either[Array[E], A] {
+	{
+		obj := v
 		{
-			_tmp_31 := Valid[E, A]{}.Unapply(obj)
+			_tmp_31 := _unapply_Valid_e1455672(obj)
 			_tmp_32 := _tmp_31.IsDefined()
-			var _tmp_33 A
-			if _tmp_32 {
-				_tmp_33 = _tmp_31.Get()
-			}
+			_tmp_33 := _tmp_31.Value.Get()
 			_ = _tmp_33
 			a := _tmp_33
 			if _tmp_32 {
 				return Right[Array[E], A]{}.Apply(a)
 			} else {
-				_tmp_34 := Invalid[E, A]{}.Unapply(obj)
+				_tmp_34 := _unapply_Invalid_e1455672(obj)
 				_tmp_35 := _tmp_34.IsDefined()
-				var _tmp_36 Array[E]
-				if _tmp_35 {
-					_tmp_36 = _tmp_34.Get()
-				}
+				_tmp_36 := _tmp_34.Value.Get()
 				_ = _tmp_36
 				errs := _tmp_36
 				if _tmp_35 {
@@ -538,5 +508,11 @@ func (v Validated[E, A]) ToEither() Either[Array[E], A] {
 				}
 			}
 		}
-	}(v)
+	}
+}
+func _unapply_Valid_e1455672[_T0 any, _T1 any](v Validated[_T0, _T1]) Option[_T1] {
+	return Valid[_T0, _T1]{}.Unapply(v)
+}
+func _unapply_Invalid_e1455672[_T0 any, _T1 any](v Validated[_T0, _T1]) Option[Array[_T0]] {
+	return Invalid[_T0, _T1]{}.Unapply(v)
 }

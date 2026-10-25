@@ -620,25 +620,20 @@ func (f Future[T]) OnSuccess(callback func(T)) {
 //line concurrent/future.gala:318
 	f.OnComplete(func(r Try[T]) {
 //line concurrent/future.gala:319
-		func(obj Try[T]) {
+		func() {
+			obj := r
 			{
-				_tmp_1 := Success[T]{}.Unapply(obj)
+				_tmp_1 := _unapply_Success_3efd068b(obj)
 				_tmp_2 := _tmp_1.IsDefined()
-				var _tmp_3 T
-				if _tmp_2 {
-					_tmp_3 = _tmp_1.Get()
-				}
+				_tmp_3 := _tmp_1.Value.Get()
 				_ = _tmp_3
 				v := _tmp_3
 				if _tmp_2 {
 					callback(v)
 				} else {
-					_tmp_4 := Failure[T]{}.Unapply(obj)
+					_tmp_4 := _unapply_Failure_3efd068b(obj)
 					_tmp_5 := _tmp_4.IsDefined()
-					var _tmp_6 error
-					if _tmp_5 {
-						_tmp_6 = _tmp_4.Get()
-					}
+					_tmp_6 := _tmp_4.Value.Get()
 					_ = _tmp_6
 					if _tmp_5 {
 					} else {
@@ -646,7 +641,7 @@ func (f Future[T]) OnSuccess(callback func(T)) {
 					}
 				}
 			}
-		}(r)
+		}()
 	})
 }
 
@@ -658,23 +653,18 @@ func (f Future[T]) OnFailure(callback func(error)) {
 //line concurrent/future.gala:329
 	f.OnComplete(func(r Try[T]) {
 //line concurrent/future.gala:330
-		func(obj Try[T]) {
+		func() {
+			obj := r
 			{
-				_tmp_7 := Success[T]{}.Unapply(obj)
+				_tmp_7 := _unapply_Success_3efd068b(obj)
 				_tmp_8 := _tmp_7.IsDefined()
-				var _tmp_9 T
-				if _tmp_8 {
-					_tmp_9 = _tmp_7.Get()
-				}
+				_tmp_9 := _tmp_7.Value.Get()
 				_ = _tmp_9
 				if _tmp_8 {
 				} else {
-					_tmp_10 := Failure[T]{}.Unapply(obj)
+					_tmp_10 := _unapply_Failure_3efd068b(obj)
 					_tmp_11 := _tmp_10.IsDefined()
-					var _tmp_12 error
-					if _tmp_11 {
-						_tmp_12 = _tmp_10.Get()
-					}
+					_tmp_12 := _tmp_10.Value.Get()
 					_ = _tmp_12
 					e := _tmp_12
 					if _tmp_11 {
@@ -684,7 +674,7 @@ func (f Future[T]) OnFailure(callback func(error)) {
 					}
 				}
 			}
-		}(r)
+		}()
 	})
 }
 
@@ -732,14 +722,12 @@ func Future_Map[U any, T any](f Future[T], fn func(T) U) Future[U] {
 func Future_FlatMap[U any, T any](f Future[T], fn func(T) Future[U]) Future[U] {
 	return Future_derive[U, T](f, func(p Promise[U], r Try[T]) {
 //line concurrent/future.gala:365
-		func(obj Try[T]) {
+		func() {
+			obj := r
 			{
-				_tmp_13 := Success[T]{}.Unapply(obj)
+				_tmp_13 := _unapply_Success_3efd068b(obj)
 				_tmp_14 := _tmp_13.IsDefined()
-				var _tmp_15 T
-				if _tmp_14 {
-					_tmp_15 = _tmp_13.Get()
-				}
+				_tmp_15 := _tmp_13.Value.Get()
 				_ = _tmp_15
 				v := _tmp_15
 				if _tmp_14 {
@@ -748,12 +736,9 @@ func Future_FlatMap[U any, T any](f Future[T], fn func(T) Future[U]) Future[U] {
 						p.Complete(innerResult)
 					})
 				} else {
-					_tmp_16 := Failure[T]{}.Unapply(obj)
+					_tmp_16 := _unapply_Failure_3efd068b(obj)
 					_tmp_17 := _tmp_16.IsDefined()
-					var _tmp_18 error
-					if _tmp_17 {
-						_tmp_18 = _tmp_16.Get()
-					}
+					_tmp_18 := _tmp_16.Value.Get()
 					_ = _tmp_18
 					e := _tmp_18
 					if _tmp_17 {
@@ -763,7 +748,7 @@ func Future_FlatMap[U any, T any](f Future[T], fn func(T) Future[U]) Future[U] {
 					}
 				}
 			}
-		}(r)
+		}()
 	})
 }
 
@@ -801,25 +786,20 @@ func (f Future[T]) Recover(pf func(error) T) Future[T] {
 func (f Future[T]) RecoverWith(pf func(error) Future[T]) Future[T] {
 	return Future_derive[T, T](f, func(p Promise[T], r Try[T]) {
 //line concurrent/future.gala:392
-		func(obj Try[T]) {
+		func() {
+			obj := r
 			{
-				_tmp_19 := Success[T]{}.Unapply(obj)
+				_tmp_19 := _unapply_Success_3efd068b(obj)
 				_tmp_20 := _tmp_19.IsDefined()
-				var _tmp_21 T
-				if _tmp_20 {
-					_tmp_21 = _tmp_19.Get()
-				}
+				_tmp_21 := _tmp_19.Value.Get()
 				_ = _tmp_21
 				v := _tmp_21
 				if _tmp_20 {
 					p.Success(v)
 				} else {
-					_tmp_22 := Failure[T]{}.Unapply(obj)
+					_tmp_22 := _unapply_Failure_3efd068b(obj)
 					_tmp_23 := _tmp_22.IsDefined()
-					var _tmp_24 error
-					if _tmp_23 {
-						_tmp_24 = _tmp_22.Get()
-					}
+					_tmp_24 := _tmp_22.Value.Get()
 					_ = _tmp_24
 					e := _tmp_24
 					if _tmp_23 {
@@ -832,7 +812,7 @@ func (f Future[T]) RecoverWith(pf func(error) Future[T]) Future[T] {
 					}
 				}
 			}
-		}(r)
+		}()
 	})
 }
 
@@ -843,25 +823,20 @@ func (f Future[T]) RecoverWith(pf func(error) Future[T]) Future[T] {
 func Future_Transform[U any, T any](f Future[T], s func(T) Try[U], fn func(error) Try[U]) Future[U] {
 	return Future_derive[U, T](f, func(p Promise[U], r Try[T]) {
 //line concurrent/future.gala:404
-		func(obj Try[T]) {
+		func() {
+			obj := r
 			{
-				_tmp_25 := Success[T]{}.Unapply(obj)
+				_tmp_25 := _unapply_Success_3efd068b(obj)
 				_tmp_26 := _tmp_25.IsDefined()
-				var _tmp_27 T
-				if _tmp_26 {
-					_tmp_27 = _tmp_25.Get()
-				}
+				_tmp_27 := _tmp_25.Value.Get()
 				_ = _tmp_27
 				v := _tmp_27
 				if _tmp_26 {
 					p.Complete(s(v))
 				} else {
-					_tmp_28 := Failure[T]{}.Unapply(obj)
+					_tmp_28 := _unapply_Failure_3efd068b(obj)
 					_tmp_29 := _tmp_28.IsDefined()
-					var _tmp_30 error
-					if _tmp_29 {
-						_tmp_30 = _tmp_28.Get()
-					}
+					_tmp_30 := _tmp_28.Value.Get()
 					_ = _tmp_30
 					e := _tmp_30
 					if _tmp_29 {
@@ -871,7 +846,7 @@ func Future_Transform[U any, T any](f Future[T], s func(T) Try[U], fn func(error
 					}
 				}
 			}
-		}(r)
+		}()
 	})
 }
 
@@ -882,14 +857,12 @@ func Future_Transform[U any, T any](f Future[T], s func(T) Try[U], fn func(error
 func Future_TransformWith[U any, T any](f Future[T], s func(T) Future[U], fn func(error) Future[U]) Future[U] {
 	return Future_derive[U, T](f, func(p Promise[U], r Try[T]) {
 //line concurrent/future.gala:414
-		func(obj Try[T]) {
+		func() {
+			obj := r
 			{
-				_tmp_31 := Success[T]{}.Unapply(obj)
+				_tmp_31 := _unapply_Success_3efd068b(obj)
 				_tmp_32 := _tmp_31.IsDefined()
-				var _tmp_33 T
-				if _tmp_32 {
-					_tmp_33 = _tmp_31.Get()
-				}
+				_tmp_33 := _tmp_31.Value.Get()
 				_ = _tmp_33
 				v := _tmp_33
 				if _tmp_32 {
@@ -898,12 +871,9 @@ func Future_TransformWith[U any, T any](f Future[T], s func(T) Future[U], fn fun
 						p.Complete(res)
 					})
 				} else {
-					_tmp_34 := Failure[T]{}.Unapply(obj)
+					_tmp_34 := _unapply_Failure_3efd068b(obj)
 					_tmp_35 := _tmp_34.IsDefined()
-					var _tmp_36 error
-					if _tmp_35 {
-						_tmp_36 = _tmp_34.Get()
-					}
+					_tmp_36 := _tmp_34.Value.Get()
 					_ = _tmp_36
 					e := _tmp_36
 					if _tmp_35 {
@@ -916,7 +886,7 @@ func Future_TransformWith[U any, T any](f Future[T], s func(T) Future[U], fn fun
 					}
 				}
 			}
-		}(r)
+		}()
 	})
 }
 
@@ -1181,14 +1151,12 @@ func Sequence[T any](futures Array[Future[T]]) Future[Array[T]] {
 //line concurrent/future.gala:565
 			if !failed {
 //line concurrent/future.gala:566
-				func(obj Try[T]) {
+				func() {
+					obj := r
 					{
-						_tmp_37 := Success[T]{}.Unapply(obj)
+						_tmp_37 := _unapply_Success_3efd068b(obj)
 						_tmp_38 := _tmp_37.IsDefined()
-						var _tmp_39 T
-						if _tmp_38 {
-							_tmp_39 = _tmp_37.Get()
-						}
+						_tmp_39 := _tmp_37.Value.Get()
 						_ = _tmp_39
 						v := _tmp_39
 						if _tmp_38 {
@@ -1209,12 +1177,9 @@ func Sequence[T any](futures Array[Future[T]]) Future[Array[T]] {
 								p.Success(result)
 							}
 						} else {
-							_tmp_40 := Failure[T]{}.Unapply(obj)
+							_tmp_40 := _unapply_Failure_3efd068b(obj)
 							_tmp_41 := _tmp_40.IsDefined()
-							var _tmp_42 error
-							if _tmp_41 {
-								_tmp_42 = _tmp_40.Get()
-							}
+							_tmp_42 := _tmp_40.Value.Get()
 							_ = _tmp_42
 							e := _tmp_42
 							if _tmp_41 {
@@ -1230,7 +1195,7 @@ func Sequence[T any](futures Array[Future[T]]) Future[Array[T]] {
 							}
 						}
 					}
-				}(r)
+				}()
 			}
 //line concurrent/future.gala:586
 			mu.Unlock()
@@ -1410,25 +1375,20 @@ func (_ Succeeded[T]) IsSucceeded() bool {
 
 // Unapply awaits the Future and extracts its value if successful.
 func (s Succeeded[T]) Unapply(f Future[T]) Option[T] {
-	return func(obj Try[T]) Option[T] {
+	{
+		obj := f.Await()
 		{
-			_tmp_43 := Success[T]{}.Unapply(obj)
+			_tmp_43 := _unapply_Success_3efd068b(obj)
 			_tmp_44 := _tmp_43.IsDefined()
-			var _tmp_45 T
-			if _tmp_44 {
-				_tmp_45 = _tmp_43.Get()
-			}
+			_tmp_45 := _tmp_43.Value.Get()
 			_ = _tmp_45
 			v := _tmp_45
 			if _tmp_44 {
 				return Some[T]{}.Apply(v)
 			} else {
-				_tmp_46 := Failure[T]{}.Unapply(obj)
+				_tmp_46 := _unapply_Failure_3efd068b(obj)
 				_tmp_47 := _tmp_46.IsDefined()
-				var _tmp_48 error
-				if _tmp_47 {
-					_tmp_48 = _tmp_46.Get()
-				}
+				_tmp_48 := _tmp_46.Value.Get()
 				_ = _tmp_48
 				if _tmp_47 {
 					return None[T]{}.Apply()
@@ -1437,7 +1397,7 @@ func (s Succeeded[T]) Unapply(f Future[T]) Option[T] {
 				}
 			}
 		}
-	}(f.Await())
+	}
 }
 
 //line concurrent/future.gala:693
@@ -1474,24 +1434,19 @@ func (_ Failed[T]) IsFailed() bool {
 
 // Unapply awaits the Future and extracts its error if failed.
 func (fa Failed[T]) Unapply(f Future[T]) Option[error] {
-	return func(obj Try[T]) Option[error] {
+	{
+		obj := f.Await()
 		{
-			_tmp_49 := Success[T]{}.Unapply(obj)
+			_tmp_49 := _unapply_Success_3efd068b(obj)
 			_tmp_50 := _tmp_49.IsDefined()
-			var _tmp_51 T
-			if _tmp_50 {
-				_tmp_51 = _tmp_49.Get()
-			}
+			_tmp_51 := _tmp_49.Value.Get()
 			_ = _tmp_51
 			if _tmp_50 {
 				return None[error]{}.Apply()
 			} else {
-				_tmp_52 := Failure[T]{}.Unapply(obj)
+				_tmp_52 := _unapply_Failure_3efd068b(obj)
 				_tmp_53 := _tmp_52.IsDefined()
-				var _tmp_54 error
-				if _tmp_53 {
-					_tmp_54 = _tmp_52.Get()
-				}
+				_tmp_54 := _tmp_52.Value.Get()
 				_ = _tmp_54
 				e := _tmp_54
 				if _tmp_53 {
@@ -1501,7 +1456,7 @@ func (fa Failed[T]) Unapply(f Future[T]) Option[error] {
 				}
 			}
 		}
-	}(f.Await())
+	}
 }
 
 //line concurrent/future.gala:712
@@ -1539,25 +1494,20 @@ func (_ AllSucceeded[T]) IsAllSucceeded() bool {
 // Unapply sequences the Futures and extracts all values if all succeed.
 func (a AllSucceeded[T]) Unapply(futures Array[Future[T]]) Option[Array[T]] {
 //line concurrent/future.gala:727
-	return func(obj Try[Array[T]]) Option[Array[T]] {
+	{
+		obj := Sequence[T](futures).Await()
 		{
-			_tmp_55 := Success[Array[T]]{}.Unapply(obj)
+			_tmp_55 := _unapply_Success_3efd068b(obj)
 			_tmp_56 := _tmp_55.IsDefined()
-			var _tmp_57 Array[T]
-			if _tmp_56 {
-				_tmp_57 = _tmp_55.Get()
-			}
+			_tmp_57 := _tmp_55.Value.Get()
 			_ = _tmp_57
 			v := _tmp_57
 			if _tmp_56 {
 				return Some[Array[T]]{}.Apply(v)
 			} else {
-				_tmp_58 := Failure[Array[T]]{}.Unapply(obj)
+				_tmp_58 := _unapply_Failure_3efd068b(obj)
 				_tmp_59 := _tmp_58.IsDefined()
-				var _tmp_60 error
-				if _tmp_59 {
-					_tmp_60 = _tmp_58.Get()
-				}
+				_tmp_60 := _tmp_58.Value.Get()
 				_ = _tmp_60
 				if _tmp_59 {
 					return None[Array[T]]{}.Apply()
@@ -1566,7 +1516,7 @@ func (a AllSucceeded[T]) Unapply(futures Array[Future[T]]) Option[Array[T]] {
 				}
 			}
 		}
-	}(Sequence[T](futures).Await())
+	}
 }
 
 //line concurrent/future.gala:731
@@ -1604,24 +1554,19 @@ func (_ AnyFailed[T]) IsAnyFailed() bool {
 // Unapply returns the first error if any Future in the sequence fails.
 func (a AnyFailed[T]) Unapply(futures Array[Future[T]]) Option[error] {
 //line concurrent/future.gala:746
-	return func(obj Try[Array[T]]) Option[error] {
+	{
+		obj := Sequence[T](futures).Await()
 		{
-			_tmp_61 := Success[Array[T]]{}.Unapply(obj)
+			_tmp_61 := _unapply_Success_3efd068b(obj)
 			_tmp_62 := _tmp_61.IsDefined()
-			var _tmp_63 Array[T]
-			if _tmp_62 {
-				_tmp_63 = _tmp_61.Get()
-			}
+			_tmp_63 := _tmp_61.Value.Get()
 			_ = _tmp_63
 			if _tmp_62 {
 				return None[error]{}.Apply()
 			} else {
-				_tmp_64 := Failure[Array[T]]{}.Unapply(obj)
+				_tmp_64 := _unapply_Failure_3efd068b(obj)
 				_tmp_65 := _tmp_64.IsDefined()
-				var _tmp_66 error
-				if _tmp_65 {
-					_tmp_66 = _tmp_64.Get()
-				}
+				_tmp_66 := _tmp_64.Value.Get()
 				_ = _tmp_66
 				e := _tmp_66
 				if _tmp_65 {
@@ -1631,7 +1576,13 @@ func (a AnyFailed[T]) Unapply(futures Array[Future[T]]) Option[error] {
 				}
 			}
 		}
-	}(Sequence[T](futures).Await())
+	}
+}
+func _unapply_Success_3efd068b[_T0 any](v Try[_T0]) Option[_T0] {
+	return Success[_T0]{}.Unapply(v)
+}
+func _unapply_Failure_3efd068b[_T0 any](v Try[_T0]) Option[error] {
+	return Failure[_T0]{}.Unapply(v)
 }
 
 type StructMeta_CancellationError struct {

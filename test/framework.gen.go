@@ -144,25 +144,20 @@ func runTest(t T, f func(T) T) T {
 		return f(t)
 	})
 //line test/framework.gala:84
-	return func(obj std.Try[T]) T {
+	{
+		obj := result
 		{
-			_tmp_1 := std.Success[T]{}.Unapply(obj)
+			_tmp_1 := _unapply_std_Success_3cfc90cc(obj)
 			_tmp_2 := _tmp_1.IsDefined()
-			var _tmp_3 T
-			if _tmp_2 {
-				_tmp_3 = _tmp_1.Get()
-			}
+			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
 			v := _tmp_3
 			if _tmp_2 {
 				return v
 			} else {
-				_tmp_4 := std.Failure[T]{}.Unapply(obj)
+				_tmp_4 := _unapply_std_Failure_3cfc90cc(obj)
 				_tmp_5 := _tmp_4.IsDefined()
-				var _tmp_6 error
-				if _tmp_5 {
-					_tmp_6 = _tmp_4.Get()
-				}
+				_tmp_6 := _tmp_4.Value.Get()
 				_ = _tmp_6
 				e := _tmp_6
 				if _tmp_5 {
@@ -172,7 +167,7 @@ func runTest(t T, f func(T) T) T {
 				}
 			}
 		}
-	}(result)
+	}
 }
 
 //line test/framework.gala:93
@@ -274,6 +269,12 @@ func RunTests(tests ...TestFunc) {
 	}
 //line test/framework.gala:148
 	fmt.Println("PASS")
+}
+func _unapply_std_Success_3cfc90cc[_T0 any](v std.Try[_T0]) std.Option[_T0] {
+	return std.Success[_T0]{}.Unapply(v)
+}
+func _unapply_std_Failure_3cfc90cc[_T0 any](v std.Try[_T0]) std.Option[error] {
+	return std.Failure[_T0]{}.Unapply(v)
 }
 
 type StructMeta_T struct {

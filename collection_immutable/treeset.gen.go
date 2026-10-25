@@ -1059,14 +1059,12 @@ func mkTree[T comparable](value T, color int, left OptionPtr[treeNode[T]], right
 
 // blackenTree returns a red node recolored black, and any other tree as is.
 func blackenTree[T comparable](tree OptionPtr[treeNode[T]]) OptionPtr[treeNode[T]] {
-	return func(obj Option[*treeNode[T]]) OptionPtr[treeNode[T]] {
+	{
+		obj := tree.MatchView()
 		{
-			_tmp_35 := Some[*treeNode[T]]{}.Unapply(obj)
+			_tmp_35 := _unapply_Some_f7181c44(obj)
 			_tmp_36 := _tmp_35.IsDefined()
-			var _tmp_37 *treeNode[T]
-			if _tmp_36 {
-				_tmp_37 = _tmp_35.Get()
-			}
+			_tmp_37 := _tmp_35.Value.Get()
 			_ = _tmp_37
 			node := _tmp_37
 			if _tmp_36 && node.color.Get() == treeRed.Get() {
@@ -1075,7 +1073,7 @@ func blackenTree[T comparable](tree OptionPtr[treeNode[T]]) OptionPtr[treeNode[T
 				return tree
 			}
 		}
-	}(tree.MatchView())
+	}
 }
 
 //line collection_immutable/treeset.gala:503
@@ -1807,4 +1805,7 @@ func (tsne TreeSetNonEmpty) Unapply(s any) Option[any] {
 			}
 		}
 	}(s)
+}
+func _unapply_Some_f7181c44[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
 }

@@ -347,7 +347,8 @@ func (e *JsonEncoderImpl) writeEscapedJsonString(s string) {
 // character.
 func (e *JsonEncoderImpl) writeEscape(c byte) {
 //line json/codec.gala:185
-	func(obj byte) {
+	func() {
+		obj := c
 		if obj == '"' {
 //line json/codec.gala:186
 			{
@@ -385,7 +386,7 @@ func (e *JsonEncoderImpl) writeEscape(c byte) {
 				return
 			}
 		}
-	}(c)
+	}()
 }
 
 //line json/codec.gala:194
@@ -915,7 +916,8 @@ func (d *JsonDecoderImpl) readEscape() rune {
 //line json/codec.gala:486
 	d.pos = d.pos + 1
 //line json/codec.gala:487
-	return func(obj byte) rune {
+	{
+		obj := esc
 		if obj == '"' {
 			return '"'
 		} else if obj == '\\' {
@@ -937,7 +939,7 @@ func (d *JsonDecoderImpl) readEscape() rune {
 		} else {
 			panic("json: invalid escape sequence")
 		}
-	}(esc)
+	}
 }
 
 //line json/codec.gala:500
@@ -945,14 +947,12 @@ func (d *JsonDecoderImpl) readEscape() rune {
 // readUnicodeEscape reads the four hex digits of a \u escape, and the second
 // escape of a surrogate pair.
 func (d *JsonDecoderImpl) readUnicodeEscape() rune {
-	return func(obj Option[rune]) rune {
+	{
+		obj := d.hex4At(d.pos)
 		{
-			_tmp_1 := Some[rune]{}.Unapply(obj)
+			_tmp_1 := _unapply_Some_54c03c3a(obj)
 			_tmp_2 := _tmp_1.IsDefined()
-			var _tmp_3 rune
-			if _tmp_2 {
-				_tmp_3 = _tmp_1.Get()
-			}
+			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
 			r := _tmp_3
 			if _tmp_2 {
@@ -961,7 +961,7 @@ func (d *JsonDecoderImpl) readUnicodeEscape() rune {
 //line json/codec.gala:506
 				return d.completeSurrogate(r)
 			} else {
-				_tmp_4 := None[rune]{}.Unapply(obj)
+				_tmp_4 := _unapply_None_54c03c3a(obj)
 				if _tmp_4 {
 					panic("json: invalid unicode escape")
 				} else {
@@ -969,7 +969,7 @@ func (d *JsonDecoderImpl) readUnicodeEscape() rune {
 				}
 			}
 		}
-	}(d.hex4At(d.pos))
+	}
 }
 
 //line json/codec.gala:510
@@ -1015,14 +1015,12 @@ func (d *JsonDecoderImpl) completeSurrogate(r rune) rune {
 		return p != unicode.ReplacementChar
 	})
 //line json/codec.gala:529
-	return func(obj Option[rune]) rune {
+	{
+		obj := pair
 		{
-			_tmp_5 := Some[rune]{}.Unapply(obj)
+			_tmp_5 := _unapply_Some_54c03c3a(obj)
 			_tmp_6 := _tmp_5.IsDefined()
-			var _tmp_7 rune
-			if _tmp_6 {
-				_tmp_7 = _tmp_5.Get()
-			}
+			_tmp_7 := _tmp_5.Value.Get()
 			_ = _tmp_7
 			p := _tmp_7
 			if _tmp_6 {
@@ -1031,7 +1029,7 @@ func (d *JsonDecoderImpl) completeSurrogate(r rune) rune {
 //line json/codec.gala:532
 				return p
 			} else {
-				_tmp_8 := None[rune]{}.Unapply(obj)
+				_tmp_8 := _unapply_None_54c03c3a(obj)
 				if _tmp_8 {
 					return unicode.ReplacementChar
 				} else {
@@ -1039,7 +1037,7 @@ func (d *JsonDecoderImpl) completeSurrogate(r rune) rune {
 				}
 			}
 		}
-	}(pair)
+	}
 }
 
 //line json/codec.gala:537
@@ -1126,7 +1124,8 @@ func (d *JsonDecoderImpl) skipValue(depth int) {
 		panic(fmt.Sprintf("json at pos %d: expected a value", d.pos))
 	}
 //line json/codec.gala:588
-	func(obj byte) {
+	func() {
+		obj := d.data[d.pos]
 		if obj == '"' {
 //line json/codec.gala:589
 			{
@@ -1179,7 +1178,7 @@ func (d *JsonDecoderImpl) skipValue(depth int) {
 				}
 			}
 		}
-	}(d.data[d.pos])
+	}()
 }
 
 //line json/codec.gala:599
@@ -1260,4 +1259,10 @@ func (d *JsonDecoderImpl) expectLiteral(word string) {
 	}
 //line json/codec.gala:646
 	d.pos = end
+}
+func _unapply_Some_54c03c3a[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
+}
+func _unapply_None_54c03c3a[_T0 any](v Option[_T0]) bool {
+	return None[_T0]{}.Unapply(v)
 }

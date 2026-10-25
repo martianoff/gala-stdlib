@@ -598,20 +598,18 @@ func List_Collect[U any, T any](l List[T], pf func(T) Option[U]) List[U] {
 //line collection_immutable/list.gala:341
 	var tail = *l.tail.Get()
 //line collection_immutable/list.gala:342
-	return func(obj Option[U]) List[U] {
+	{
+		obj := pf(l.head.Get())
 		{
-			_tmp_1 := Some[U]{}.Unapply(obj)
+			_tmp_1 := _unapply_Some_0c4cbba6(obj)
 			_tmp_2 := _tmp_1.IsDefined()
-			var _tmp_3 U
-			if _tmp_2 {
-				_tmp_3 = _tmp_1.Get()
-			}
+			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
 			v := _tmp_3
 			if _tmp_2 {
 				return consList[U](v, List_Collect[U, T](tail, pf))
 			} else {
-				_tmp_4 := None[U]{}.Unapply(obj)
+				_tmp_4 := _unapply_None_0c4cbba6(obj)
 				if _tmp_4 {
 					return List_Collect[U, T](tail, pf)
 				} else {
@@ -619,7 +617,7 @@ func List_Collect[U any, T any](l List[T], pf func(T) Option[U]) List[U] {
 				}
 			}
 		}
-	}(pf(l.head.Get()))
+	}
 }
 
 //line collection_immutable/list.gala:347
@@ -979,25 +977,20 @@ func List_PartitionMap[A any, B any, T any](l List[T], f func(T) Either[A, B]) T
 //line collection_immutable/list.gala:563
 	for current.length.Get() > 0 {
 //line collection_immutable/list.gala:564
-		func(obj Either[A, B]) {
+		func() {
+			obj := f(current.head.Get())
 			{
-				_tmp_5 := Left[A, B]{}.Unapply(obj)
+				_tmp_5 := _unapply_Left_0c4cbba6(obj)
 				_tmp_6 := _tmp_5.IsDefined()
-				var _tmp_7 A
-				if _tmp_6 {
-					_tmp_7 = _tmp_5.Get()
-				}
+				_tmp_7 := _tmp_5.Value.Get()
 				_ = _tmp_7
 				l := _tmp_7
 				if _tmp_6 {
 					lefts = consList[A](l, lefts)
 				} else {
-					_tmp_8 := Right[A, B]{}.Unapply(obj)
+					_tmp_8 := _unapply_Right_0c4cbba6(obj)
 					_tmp_9 := _tmp_8.IsDefined()
-					var _tmp_10 B
-					if _tmp_9 {
-						_tmp_10 = _tmp_8.Get()
-					}
+					_tmp_10 := _tmp_8.Value.Get()
 					_ = _tmp_10
 					r := _tmp_10
 					if _tmp_9 {
@@ -1007,7 +1000,7 @@ func List_PartitionMap[A any, B any, T any](l List[T], f func(T) Either[A, B]) T
 					}
 				}
 			}
-		}(f(current.head.Get()))
+		}()
 //line collection_immutable/list.gala:568
 		current = *current.tail.Get()
 	}
@@ -1235,4 +1228,16 @@ func List_SortBy[K comparable, T any](l List[T], f func(T) K) List[T] {
 // Returns the list with the first n elements removed.
 func (l List[T]) SeqDrop(n int) any {
 	return l.Drop(n)
+}
+func _unapply_Some_0c4cbba6[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
+}
+func _unapply_None_0c4cbba6[_T0 any](v Option[_T0]) bool {
+	return None[_T0]{}.Unapply(v)
+}
+func _unapply_Left_0c4cbba6[_T0 any, _T1 any](v Either[_T0, _T1]) Option[_T0] {
+	return Left[_T0, _T1]{}.Unapply(v)
+}
+func _unapply_Right_0c4cbba6[_T0 any, _T1 any](v Either[_T0, _T1]) Option[_T1] {
+	return Right[_T0, _T1]{}.Unapply(v)
 }

@@ -333,20 +333,18 @@ func (m HashMap[K, V]) GetOrElse(key K, defaultValue V) V {
 // Apply returns the value for a key. Panics if key not found. O(eC).
 func (m HashMap[K, V]) Apply(key K) V {
 //line collection_immutable/hashmap.gala:172
-	return func(obj Option[V]) V {
+	{
+		obj := m.Get(key)
 		{
-			_tmp_16 := Some[V]{}.Unapply(obj)
+			_tmp_16 := _unapply_Some_7e6d5682(obj)
 			_tmp_17 := _tmp_16.IsDefined()
-			var _tmp_18 V
-			if _tmp_17 {
-				_tmp_18 = _tmp_16.Get()
-			}
+			_tmp_18 := _tmp_16.Value.Get()
 			_ = _tmp_18
 			v := _tmp_18
 			if _tmp_17 {
 				return v
 			} else {
-				_tmp_19 := None[V]{}.Unapply(obj)
+				_tmp_19 := _unapply_None_7e6d5682(obj)
 				if _tmp_19 {
 					panic(fmt.Sprintf("HashMap: key not found: %v", key))
 				} else {
@@ -354,7 +352,7 @@ func (m HashMap[K, V]) Apply(key K) V {
 				}
 			}
 		}
-	}(m.Get(key))
+	}
 }
 
 //line collection_immutable/hashmap.gala:177
@@ -837,20 +835,18 @@ func HashMap_FoldLeftKV[U any, K comparable, V any](m HashMap[K, V], initial U, 
 // Exists returns true if any entry satisfies the predicate.
 // Uses early exit for performance.
 func (m HashMap[K, V]) Exists(p func(K, V) bool) bool {
-	return func(obj Option[*hashMapNode[K, V]]) bool {
+	{
+		obj := m.root.MatchView()
 		{
-			_tmp_20 := Some[*hashMapNode[K, V]]{}.Unapply(obj)
+			_tmp_20 := _unapply_Some_7e6d5682(obj)
 			_tmp_21 := _tmp_20.IsDefined()
-			var _tmp_22 *hashMapNode[K, V]
-			if _tmp_21 {
-				_tmp_22 = _tmp_20.Get()
-			}
+			_tmp_22 := _tmp_20.Value.Get()
 			_ = _tmp_22
 			root := _tmp_22
 			if _tmp_21 {
 				return existsInNodeMap[K, V](root, p)
 			} else {
-				_tmp_23 := None[*hashMapNode[K, V]]{}.Unapply(obj)
+				_tmp_23 := _unapply_None_7e6d5682(obj)
 				if _tmp_23 {
 					return false
 				} else {
@@ -858,7 +854,7 @@ func (m HashMap[K, V]) Exists(p func(K, V) bool) bool {
 				}
 			}
 		}
-	}(m.root.MatchView())
+	}
 }
 
 //line collection_immutable/hashmap.gala:516
@@ -895,20 +891,18 @@ func existsInNodeMap[K comparable, V any](node *hashMapNode[K, V], p func(K, V) 
 // ForAll returns true if all entries satisfy the predicate.
 // Uses early exit for performance.
 func (m HashMap[K, V]) ForAll(p func(K, V) bool) bool {
-	return func(obj Option[*hashMapNode[K, V]]) bool {
+	{
+		obj := m.root.MatchView()
 		{
-			_tmp_24 := Some[*hashMapNode[K, V]]{}.Unapply(obj)
+			_tmp_24 := _unapply_Some_7e6d5682(obj)
 			_tmp_25 := _tmp_24.IsDefined()
-			var _tmp_26 *hashMapNode[K, V]
-			if _tmp_25 {
-				_tmp_26 = _tmp_24.Get()
-			}
+			_tmp_26 := _tmp_24.Value.Get()
 			_ = _tmp_26
 			root := _tmp_26
 			if _tmp_25 {
 				return forAllInNodeMap[K, V](root, p)
 			} else {
-				_tmp_27 := None[*hashMapNode[K, V]]{}.Unapply(obj)
+				_tmp_27 := _unapply_None_7e6d5682(obj)
 				if _tmp_27 {
 					return true
 				} else {
@@ -916,7 +910,7 @@ func (m HashMap[K, V]) ForAll(p func(K, V) bool) bool {
 				}
 			}
 		}
-	}(m.root.MatchView())
+	}
 }
 
 //line collection_immutable/hashmap.gala:541
@@ -1021,20 +1015,18 @@ func (m HashMap[K, V]) Merge(other HashMap[K, V], f func(V, V) V) HashMap[K, V] 
 //line collection_immutable/hashmap.gala:601
 	return HashMap_FoldLeftKV[HashMap[K, V], K, V](other, m, func(acc HashMap[K, V], k K, v V) HashMap[K, V] {
 //line collection_immutable/hashmap.gala:602
-		return func(obj Option[V]) HashMap[K, V] {
+		{
+			obj := acc.Get(k)
 			{
-				_tmp_28 := Some[V]{}.Unapply(obj)
+				_tmp_28 := _unapply_Some_7e6d5682(obj)
 				_tmp_29 := _tmp_28.IsDefined()
-				var _tmp_30 V
-				if _tmp_29 {
-					_tmp_30 = _tmp_28.Get()
-				}
+				_tmp_30 := _tmp_28.Value.Get()
 				_ = _tmp_30
 				existing := _tmp_30
 				if _tmp_29 {
 					return acc.Put(k, f(existing, v))
 				} else {
-					_tmp_31 := None[V]{}.Unapply(obj)
+					_tmp_31 := _unapply_None_7e6d5682(obj)
 					if _tmp_31 {
 						return acc.Put(k, v)
 					} else {
@@ -1042,7 +1034,7 @@ func (m HashMap[K, V]) Merge(other HashMap[K, V], f func(V, V) V) HashMap[K, V] 
 					}
 				}
 			}
-		}(acc.Get(k))
+		}
 	})
 }
 
@@ -1180,20 +1172,18 @@ func (m HashMap[K, V]) Find(p func(K, V) bool) Option[Tuple[K, V]] {
 // Head returns the first entry. Panics if empty.
 func (m HashMap[K, V]) Head() Tuple[K, V] {
 //line collection_immutable/hashmap.gala:687
-	return func(obj Option[Tuple[K, V]]) Tuple[K, V] {
+	{
+		obj := m.HeadOption()
 		{
-			_tmp_32 := Some[Tuple[K, V]]{}.Unapply(obj)
+			_tmp_32 := _unapply_Some_7e6d5682(obj)
 			_tmp_33 := _tmp_32.IsDefined()
-			var _tmp_34 Tuple[K, V]
-			if _tmp_33 {
-				_tmp_34 = _tmp_32.Get()
-			}
+			_tmp_34 := _tmp_32.Value.Get()
 			_ = _tmp_34
 			v := _tmp_34
 			if _tmp_33 {
 				return v
 			} else {
-				_tmp_35 := None[Tuple[K, V]]{}.Unapply(obj)
+				_tmp_35 := _unapply_None_7e6d5682(obj)
 				if _tmp_35 {
 					panic("HashMap: head of empty map")
 				} else {
@@ -1201,7 +1191,7 @@ func (m HashMap[K, V]) Head() Tuple[K, V] {
 				}
 			}
 		}
-	}(m.HeadOption())
+	}
 }
 
 //line collection_immutable/hashmap.gala:692
@@ -1296,4 +1286,10 @@ func HashMapFromGoMap[K comparable, V any](m map[K]V) HashMap[K, V] {
 	}
 //line collection_immutable/hashmap.gala:748
 	return result
+}
+func _unapply_Some_7e6d5682[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
+}
+func _unapply_None_7e6d5682[_T0 any](v Option[_T0]) bool {
+	return None[_T0]{}.Unapply(v)
 }
