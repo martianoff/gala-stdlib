@@ -88,19 +88,34 @@ func NewEitherRight[A any, B any](rightValue B) Either[A, B] {
 
 //line std/either.gala:11
 
+// Hash hashes the value Left or Right holds (see HashValue), mixed with which
+// side holds it, so an Either of hashable types is a HashSet element or
+// HashMap key.
+func (e Either[A, B]) Hash() uint32 {
+	{
+		if e.isLeft() {
+			return HashCombine(1, HashValue(e.LeftValue.Get()))
+		} else {
+			return HashCombine(2, HashValue(e.RightValue.Get()))
+		}
+	}
+}
+
+//line std/either.gala:17
+
 // IsLeft returns true if this is a Left, false otherwise.
 func (e Either[A, B]) IsLeft() bool {
 	return e.isLeft()
 }
 
-//line std/either.gala:14
+//line std/either.gala:20
 
 // IsRight returns true if this is a Right, false otherwise.
 func (e Either[A, B]) IsRight() bool {
 	return e.isRight()
 }
 
-//line std/either.gala:17
+//line std/either.gala:23
 
 // isLeft returns true if this is a Left, false otherwise.
 func isLeft(e any) bool {
@@ -116,7 +131,7 @@ func isLeft(e any) bool {
 	}(e)
 }
 
-//line std/either.gala:23
+//line std/either.gala:29
 
 // isRight returns true if this is a Right, false otherwise.
 func isRight(e any) bool {
@@ -132,7 +147,7 @@ func isRight(e any) bool {
 	}(e)
 }
 
-//line std/either.gala:29
+//line std/either.gala:35
 
 // getLeftValue returns the left value if this is a Left, otherwise it returns nil.
 func getLeftValue(e any) any {
@@ -148,7 +163,7 @@ func getLeftValue(e any) any {
 	}(e)
 }
 
-//line std/either.gala:35
+//line std/either.gala:41
 
 // getRightValue returns the right value if this is a Right, otherwise it returns nil.
 func getRightValue(e any) any {
@@ -164,108 +179,108 @@ func getRightValue(e any) any {
 	}(e)
 }
 
-//line std/either.gala:41
+//line std/either.gala:47
 
 // GetLeft returns the left value if this is a Left, otherwise it panics.
 func (e Either[A, B]) GetLeft() A {
-//line std/either.gala:44
+//line std/either.gala:50
 	if e.isRight() {
-//line std/either.gala:45
+//line std/either.gala:51
 		panic("Either.GetLeft on Right")
 	}
-//line std/either.gala:47
+//line std/either.gala:53
 	return e.LeftValue.Get()
 }
 
-//line std/either.gala:49
+//line std/either.gala:55
 
 // GetRight returns the right value if this is a Right, otherwise it panics.
 func (e Either[A, B]) GetRight() B {
-//line std/either.gala:52
+//line std/either.gala:58
 	if e.isLeft() {
-//line std/either.gala:53
+//line std/either.gala:59
 		panic("Either.GetRight on Left")
 	}
-//line std/either.gala:55
+//line std/either.gala:61
 	return e.RightValue.Get()
 }
 
-//line std/either.gala:57
+//line std/either.gala:63
 
 // Swap returns the left as right and vice versa.
 func Either_Swap[A any, B any](e Either[A, B]) Either[B, A] {
-//line std/either.gala:60
+//line std/either.gala:66
 	if e.isLeft() {
-//line std/either.gala:61
+//line std/either.gala:67
 		return Right[B, A]{}.Apply(e.LeftValue.Get())
 	}
-//line std/either.gala:63
+//line std/either.gala:69
 	return Left[B, A]{}.Apply(e.RightValue.Get())
 }
 
-//line std/either.gala:65
+//line std/either.gala:71
 
 // OnRight executes a callback with the right value if this is a Right,
 // returns the original Either unchanged (for chaining).
 func (e Either[A, B]) OnRight(f func(B)) Either[A, B] {
-//line std/either.gala:69
+//line std/either.gala:75
 	if e.isRight() {
-//line std/either.gala:70
+//line std/either.gala:76
 		f(e.RightValue.Get())
 	}
-//line std/either.gala:72
+//line std/either.gala:78
 	return e
 }
 
-//line std/either.gala:74
+//line std/either.gala:80
 
 // OnLeft executes a callback with the left value if this is a Left,
 // returns the original Either unchanged (for chaining).
 func (e Either[A, B]) OnLeft(f func(A)) Either[A, B] {
-//line std/either.gala:78
+//line std/either.gala:84
 	if e.isLeft() {
-//line std/either.gala:79
+//line std/either.gala:85
 		f(e.LeftValue.Get())
 	}
-//line std/either.gala:81
+//line std/either.gala:87
 	return e
 }
 
-//line std/either.gala:83
+//line std/either.gala:89
 
 // Fold applies f1 to the left value or f2 to the right value.
 func Either_Fold[C any, A any, B any](e Either[A, B], f1 func(A) C, f2 func(B) C) C {
-//line std/either.gala:86
+//line std/either.gala:92
 	if e.isLeft() {
-//line std/either.gala:87
+//line std/either.gala:93
 		return f1(e.LeftValue.Get())
 	}
-//line std/either.gala:89
+//line std/either.gala:95
 	return f2(e.RightValue.Get())
 }
 
-//line std/either.gala:91
+//line std/either.gala:97
 
 // Map applies a function to the right value if this is a Right.
 func Either_Map[C any, A any, B any](e Either[A, B], f func(B) C) Either[A, C] {
-//line std/either.gala:94
+//line std/either.gala:100
 	if e.isLeft() {
-//line std/either.gala:95
+//line std/either.gala:101
 		return Left[A, C]{}.Apply(e.LeftValue.Get())
 	}
-//line std/either.gala:97
+//line std/either.gala:103
 	return Right[A, C]{}.Apply(f(e.RightValue.Get()))
 }
 
-//line std/either.gala:99
+//line std/either.gala:105
 
 // FlatMap applies a function to the right value if this is a Right.
 func Either_FlatMap[C any, A any, B any](e Either[A, B], f func(B) Either[A, C]) Either[A, C] {
-//line std/either.gala:102
+//line std/either.gala:108
 	if e.isLeft() {
-//line std/either.gala:103
+//line std/either.gala:109
 		return Left[A, C]{}.Apply(e.LeftValue.Get())
 	}
-//line std/either.gala:105
+//line std/either.gala:111
 	return f(e.RightValue.Get())
 }

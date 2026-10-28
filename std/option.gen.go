@@ -145,143 +145,157 @@ func NewOption[T any]() Option[T] {
 
 //line std/option.gala:27
 
+// Hash hashes Some by its value (see HashValue) and None as a constant, so an
+// Option of a hashable type is a HashSet element or HashMap key.
+func (o Option[T]) Hash() uint32 {
+	{
+		if o.isSome() {
+			return HashCombine(1, HashValue(o.Value.Get()))
+		} else {
+			return 0
+		}
+	}
+}
+
+//line std/option.gala:31
+
 // IsDefined returns true if the option is an instance of Some, false otherwise.
 func (o Option[T]) IsDefined() bool {
 	return o.isSome()
 }
 
-//line std/option.gala:30
+//line std/option.gala:34
 
 // IsEmpty returns true if the option is None, false otherwise.
 func (o Option[T]) IsEmpty() bool {
 	return o.isNone()
 }
 
-//line std/option.gala:33
+//line std/option.gala:37
 
 // Get returns the option's value if the option is Some, otherwise it panics.
 func (o Option[T]) Get() T {
-//line std/option.gala:36
+//line std/option.gala:40
 	if o.isNone() {
-//line std/option.gala:37
+//line std/option.gala:41
 		panic("Option.Get on None")
 	}
-//line std/option.gala:39
+//line std/option.gala:43
 	return o.Value.Get()
 }
 
-//line std/option.gala:41
+//line std/option.gala:45
 
 // GetOrElse returns the option's value if the option is Some, otherwise returns the result of evaluating defaultValue.
 // defaultValue: the default value to return if the option is empty.
 func (o Option[T]) GetOrElse(defaultValue T) T {
-//line std/option.gala:45
+//line std/option.gala:49
 	if o.isSome() {
-//line std/option.gala:46
+//line std/option.gala:50
 		return o.Value.Get()
 	}
-//line std/option.gala:48
+//line std/option.gala:52
 	return defaultValue
 }
 
-//line std/option.gala:50
+//line std/option.gala:54
 
 // OrElse returns this Option if it is Some, otherwise returns alternative.
 func (o Option[T]) OrElse(alternative Option[T]) Option[T] {
-//line std/option.gala:53
+//line std/option.gala:57
 	if o.isSome() {
-//line std/option.gala:54
+//line std/option.gala:58
 		return o
 	}
-//line std/option.gala:56
+//line std/option.gala:60
 	return alternative
 }
 
-//line std/option.gala:58
+//line std/option.gala:62
 
 // OnSome executes a callback with the value if this is Some,
 // returns the original Option unchanged (for chaining).
 func (o Option[T]) OnSome(f func(T)) Option[T] {
-//line std/option.gala:62
+//line std/option.gala:66
 	if o.isSome() {
-//line std/option.gala:63
+//line std/option.gala:67
 		f(o.Value.Get())
 	}
-//line std/option.gala:65
+//line std/option.gala:69
 	return o
 }
 
-//line std/option.gala:67
+//line std/option.gala:71
 
 // OnNone executes a callback if this is None,
 // returns the original Option unchanged (for chaining).
 func (o Option[T]) OnNone(f func()) Option[T] {
-//line std/option.gala:71
+//line std/option.gala:75
 	if o.isNone() {
-//line std/option.gala:72
+//line std/option.gala:76
 		f()
 	}
-//line std/option.gala:74
+//line std/option.gala:78
 	return o
 }
 
-//line std/option.gala:76
+//line std/option.gala:80
 
 // ForEach applies the given procedure f to the option's value, if it is nonempty.
 // f: the procedure to apply.
 func (o Option[T]) ForEach(f func(T)) {
-//line std/option.gala:80
+//line std/option.gala:84
 	if o.isSome() {
-//line std/option.gala:81
+//line std/option.gala:85
 		f(o.Value.Get())
 	}
 }
 
-//line std/option.gala:84
+//line std/option.gala:88
 
 // Map builds a new option by applying a function to all values of this option.
 // f: the function to apply.
 // Returns a new Option containing the result of applying f to this option's value if it is nonempty.
 func Option_Map[U any, T any](o Option[T], f func(T) U) Option[U] {
-//line std/option.gala:89
+//line std/option.gala:93
 	if o.isSome() {
-//line std/option.gala:90
+//line std/option.gala:94
 		return Some[U]{}.Apply(f(o.Value.Get()))
 	}
-//line std/option.gala:92
+//line std/option.gala:96
 	return None[U]{}.Apply()
 }
 
-//line std/option.gala:94
+//line std/option.gala:98
 
 // FlatMap returns the result of applying f to this option's value if this option is nonempty.
 // Returns None if this option is empty.
 // f: the function to apply.
 func Option_FlatMap[U any, T any](o Option[T], f func(T) Option[U]) Option[U] {
-//line std/option.gala:99
+//line std/option.gala:103
 	if o.isSome() {
-//line std/option.gala:100
+//line std/option.gala:104
 		return f(o.Value.Get())
 	}
-//line std/option.gala:102
+//line std/option.gala:106
 	return None[U]{}.Apply()
 }
 
-//line std/option.gala:104
+//line std/option.gala:108
 
 // Filter returns this option if it is nonempty and applying the predicate p to this option's value returns true.
 // p: the predicate used for testing.
 func (o Option[T]) Filter(p func(T) bool) Option[T] {
-//line std/option.gala:108
+//line std/option.gala:112
 	if o.isSome() && p(o.Value.Get()) {
-//line std/option.gala:109
+//line std/option.gala:113
 		return o
 	}
-//line std/option.gala:111
+//line std/option.gala:115
 	return None[T]{}.Apply()
 }
 
-//line std/option.gala:113
+//line std/option.gala:117
 
 // Exists reports whether this option is nonempty and p holds for its value.
 // None never satisfies it.
@@ -289,7 +303,7 @@ func (o Option[T]) Exists(p func(T) bool) bool {
 	return o.isSome() && p(o.Value.Get())
 }
 
-//line std/option.gala:117
+//line std/option.gala:121
 
 // ForAll reports whether p holds for this option's value, if it has one.
 // None satisfies it vacuously.
@@ -297,7 +311,7 @@ func (o Option[T]) ForAll(p func(T) bool) bool {
 	return o.isNone() || p(o.Value.Get())
 }
 
-//line std/option.gala:121
+//line std/option.gala:125
 
 // When returns Some(value) if condition is true, None otherwise.
 func When[T any](condition bool, value T) Option[T] {
@@ -310,7 +324,7 @@ func When[T any](condition bool, value T) Option[T] {
 	}
 }
 
-//line std/option.gala:124
+//line std/option.gala:128
 
 // Unless returns Some(value) if condition is false, None otherwise.
 func Unless[T any](condition bool, value T) Option[T] {

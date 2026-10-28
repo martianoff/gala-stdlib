@@ -43,6 +43,15 @@ func (t Tuple[A, B]) String() string {
 
 //line std/tuple.gala:11
 
+// Hash combines the hashes of the tuple's values (see HashValue), so a tuple
+// of hashable values is a HashSet element or HashMap key. Every arity hashes
+// the same way.
+func (t Tuple[A, B]) Hash() uint32 {
+	return HashCombine(HashValue(t.V1.Get()), HashValue(t.V2.Get()))
+}
+
+//line std/tuple.gala:16
+
 // Tuple3 represents a triple of values.
 type Tuple3[A any, B any, C any] struct {
 	V1 Immutable[A]
@@ -74,12 +83,17 @@ func (s Tuple3[A, B, C]) Unapply(v any) (Immutable[A], Immutable[B], Immutable[C
 	return *new(Immutable[A]), *new(Immutable[B]), *new(Immutable[C]), false
 }
 
-//line std/tuple.gala:19
+//line std/tuple.gala:24
 func (t Tuple3[A, B, C]) String() string {
 	return fmt.Sprintf("(%v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get())
 }
 
-//line std/tuple.gala:21
+//line std/tuple.gala:27
+func (t Tuple3[A, B, C]) Hash() uint32 {
+	return combineHashes(HashValue(t.V1.Get()), HashValue(t.V2.Get()), HashValue(t.V3.Get()))
+}
+
+//line std/tuple.gala:28
 
 // Tuple4 represents a quadruple of values.
 type Tuple4[A any, B any, C any, D any] struct {
@@ -113,12 +127,17 @@ func (s Tuple4[A, B, C, D]) Unapply(v any) (Immutable[A], Immutable[B], Immutabl
 	return *new(Immutable[A]), *new(Immutable[B]), *new(Immutable[C]), *new(Immutable[D]), false
 }
 
-//line std/tuple.gala:30
+//line std/tuple.gala:37
 func (t Tuple4[A, B, C, D]) String() string {
 	return fmt.Sprintf("(%v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get())
 }
 
-//line std/tuple.gala:32
+//line std/tuple.gala:40
+func (t Tuple4[A, B, C, D]) Hash() uint32 {
+	return combineHashes(HashValue(t.V1.Get()), HashValue(t.V2.Get()), HashValue(t.V3.Get()), HashValue(t.V4.Get()))
+}
+
+//line std/tuple.gala:42
 
 // Tuple5 represents a quintuple of values.
 type Tuple5[A any, B any, C any, D any, E any] struct {
@@ -153,12 +172,17 @@ func (s Tuple5[A, B, C, D, E]) Unapply(v any) (Immutable[A], Immutable[B], Immut
 	return *new(Immutable[A]), *new(Immutable[B]), *new(Immutable[C]), *new(Immutable[D]), *new(Immutable[E]), false
 }
 
-//line std/tuple.gala:42
+//line std/tuple.gala:52
 func (t Tuple5[A, B, C, D, E]) String() string {
 	return fmt.Sprintf("(%v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get())
 }
 
-//line std/tuple.gala:44
+//line std/tuple.gala:55
+func (t Tuple5[A, B, C, D, E]) Hash() uint32 {
+	return combineHashes(HashValue(t.V1.Get()), HashValue(t.V2.Get()), HashValue(t.V3.Get()), HashValue(t.V4.Get()), HashValue(t.V5.Get()))
+}
+
+//line std/tuple.gala:57
 
 // Tuple6 represents a sextuple of values.
 type Tuple6[A any, B any, C any, D any, E any, F any] struct {
@@ -194,12 +218,17 @@ func (s Tuple6[A, B, C, D, E, F]) Unapply(v any) (Immutable[A], Immutable[B], Im
 	return *new(Immutable[A]), *new(Immutable[B]), *new(Immutable[C]), *new(Immutable[D]), *new(Immutable[E]), *new(Immutable[F]), false
 }
 
-//line std/tuple.gala:55
+//line std/tuple.gala:68
 func (t Tuple6[A, B, C, D, E, F]) String() string {
 	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get())
 }
 
-//line std/tuple.gala:57
+//line std/tuple.gala:71
+func (t Tuple6[A, B, C, D, E, F]) Hash() uint32 {
+	return combineHashes(HashValue(t.V1.Get()), HashValue(t.V2.Get()), HashValue(t.V3.Get()), HashValue(t.V4.Get()), HashValue(t.V5.Get()), HashValue(t.V6.Get()))
+}
+
+//line std/tuple.gala:73
 
 // Tuple7 represents a septuple of values.
 type Tuple7[A any, B any, C any, D any, E any, F any, G any] struct {
@@ -236,12 +265,17 @@ func (s Tuple7[A, B, C, D, E, F, G]) Unapply(v any) (Immutable[A], Immutable[B],
 	return *new(Immutable[A]), *new(Immutable[B]), *new(Immutable[C]), *new(Immutable[D]), *new(Immutable[E]), *new(Immutable[F]), *new(Immutable[G]), false
 }
 
-//line std/tuple.gala:69
+//line std/tuple.gala:85
 func (t Tuple7[A, B, C, D, E, F, G]) String() string {
 	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get(), t.V7.Get())
 }
 
-//line std/tuple.gala:71
+//line std/tuple.gala:88
+func (t Tuple7[A, B, C, D, E, F, G]) Hash() uint32 {
+	return combineHashes(HashValue(t.V1.Get()), HashValue(t.V2.Get()), HashValue(t.V3.Get()), HashValue(t.V4.Get()), HashValue(t.V5.Get()), HashValue(t.V6.Get()), HashValue(t.V7.Get()))
+}
+
+//line std/tuple.gala:90
 
 // Tuple8 represents an octuple of values.
 type Tuple8[A any, B any, C any, D any, E any, F any, G any, H any] struct {
@@ -279,12 +313,17 @@ func (s Tuple8[A, B, C, D, E, F, G, H]) Unapply(v any) (Immutable[A], Immutable[
 	return *new(Immutable[A]), *new(Immutable[B]), *new(Immutable[C]), *new(Immutable[D]), *new(Immutable[E]), *new(Immutable[F]), *new(Immutable[G]), *new(Immutable[H]), false
 }
 
-//line std/tuple.gala:84
+//line std/tuple.gala:103
 func (t Tuple8[A, B, C, D, E, F, G, H]) String() string {
 	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get(), t.V7.Get(), t.V8.Get())
 }
 
-//line std/tuple.gala:86
+//line std/tuple.gala:106
+func (t Tuple8[A, B, C, D, E, F, G, H]) Hash() uint32 {
+	return combineHashes(HashValue(t.V1.Get()), HashValue(t.V2.Get()), HashValue(t.V3.Get()), HashValue(t.V4.Get()), HashValue(t.V5.Get()), HashValue(t.V6.Get()), HashValue(t.V7.Get()), HashValue(t.V8.Get()))
+}
+
+//line std/tuple.gala:108
 
 // Tuple9 represents a nonuple of values.
 type Tuple9[A any, B any, C any, D any, E any, F any, G any, H any, I any] struct {
@@ -323,12 +362,17 @@ func (s Tuple9[A, B, C, D, E, F, G, H, I]) Unapply(v any) (Immutable[A], Immutab
 	return *new(Immutable[A]), *new(Immutable[B]), *new(Immutable[C]), *new(Immutable[D]), *new(Immutable[E]), *new(Immutable[F]), *new(Immutable[G]), *new(Immutable[H]), *new(Immutable[I]), false
 }
 
-//line std/tuple.gala:100
+//line std/tuple.gala:122
 func (t Tuple9[A, B, C, D, E, F, G, H, I]) String() string {
 	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get(), t.V7.Get(), t.V8.Get(), t.V9.Get())
 }
 
-//line std/tuple.gala:102
+//line std/tuple.gala:125
+func (t Tuple9[A, B, C, D, E, F, G, H, I]) Hash() uint32 {
+	return combineHashes(HashValue(t.V1.Get()), HashValue(t.V2.Get()), HashValue(t.V3.Get()), HashValue(t.V4.Get()), HashValue(t.V5.Get()), HashValue(t.V6.Get()), HashValue(t.V7.Get()), HashValue(t.V8.Get()), HashValue(t.V9.Get()))
+}
+
+//line std/tuple.gala:127
 
 // Tuple10 represents a decuple of values.
 type Tuple10[A any, B any, C any, D any, E any, F any, G any, H any, I any, J any] struct {
@@ -368,12 +412,32 @@ func (s Tuple10[A, B, C, D, E, F, G, H, I, J]) Unapply(v any) (Immutable[A], Imm
 	return *new(Immutable[A]), *new(Immutable[B]), *new(Immutable[C]), *new(Immutable[D]), *new(Immutable[E]), *new(Immutable[F]), *new(Immutable[G]), *new(Immutable[H]), *new(Immutable[I]), *new(Immutable[J]), false
 }
 
-//line std/tuple.gala:117
+//line std/tuple.gala:142
 func (t Tuple10[A, B, C, D, E, F, G, H, I, J]) String() string {
 	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get(), t.V7.Get(), t.V8.Get(), t.V9.Get(), t.V10.Get())
 }
 
-//line std/tuple.gala:119
+//line std/tuple.gala:145
+func (t Tuple10[A, B, C, D, E, F, G, H, I, J]) Hash() uint32 {
+	return combineHashes(HashValue(t.V1.Get()), HashValue(t.V2.Get()), HashValue(t.V3.Get()), HashValue(t.V4.Get()), HashValue(t.V5.Get()), HashValue(t.V6.Get()), HashValue(t.V7.Get()), HashValue(t.V8.Get()), HashValue(t.V9.Get()), HashValue(t.V10.Get()))
+}
+
+//line std/tuple.gala:147
+
+// combineHashes folds hashes left to right with HashCombine.
+func combineHashes(first uint32, rest ...uint32) uint32 {
+//line std/tuple.gala:150
+	var h = first
+//line std/tuple.gala:151
+	for i := 0; i < len(rest); i++ {
+//line std/tuple.gala:152
+		h = HashCombine(h, rest[i])
+	}
+//line std/tuple.gala:154
+	return h
+}
+
+//line std/tuple.gala:156
 
 // GoTuple builds a Tuple from 2 values. A Go call returning 2 values and no
 // error is converted with it when used as a value.
@@ -381,7 +445,7 @@ func GoTuple[A any, B any](a A, b B) Tuple[A, B] {
 	return Tuple[A, B]{V1: NewImmutable(a), V2: NewImmutable(b)}
 }
 
-//line std/tuple.gala:123
+//line std/tuple.gala:160
 
 // GoTuple3 builds a Tuple3 from 3 values. A Go call returning 3 values and no
 // error is converted with it when used as a value.
@@ -389,7 +453,7 @@ func GoTuple3[A any, B any, C any](a A, b B, c C) Tuple3[A, B, C] {
 	return Tuple3[A, B, C]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c)}
 }
 
-//line std/tuple.gala:127
+//line std/tuple.gala:164
 
 // GoTuple4 builds a Tuple4 from 4 values. A Go call returning 4 values and no
 // error is converted with it when used as a value.
@@ -397,7 +461,7 @@ func GoTuple4[A any, B any, C any, D any](a A, b B, c C, d D) Tuple4[A, B, C, D]
 	return Tuple4[A, B, C, D]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d)}
 }
 
-//line std/tuple.gala:131
+//line std/tuple.gala:168
 
 // GoTuple5 builds a Tuple5 from 5 values. A Go call returning 5 values and no
 // error is converted with it when used as a value.
@@ -405,7 +469,7 @@ func GoTuple5[A any, B any, C any, D any, E any](a A, b B, c C, d D, e E) Tuple5
 	return Tuple5[A, B, C, D, E]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e)}
 }
 
-//line std/tuple.gala:135
+//line std/tuple.gala:172
 
 // GoTuple6 builds a Tuple6 from 6 values. A Go call returning 6 values and no
 // error is converted with it when used as a value.
@@ -413,7 +477,7 @@ func GoTuple6[A any, B any, C any, D any, E any, F any](a A, b B, c C, d D, e E,
 	return Tuple6[A, B, C, D, E, F]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f)}
 }
 
-//line std/tuple.gala:139
+//line std/tuple.gala:176
 
 // GoTuple7 builds a Tuple7 from 7 values. A Go call returning 7 values and no
 // error is converted with it when used as a value.
@@ -421,7 +485,7 @@ func GoTuple7[A any, B any, C any, D any, E any, F any, G any](a A, b B, c C, d 
 	return Tuple7[A, B, C, D, E, F, G]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f), V7: NewImmutable(g)}
 }
 
-//line std/tuple.gala:143
+//line std/tuple.gala:180
 
 // GoTuple8 builds a Tuple8 from 8 values. A Go call returning 8 values and no
 // error is converted with it when used as a value.
@@ -429,7 +493,7 @@ func GoTuple8[A any, B any, C any, D any, E any, F any, G any, H any](a A, b B, 
 	return Tuple8[A, B, C, D, E, F, G, H]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f), V7: NewImmutable(g), V8: NewImmutable(h)}
 }
 
-//line std/tuple.gala:147
+//line std/tuple.gala:184
 
 // GoTuple9 builds a Tuple9 from 9 values. A Go call returning 9 values and no
 // error is converted with it when used as a value.
@@ -437,7 +501,7 @@ func GoTuple9[A any, B any, C any, D any, E any, F any, G any, H any, I any](a A
 	return Tuple9[A, B, C, D, E, F, G, H, I]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f), V7: NewImmutable(g), V8: NewImmutable(h), V9: NewImmutable(i)}
 }
 
-//line std/tuple.gala:151
+//line std/tuple.gala:188
 
 // GoTuple10 builds a Tuple10 from 10 values. A Go call returning 10 values and no
 // error is converted with it when used as a value.
