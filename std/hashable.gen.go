@@ -12,11 +12,14 @@ import "math"
 //
 // Primitive types (int, string, bool, etc.) are handled automatically, and the
 // std value types Tuple (every arity), Option and Either implement Hashable by
-// combining the hashes of the values they hold. Custom types should implement
-// this interface for use in hash-based collections.
+// combining the hashes of the values they hold, and the immutable List and
+// HashSet by hashing their elements. Custom types should implement this
+// interface for use in hash-based collections.
 //
-// HashSet and HashMap compare keys with ==, so a Hash method must agree with
-// it: values that are == must hash alike.
+// HashSet and HashMap compare keys with ==, and keys that are not == by their
+// Equal method when they have one (KeysEqualByValue), so a List or a struct
+// holding one is a key by value. A Hash method must agree with that: keys that
+// are equal must hash alike.
 //
 // Example:
 //
@@ -31,108 +34,108 @@ type Hashable interface {
 	Hash() uint32
 }
 
-//line std/hashable.gala:30
+//line std/hashable.gala:33
 
 // HashInt hashes an int64 value using FNV-1a bit mixing.
 func HashInt(n int64) uint32 {
-//line std/hashable.gala:33
-	var h uint32 = 2166136261
-//line std/hashable.gala:34
-	h = h ^ uint32(n&255)
-//line std/hashable.gala:35
-	h = h * 16777619
 //line std/hashable.gala:36
-	h = h ^ uint32((n>>8)&255)
+	var h uint32 = 2166136261
 //line std/hashable.gala:37
-	h = h * 16777619
+	h = h ^ uint32(n&255)
 //line std/hashable.gala:38
-	h = h ^ uint32((n>>16)&255)
+	h = h * 16777619
 //line std/hashable.gala:39
-	h = h * 16777619
+	h = h ^ uint32((n>>8)&255)
 //line std/hashable.gala:40
-	h = h ^ uint32((n>>24)&255)
+	h = h * 16777619
 //line std/hashable.gala:41
-	h = h * 16777619
+	h = h ^ uint32((n>>16)&255)
 //line std/hashable.gala:42
-	h = h ^ uint32((n>>32)&255)
+	h = h * 16777619
 //line std/hashable.gala:43
-	h = h * 16777619
+	h = h ^ uint32((n>>24)&255)
 //line std/hashable.gala:44
-	h = h ^ uint32((n>>40)&255)
+	h = h * 16777619
 //line std/hashable.gala:45
-	h = h * 16777619
+	h = h ^ uint32((n>>32)&255)
 //line std/hashable.gala:46
-	h = h ^ uint32((n>>48)&255)
+	h = h * 16777619
 //line std/hashable.gala:47
-	h = h * 16777619
+	h = h ^ uint32((n>>40)&255)
 //line std/hashable.gala:48
-	h = h ^ uint32((n>>56)&255)
-//line std/hashable.gala:49
 	h = h * 16777619
+//line std/hashable.gala:49
+	h = h ^ uint32((n>>48)&255)
 //line std/hashable.gala:50
+	h = h * 16777619
+//line std/hashable.gala:51
+	h = h ^ uint32((n>>56)&255)
+//line std/hashable.gala:52
+	h = h * 16777619
+//line std/hashable.gala:53
 	return h
 }
 
-//line std/hashable.gala:52
+//line std/hashable.gala:55
 
 // HashUint hashes a uint64 value using FNV-1a bit mixing.
 func HashUint(n uint64) uint32 {
-//line std/hashable.gala:55
-	var h uint32 = 2166136261
-//line std/hashable.gala:56
-	h = h ^ uint32(n&255)
-//line std/hashable.gala:57
-	h = h * 16777619
 //line std/hashable.gala:58
-	h = h ^ uint32((n>>8)&255)
+	var h uint32 = 2166136261
 //line std/hashable.gala:59
-	h = h * 16777619
+	h = h ^ uint32(n&255)
 //line std/hashable.gala:60
-	h = h ^ uint32((n>>16)&255)
+	h = h * 16777619
 //line std/hashable.gala:61
-	h = h * 16777619
+	h = h ^ uint32((n>>8)&255)
 //line std/hashable.gala:62
-	h = h ^ uint32((n>>24)&255)
+	h = h * 16777619
 //line std/hashable.gala:63
-	h = h * 16777619
+	h = h ^ uint32((n>>16)&255)
 //line std/hashable.gala:64
-	h = h ^ uint32((n>>32)&255)
+	h = h * 16777619
 //line std/hashable.gala:65
-	h = h * 16777619
+	h = h ^ uint32((n>>24)&255)
 //line std/hashable.gala:66
-	h = h ^ uint32((n>>40)&255)
+	h = h * 16777619
 //line std/hashable.gala:67
-	h = h * 16777619
+	h = h ^ uint32((n>>32)&255)
 //line std/hashable.gala:68
-	h = h ^ uint32((n>>48)&255)
+	h = h * 16777619
 //line std/hashable.gala:69
-	h = h * 16777619
+	h = h ^ uint32((n>>40)&255)
 //line std/hashable.gala:70
-	h = h ^ uint32((n>>56)&255)
-//line std/hashable.gala:71
 	h = h * 16777619
+//line std/hashable.gala:71
+	h = h ^ uint32((n>>48)&255)
 //line std/hashable.gala:72
+	h = h * 16777619
+//line std/hashable.gala:73
+	h = h ^ uint32((n>>56)&255)
+//line std/hashable.gala:74
+	h = h * 16777619
+//line std/hashable.gala:75
 	return h
 }
 
-//line std/hashable.gala:74
+//line std/hashable.gala:77
 
 // HashString hashes a string value using FNV-1a.
 func HashString(s string) uint32 {
-//line std/hashable.gala:77
-	var h uint32 = 2166136261
-//line std/hashable.gala:78
-	for i := 0; i < len(s); i++ {
-//line std/hashable.gala:79
-		h = h ^ uint32(s[i])
 //line std/hashable.gala:80
+	var h uint32 = 2166136261
+//line std/hashable.gala:81
+	for i := 0; i < len(s); i++ {
+//line std/hashable.gala:82
+		h = h ^ uint32(s[i])
+//line std/hashable.gala:83
 		h = h * 16777619
 	}
-//line std/hashable.gala:82
+//line std/hashable.gala:85
 	return h
 }
 
-//line std/hashable.gala:84
+//line std/hashable.gala:87
 
 // HashFloat hashes a float64 by its bits, so fractions spread over the buckets
 // instead of truncating to a handful of integers. The two zeros are == and
@@ -147,30 +150,30 @@ func HashFloat(f float64) uint32 {
 	}
 }
 
-//line std/hashable.gala:89
+//line std/hashable.gala:92
 
 // HashBool hashes a boolean value.
 func HashBool(b bool) uint32 {
-//line std/hashable.gala:92
+//line std/hashable.gala:95
 	if b {
-//line std/hashable.gala:93
+//line std/hashable.gala:96
 		return 1231
 	}
-//line std/hashable.gala:95
+//line std/hashable.gala:98
 	return 1237
 }
 
-//line std/hashable.gala:97
+//line std/hashable.gala:100
 
 // HashCombine combines two hash values into one.
 // Useful for hashing structs with multiple fields.
 // Example: HashCombine(HashString(name), HashInt(age))
 func HashCombine(h1 uint32, h2 uint32) uint32 {
-//line std/hashable.gala:103
+//line std/hashable.gala:106
 	return h1 ^ (h2 + 2654435769 + (h1 << 6) + (h1 >> 2))
 }
 
-//line std/hashable.gala:105
+//line std/hashable.gala:108
 
 // HashValue hashes a value the way HashSet and HashMap hash their keys: a
 // value of a predeclared primitive type by its value, any other value through
@@ -262,7 +265,7 @@ func HashValue(v any) uint32 {
 	}(v)
 }
 
-//line std/hashable.gala:131
+//line std/hashable.gala:134
 
 // HashesByValue reports whether v is of a predeclared primitive type that
 // HashValue hashes by its value. For those types == is Equal, so a HashSet
@@ -346,10 +349,10 @@ func HashesByValue(v any) bool {
 	}(v)
 }
 
-//line std/hashable.gala:153
+//line std/hashable.gala:156
 
 // panicNotHashable panics for a value HashValue cannot hash.
 func panicNotHashable(v any) uint32 {
-//line std/hashable.gala:156
+//line std/hashable.gala:159
 	panic(fmt.Sprintf("cannot hash type %T: a HashSet element or HashMap key, and every value inside a Tuple, Option or Either one, must be a primitive or implement std.Hashable interface", v))
 }

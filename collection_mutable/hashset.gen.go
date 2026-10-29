@@ -200,7 +200,7 @@ func (s *HashSet[T]) Add(elem T) bool {
 //line collection_mutable/hashset.gala:112
 		var node = entry.Get()
 //line collection_mutable/hashset.gala:113
-		if node.hashCode.Get() == hashCode && node.value.Get() == elem {
+		if node.hashCode.Get() == hashCode && (node.value.Get() == elem || KeysEqualByValue(node.value.Get(), elem)) {
 //line collection_mutable/hashset.gala:114
 			return false
 		}
@@ -308,7 +308,7 @@ func (s *HashSet[T]) Remove(elem T) bool {
 //line collection_mutable/hashset.gala:177
 		var node = entry.Get()
 //line collection_mutable/hashset.gala:178
-		if node.hashCode.Get() == hashCode && node.value.Get() == elem {
+		if node.hashCode.Get() == hashCode && (node.value.Get() == elem || KeysEqualByValue(node.value.Get(), elem)) {
 //line collection_mutable/hashset.gala:179
 			if prev.IsEmpty() {
 //line collection_mutable/hashset.gala:180
@@ -395,7 +395,7 @@ func (s *HashSet[T]) Contains(elem T) bool {
 //line collection_mutable/hashset.gala:223
 		var node = entry.Get()
 //line collection_mutable/hashset.gala:224
-		if node.hashCode.Get() == hashCode && node.value.Get() == elem {
+		if node.hashCode.Get() == hashCode && (node.value.Get() == elem || KeysEqualByValue(node.value.Get(), elem)) {
 //line collection_mutable/hashset.gala:225
 			return true
 		}

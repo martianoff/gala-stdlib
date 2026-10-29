@@ -136,7 +136,7 @@ func (m *HashMap[K, V]) Put(key K, value V) bool {
 //line collection_mutable/hashmap.gala:75
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:76
-		if node.hashCode.Get() == hashCode && node.key.Get() == key {
+		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
 //line collection_mutable/hashmap.gala:77
 			node.value = value
 //line collection_mutable/hashmap.gala:78
@@ -254,7 +254,7 @@ func (m *HashMap[K, V]) Update(key K, f func(V) V) bool {
 //line collection_mutable/hashmap.gala:147
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:148
-		if node.hashCode.Get() == hashCode && node.key.Get() == key {
+		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
 //line collection_mutable/hashmap.gala:149
 			node.value = f(node.value)
 //line collection_mutable/hashmap.gala:150
@@ -288,7 +288,7 @@ func (m *HashMap[K, V]) Remove(key K) bool {
 //line collection_mutable/hashmap.gala:166
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:167
-		if node.hashCode.Get() == hashCode && node.key.Get() == key {
+		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
 //line collection_mutable/hashmap.gala:168
 			if prev.IsEmpty() {
 //line collection_mutable/hashmap.gala:169
@@ -361,7 +361,7 @@ func (m *HashMap[K, V]) Contains(key K) bool {
 //line collection_mutable/hashmap.gala:205
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:206
-		if node.hashCode.Get() == hashCode && node.key.Get() == key {
+		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
 //line collection_mutable/hashmap.gala:207
 			return true
 		}
@@ -390,7 +390,7 @@ func (m *HashMap[K, V]) Get(key K) Option[V] {
 //line collection_mutable/hashmap.gala:221
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:222
-		if node.hashCode.Get() == hashCode && node.key.Get() == key {
+		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
 //line collection_mutable/hashmap.gala:223
 			return Some[V]{}.Apply(node.value)
 		}
