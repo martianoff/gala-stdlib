@@ -276,7 +276,7 @@ func (l List[T]) Equal(other List[T]) bool {
 // and not cached.
 func (l List[T]) Hash() uint32 {
 	return List_FoldLeft(l, HashInt(int64(l.length.Get())), func(h uint32, elem T) uint32 {
-		return HashCombine(h, HashValue(elem))
+		return HashCombine(h, HashOf(elem))
 	})
 }
 

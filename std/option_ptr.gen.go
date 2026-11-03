@@ -22,9 +22,6 @@ type OptionPtr[T any] struct {
 func (s OptionPtr[T]) Copy() OptionPtr[T] {
 	return OptionPtr[T]{p: Copy(s.p)}
 }
-func (s OptionPtr[T]) Equal(other OptionPtr[T]) bool {
-	return Equal(s.p, other.p)
-}
 
 type OptionPtrInstance interface {
 	IsOptionPtr() bool
@@ -75,18 +72,28 @@ func (o OptionPtr[T]) IsEmpty() bool {
 
 //line std/option_ptr.gala:31
 
+// Equal reports whether other holds the same pointer, or is empty as well:
+// an OptionPtr compares as a pointer does, by identity, not by what it
+// points to. So `a == b` on two OptionPtrs tells whether they point to the
+// same node, as a linked structure's code asks.
+func (o OptionPtr[T]) Equal(other OptionPtr[T]) bool {
+	return o.p == other.p
+}
+
+//line std/option_ptr.gala:37
+
 // Get returns the pointer. It panics when the OptionPtr is empty.
 func (o OptionPtr[T]) Get() *T {
-//line std/option_ptr.gala:34
+//line std/option_ptr.gala:40
 	if o.p == nil {
-//line std/option_ptr.gala:35
+//line std/option_ptr.gala:41
 		panic("OptionPtr.Get on an empty OptionPtr")
 	}
-//line std/option_ptr.gala:37
+//line std/option_ptr.gala:43
 	return &*o.p
 }
 
-//line std/option_ptr.gala:39
+//line std/option_ptr.gala:45
 
 // GetOrElse returns the pointer, or defaultValue when the OptionPtr is empty.
 func (o OptionPtr[T]) GetOrElse(defaultValue *T) *T {
@@ -102,7 +109,7 @@ func (o OptionPtr[T]) GetOrElse(defaultValue *T) *T {
 	}
 }
 
-//line std/option_ptr.gala:42
+//line std/option_ptr.gala:48
 
 // OrElse returns this OptionPtr when it holds a pointer, otherwise alternative.
 func (o OptionPtr[T]) OrElse(alternative OptionPtr[T]) OptionPtr[T] {
@@ -115,18 +122,18 @@ func (o OptionPtr[T]) OrElse(alternative OptionPtr[T]) OptionPtr[T] {
 	}
 }
 
-//line std/option_ptr.gala:45
+//line std/option_ptr.gala:51
 
 // ForEach applies f to the pointer, when the OptionPtr holds one.
 func (o OptionPtr[T]) ForEach(f func(*T)) {
-//line std/option_ptr.gala:48
+//line std/option_ptr.gala:54
 	if o.p != nil {
-//line std/option_ptr.gala:49
+//line std/option_ptr.gala:55
 		f(&*o.p)
 	}
 }
 
-//line std/option_ptr.gala:52
+//line std/option_ptr.gala:58
 
 // Map returns Some of f applied to the pointer, or None when the OptionPtr is
 // empty.
@@ -140,7 +147,7 @@ func OptionPtr_Map[U any, T any](o OptionPtr[T], f func(*T) U) Option[U] {
 	}
 }
 
-//line std/option_ptr.gala:56
+//line std/option_ptr.gala:62
 
 // FlatMap returns f applied to the pointer, or an empty OptionPtr when this
 // one is empty.
@@ -154,7 +161,7 @@ func OptionPtr_FlatMap[U any, T any](o OptionPtr[T], f func(*T) OptionPtr[U]) Op
 	}
 }
 
-//line std/option_ptr.gala:60
+//line std/option_ptr.gala:66
 
 // ToOption returns the pointer as an Option: Some(pointer) or None.
 func (o OptionPtr[T]) ToOption() Option[*T] {
@@ -167,7 +174,7 @@ func (o OptionPtr[T]) ToOption() Option[*T] {
 	}
 }
 
-//line std/option_ptr.gala:63
+//line std/option_ptr.gala:69
 
 // MatchView gives OptionPtr the sealed view Option[Ptr[T]], so a match on an
 // OptionPtr uses Option's variants: `case Some(p)` and `case None()`,
@@ -176,7 +183,7 @@ func (o OptionPtr[T]) MatchView() Option[*T] {
 	return o.ToOption()
 }
 
-//line std/option_ptr.gala:68
+//line std/option_ptr.gala:74
 
 // String returns "SomePtr(<value>)" or "EmptyOptionPtr".
 func (o OptionPtr[T]) String() string {

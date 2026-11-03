@@ -126,7 +126,7 @@ func (m *HashMap[K, V]) Put(key K, value V) bool {
 		panic("HashMap.Put: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/hashmap.gala:69
-	var hashCode = HashValue(key)
+	var hashCode = HashKeyOf(key)
 //line collection_mutable/hashmap.gala:70
 	var idx = int(hashCode & m.bucketMask)
 //line collection_mutable/hashmap.gala:73
@@ -244,7 +244,7 @@ func (m *HashMap[K, V]) Update(key K, f func(V) V) bool {
 		panic("HashMap.Update: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/hashmap.gala:142
-	var hashCode = HashValue(key)
+	var hashCode = HashKeyOf(key)
 //line collection_mutable/hashmap.gala:143
 	var idx = int(hashCode & m.bucketMask)
 //line collection_mutable/hashmap.gala:145
@@ -276,7 +276,7 @@ func (m *HashMap[K, V]) Remove(key K) bool {
 		panic("HashMap.Remove: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/hashmap.gala:160
-	var hashCode = HashValue(key)
+	var hashCode = HashKeyOf(key)
 //line collection_mutable/hashmap.gala:161
 	var idx = int(hashCode & m.bucketMask)
 //line collection_mutable/hashmap.gala:163
@@ -351,7 +351,7 @@ func (m *HashMap[K, V]) Contains(key K) bool {
 		panic("HashMap.Contains: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/hashmap.gala:200
-	var hashCode = HashValue(key)
+	var hashCode = HashKeyOf(key)
 //line collection_mutable/hashmap.gala:201
 	var idx = int(hashCode & m.bucketMask)
 //line collection_mutable/hashmap.gala:203
@@ -380,7 +380,7 @@ func (m *HashMap[K, V]) Get(key K) Option[V] {
 		panic("HashMap.Get: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/hashmap.gala:216
-	var hashCode = HashValue(key)
+	var hashCode = HashKeyOf(key)
 //line collection_mutable/hashmap.gala:217
 	var idx = int(hashCode & m.bucketMask)
 //line collection_mutable/hashmap.gala:219

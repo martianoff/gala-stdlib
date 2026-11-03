@@ -175,78 +175,239 @@ func HashCombine(h1 uint32, h2 uint32) uint32 {
 
 //line std/hashable.gala:108
 
-// HashValue hashes a value the way HashSet and HashMap hash their keys: a
-// value of a predeclared primitive type by its value, any other value through
-// its Hashable Hash method. It panics for a value that is neither. The std
-// value types hash the values they hold through it too, so a Tuple of Tuples,
-// or an Option of a Hashable type, hashes all the way down. It takes any
-// rather than a type parameter: the switch boxes the value either way, and one
-// function serves every key type instead of an instance per type.
+// HashValue hashes a value held inside a key: a value of a predeclared
+// primitive type by its value, any other value through its Hashable Hash
+// method. It panics for a value that is neither. The std value types hash the
+// values they hold through it, so a Tuple of Tuples, or an Option of a
+// Hashable type, hashes all the way down. A caller that knows the value's
+// type hashes it with HashOf, which does not box a primitive.
 func HashValue(v any) uint32 {
-	return func(obj any) uint32 {
+	return hashOf(v, false)
+}
+
+//line std/hashable.gala:116
+
+// HashKey hashes a HashSet element or HashMap key: as HashValue does, and a
+// pointer that is not Hashable, and has no Equal method another key could be
+// passed to, by its address. HashSet and HashMap tell such pointers apart by
+// identity (==), so the address is the hash that agrees with their equality.
+//
+// HashValue does not hash such a pointer: a Tuple, Option, List or struct
+// holding one compares it by its target (std.Equal), which its address does
+// not agree with.
+func HashKey(v any) uint32 {
+	return hashOf(v, true)
+}
+
+//line std/hashable.gala:125
+
+// HashOf hashes v exactly as HashValue(v) does, without boxing it into an
+// any: hashing a value of a predeclared primitive type, an int, a string or a
+// float64, allocates nothing. Being generic, it is compiled once per shape of
+// T it hashes, where HashValue is compiled once.
+//
+// Example:
+//
+//	val h = HashOf(1000) // HashValue(1000), without an allocation
+func HashOf[T any](v T) uint32 {
+	return hashOf(v, false)
+}
+
+//line std/hashable.gala:135
+
+// HashKeyOf hashes a HashSet element or HashMap key exactly as HashKey(v)
+// does, without boxing it into an any, as HashOf does HashValue.
+func HashKeyOf[T any](v T) uint32 {
+	return hashOf(v, true)
+}
+
+//line std/hashable.gala:139
+
+// hashOf is HashOf, and HashKeyOf when key is set.
+func hashOf[T any](v T, key bool) uint32 {
+	{
+		obj := hashPrimitive(v)
 		{
-			i, _tmp_1 := As[int](obj)
-			if _tmp_1 {
-				return HashInt(int64(i))
+			_tmp_1 := _unapply_Some_788eb096(obj)
+			_tmp_2 := _tmp_1.IsDefined()
+			_tmp_3 := _tmp_1.Value.Get()
+			_ = _tmp_3
+			h := _tmp_3
+			if _tmp_2 {
+				return h
 			} else {
-				s, _tmp_2 := As[string](obj)
-				if _tmp_2 {
-					return HashString(s)
-				} else {
-					i, _tmp_3 := As[int64](obj)
-					if _tmp_3 {
-						return HashInt(i)
-					} else {
-						i, _tmp_4 := As[int32](obj)
+				{
+					obj := v
+					var _tmp_8 Hashable
+					_tmp_5 := 0
+					switch any(obj).(type) {
+					case ImmutableUnwrapper, Transparent:
+						var _tmp_7 bool
+						if _tmp_8, _tmp_7 = As[Hashable](obj); _tmp_7 {
+							_tmp_5 = 1
+						}
+					case Hashable:
+						_tmp_8, _tmp_5 = any(obj).(Hashable), 1
+					}
+					{
+						h, _tmp_4 := _tmp_8, _tmp_5 == 1
 						if _tmp_4 {
-							return HashInt(int64(i))
+							return h.Hash()
+						} else if true && key {
+							return hashKeyByIdentity(v)
 						} else {
-							u, _tmp_5 := As[uint](obj)
-							if _tmp_5 {
-								return HashUint(uint64(u))
+							return panicNotHashable(v)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//line std/hashable.gala:149
+
+// hashPrimitive hashes v by its value when it is of a predeclared primitive
+// type, and is None otherwise: the one list of the types HashValue hashes by
+// value. Its type patterns lower to one Go type switch, which boxes v without
+// an allocation.
+func hashPrimitive[T any](v T) Option[uint32] {
+	{
+		obj := v
+		var _tmp_26 int
+		var _tmp_27 string
+		var _tmp_28 int64
+		var _tmp_29 int32
+		var _tmp_30 uint
+		var _tmp_31 uint64
+		var _tmp_32 uint32
+		var _tmp_33 bool
+		var _tmp_34 int8
+		var _tmp_35 int16
+		var _tmp_36 uint8
+		var _tmp_37 uint16
+		var _tmp_38 float64
+		var _tmp_39 float32
+		_tmp_23 := 0
+		switch _tmp_24 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_25 bool
+			if _tmp_26, _tmp_25 = As[int](obj); _tmp_25 {
+				_tmp_23 = 1
+			} else if _tmp_27, _tmp_25 = As[string](obj); _tmp_25 {
+				_tmp_23 = 2
+			} else if _tmp_28, _tmp_25 = As[int64](obj); _tmp_25 {
+				_tmp_23 = 3
+			} else if _tmp_29, _tmp_25 = As[int32](obj); _tmp_25 {
+				_tmp_23 = 4
+			} else if _tmp_30, _tmp_25 = As[uint](obj); _tmp_25 {
+				_tmp_23 = 5
+			} else if _tmp_31, _tmp_25 = As[uint64](obj); _tmp_25 {
+				_tmp_23 = 6
+			} else if _tmp_32, _tmp_25 = As[uint32](obj); _tmp_25 {
+				_tmp_23 = 7
+			} else if _tmp_33, _tmp_25 = As[bool](obj); _tmp_25 {
+				_tmp_23 = 8
+			} else if _tmp_34, _tmp_25 = As[int8](obj); _tmp_25 {
+				_tmp_23 = 9
+			} else if _tmp_35, _tmp_25 = As[int16](obj); _tmp_25 {
+				_tmp_23 = 10
+			} else if _tmp_36, _tmp_25 = As[uint8](obj); _tmp_25 {
+				_tmp_23 = 11
+			} else if _tmp_37, _tmp_25 = As[uint16](obj); _tmp_25 {
+				_tmp_23 = 12
+			} else if _tmp_38, _tmp_25 = As[float64](obj); _tmp_25 {
+				_tmp_23 = 13
+			} else if _tmp_39, _tmp_25 = As[float32](obj); _tmp_25 {
+				_tmp_23 = 14
+			}
+		case int:
+			_tmp_26, _tmp_23 = _tmp_24, 1
+		case string:
+			_tmp_27, _tmp_23 = _tmp_24, 2
+		case int64:
+			_tmp_28, _tmp_23 = _tmp_24, 3
+		case int32:
+			_tmp_29, _tmp_23 = _tmp_24, 4
+		case uint:
+			_tmp_30, _tmp_23 = _tmp_24, 5
+		case uint64:
+			_tmp_31, _tmp_23 = _tmp_24, 6
+		case uint32:
+			_tmp_32, _tmp_23 = _tmp_24, 7
+		case bool:
+			_tmp_33, _tmp_23 = _tmp_24, 8
+		case int8:
+			_tmp_34, _tmp_23 = _tmp_24, 9
+		case int16:
+			_tmp_35, _tmp_23 = _tmp_24, 10
+		case uint8:
+			_tmp_36, _tmp_23 = _tmp_24, 11
+		case uint16:
+			_tmp_37, _tmp_23 = _tmp_24, 12
+		case float64:
+			_tmp_38, _tmp_23 = _tmp_24, 13
+		case float32:
+			_tmp_39, _tmp_23 = _tmp_24, 14
+		}
+		{
+			i, _tmp_9 := _tmp_26, _tmp_23 == 1
+			if _tmp_9 {
+				return Some[uint32]{}.Apply(HashInt(int64(i)))
+			} else {
+				s, _tmp_10 := _tmp_27, _tmp_23 == 2
+				if _tmp_10 {
+					return Some[uint32]{}.Apply(HashString(s))
+				} else {
+					i, _tmp_11 := _tmp_28, _tmp_23 == 3
+					if _tmp_11 {
+						return Some[uint32]{}.Apply(HashInt(i))
+					} else {
+						i, _tmp_12 := _tmp_29, _tmp_23 == 4
+						if _tmp_12 {
+							return Some[uint32]{}.Apply(HashInt(int64(i)))
+						} else {
+							u, _tmp_13 := _tmp_30, _tmp_23 == 5
+							if _tmp_13 {
+								return Some[uint32]{}.Apply(HashUint(uint64(u)))
 							} else {
-								u, _tmp_6 := As[uint64](obj)
-								if _tmp_6 {
-									return HashUint(u)
+								u, _tmp_14 := _tmp_31, _tmp_23 == 6
+								if _tmp_14 {
+									return Some[uint32]{}.Apply(HashUint(u))
 								} else {
-									u, _tmp_7 := As[uint32](obj)
-									if _tmp_7 {
-										return HashUint(uint64(u))
+									u, _tmp_15 := _tmp_32, _tmp_23 == 7
+									if _tmp_15 {
+										return Some[uint32]{}.Apply(HashUint(uint64(u)))
 									} else {
-										b, _tmp_8 := As[bool](obj)
-										if _tmp_8 {
-											return HashBool(b)
+										b, _tmp_16 := _tmp_33, _tmp_23 == 8
+										if _tmp_16 {
+											return Some[uint32]{}.Apply(HashBool(b))
 										} else {
-											i, _tmp_9 := As[int8](obj)
-											if _tmp_9 {
-												return HashInt(int64(i))
+											i, _tmp_17 := _tmp_34, _tmp_23 == 9
+											if _tmp_17 {
+												return Some[uint32]{}.Apply(HashInt(int64(i)))
 											} else {
-												i, _tmp_10 := As[int16](obj)
-												if _tmp_10 {
-													return HashInt(int64(i))
+												i, _tmp_18 := _tmp_35, _tmp_23 == 10
+												if _tmp_18 {
+													return Some[uint32]{}.Apply(HashInt(int64(i)))
 												} else {
-													u, _tmp_11 := As[uint8](obj)
-													if _tmp_11 {
-														return HashUint(uint64(u))
+													u, _tmp_19 := _tmp_36, _tmp_23 == 11
+													if _tmp_19 {
+														return Some[uint32]{}.Apply(HashUint(uint64(u)))
 													} else {
-														u, _tmp_12 := As[uint16](obj)
-														if _tmp_12 {
-															return HashUint(uint64(u))
+														u, _tmp_20 := _tmp_37, _tmp_23 == 12
+														if _tmp_20 {
+															return Some[uint32]{}.Apply(HashUint(uint64(u)))
 														} else {
-															f, _tmp_13 := As[float64](obj)
-															if _tmp_13 {
-																return HashFloat(f)
+															f, _tmp_21 := _tmp_38, _tmp_23 == 13
+															if _tmp_21 {
+																return Some[uint32]{}.Apply(HashFloat(f))
 															} else {
-																f, _tmp_14 := As[float32](obj)
-																if _tmp_14 {
-																	return HashFloat(float64(f))
+																f, _tmp_22 := _tmp_39, _tmp_23 == 14
+																if _tmp_22 {
+																	return Some[uint32]{}.Apply(HashFloat(float64(f)))
 																} else {
-																	h, _tmp_15 := As[Hashable](obj)
-																	if _tmp_15 {
-																		return h.Hash()
-																	} else {
-																		return panicNotHashable(v)
-																	}
+																	return None[uint32]{}.Apply()
 																}
 															}
 														}
@@ -262,97 +423,26 @@ func HashValue(v any) uint32 {
 				}
 			}
 		}
-	}(v)
+	}
 }
 
-//line std/hashable.gala:134
+//line std/hashable.gala:171
 
 // HashesByValue reports whether v is of a predeclared primitive type that
 // HashValue hashes by its value. For those types == is Equal, so a HashSet
 // holding them tells values apart exactly as Equal does. A named type is left
 // out: it may declare an Equal of its own.
 func HashesByValue(v any) bool {
-	return func(obj any) bool {
-		{
-			_, _tmp_16 := As[int](obj)
-			if _tmp_16 {
-				return true
-			} else {
-				_, _tmp_17 := As[string](obj)
-				if _tmp_17 {
-					return true
-				} else {
-					_, _tmp_18 := As[int64](obj)
-					if _tmp_18 {
-						return true
-					} else {
-						_, _tmp_19 := As[int32](obj)
-						if _tmp_19 {
-							return true
-						} else {
-							_, _tmp_20 := As[uint](obj)
-							if _tmp_20 {
-								return true
-							} else {
-								_, _tmp_21 := As[uint64](obj)
-								if _tmp_21 {
-									return true
-								} else {
-									_, _tmp_22 := As[uint32](obj)
-									if _tmp_22 {
-										return true
-									} else {
-										_, _tmp_23 := As[bool](obj)
-										if _tmp_23 {
-											return true
-										} else {
-											_, _tmp_24 := As[int8](obj)
-											if _tmp_24 {
-												return true
-											} else {
-												_, _tmp_25 := As[int16](obj)
-												if _tmp_25 {
-													return true
-												} else {
-													_, _tmp_26 := As[uint8](obj)
-													if _tmp_26 {
-														return true
-													} else {
-														_, _tmp_27 := As[uint16](obj)
-														if _tmp_27 {
-															return true
-														} else {
-															_, _tmp_28 := As[float64](obj)
-															if _tmp_28 {
-																return true
-															} else {
-																_, _tmp_29 := As[float32](obj)
-																if _tmp_29 {
-																	return true
-																} else {
-																	return false
-																}
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}(v)
+	return hashPrimitive(v).IsDefined()
 }
 
-//line std/hashable.gala:156
+//line std/hashable.gala:177
 
 // panicNotHashable panics for a value HashValue cannot hash.
 func panicNotHashable(v any) uint32 {
-//line std/hashable.gala:159
+//line std/hashable.gala:180
 	panic(fmt.Sprintf("cannot hash type %T: a HashSet element or HashMap key, and every value inside a Tuple, Option or Either one, must be a primitive or implement std.Hashable interface", v))
+}
+func _unapply_Some_788eb096[_T0 any](v Option[_T0]) Option[_T0] {
+	return Some[_T0]{}.Unapply(v)
 }

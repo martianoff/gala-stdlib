@@ -190,7 +190,7 @@ func (s *HashSet[T]) Add(elem T) bool {
 		panic("HashSet.Add: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
 //line collection_mutable/hashset.gala:106
-	var hashCode = HashValue(elem)
+	var hashCode = HashKeyOf(elem)
 //line collection_mutable/hashset.gala:107
 	var idx = int(hashCode & s.bucketMask)
 //line collection_mutable/hashset.gala:110
@@ -296,7 +296,7 @@ func (s *HashSet[T]) Remove(elem T) bool {
 		panic("HashSet.Remove: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
 //line collection_mutable/hashset.gala:171
-	var hashCode = HashValue(elem)
+	var hashCode = HashKeyOf(elem)
 //line collection_mutable/hashset.gala:172
 	var idx = int(hashCode & s.bucketMask)
 //line collection_mutable/hashset.gala:174
@@ -385,7 +385,7 @@ func (s *HashSet[T]) Contains(elem T) bool {
 		panic("HashSet.Contains: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
 //line collection_mutable/hashset.gala:218
-	var hashCode = HashValue(elem)
+	var hashCode = HashKeyOf(elem)
 //line collection_mutable/hashset.gala:219
 	var idx = int(hashCode & s.bucketMask)
 //line collection_mutable/hashset.gala:221

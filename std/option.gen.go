@@ -15,12 +15,28 @@ func isDefined(opt any) bool {
 			return false
 		} else {
 			return func(obj any) bool {
+				var _tmp_6 bool
+				var _tmp_7 Option[any]
+				_tmp_3 := 0
+				switch _tmp_4 := any(obj).(type) {
+				case ImmutableUnwrapper, Transparent:
+					var _tmp_5 bool
+					if _tmp_6, _tmp_5 = As[bool](obj); _tmp_5 {
+						_tmp_3 = 1
+					} else if _tmp_7, _tmp_5 = As[Option[any]](obj); _tmp_5 {
+						_tmp_3 = 2
+					}
+				case bool:
+					_tmp_6, _tmp_3 = _tmp_4, 1
+				case Option[any]:
+					_tmp_7, _tmp_3 = _tmp_4, 2
+				}
 				{
-					b, _tmp_1 := As[bool](obj)
+					b, _tmp_1 := _tmp_6, _tmp_3 == 1
 					if _tmp_1 {
 						return b
 					} else {
-						oi, _tmp_2 := As[Option[any]](obj)
+						oi, _tmp_2 := _tmp_7, _tmp_3 == 2
 						if _tmp_2 {
 							return oi.isSome()
 						} else {
@@ -38,9 +54,20 @@ func isDefined(opt any) bool {
 // getSomeValue returns the option's value if it is an Option, otherwise returns the value itself.
 func getSomeValue(opt any) any {
 	return func(obj any) any {
+		var _tmp_12 Option[any]
+		_tmp_9 := 0
+		switch _tmp_10 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_11 bool
+			if _tmp_12, _tmp_11 = As[Option[any]](obj); _tmp_11 {
+				_tmp_9 = 1
+			}
+		case Option[any]:
+			_tmp_12, _tmp_9 = _tmp_10, 1
+		}
 		{
-			oi, _tmp_3 := As[Option[any]](obj)
-			if _tmp_3 {
+			oi, _tmp_8 := _tmp_12, _tmp_9 == 1
+			if _tmp_8 {
 				return oi.Value.Get()
 			} else {
 				return opt

@@ -253,8 +253,19 @@ func mutableTreeMapCompare[K comparable](a K, b K) int {
 func mutableTreeMapCompareIntsAny(a int, vb any) int {
 //line collection_mutable/treemap.gala:119
 	var b = func(obj any) int {
+		var _tmp_19 int
+		_tmp_16 := 0
+		switch _tmp_17 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_18 bool
+			if _tmp_19, _tmp_18 = As[int](obj); _tmp_18 {
+				_tmp_16 = 1
+			}
+		case int:
+			_tmp_19, _tmp_16 = _tmp_17, 1
+		}
 		{
-			bi, _tmp_15 := As[int](obj)
+			bi, _tmp_15 := _tmp_19, _tmp_16 == 1
 			if _tmp_15 {
 				return bi
 			} else {
@@ -280,9 +291,20 @@ func mutableTreeMapCompareIntsAny(a int, vb any) int {
 func mutableTreeMapCompareStringsAny(a string, vb any) int {
 //line collection_mutable/treemap.gala:126
 	var b = func(obj any) string {
+		var _tmp_24 string
+		_tmp_21 := 0
+		switch _tmp_22 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_23 bool
+			if _tmp_24, _tmp_23 = As[string](obj); _tmp_23 {
+				_tmp_21 = 1
+			}
+		case string:
+			_tmp_24, _tmp_21 = _tmp_22, 1
+		}
 		{
-			bs, _tmp_16 := As[string](obj)
-			if _tmp_16 {
+			bs, _tmp_20 := _tmp_24, _tmp_21 == 1
+			if _tmp_20 {
 				return bs
 			} else {
 				return ""
@@ -307,9 +329,20 @@ func mutableTreeMapCompareStringsAny(a string, vb any) int {
 func mutableTreeMapCompareInt64sAny(a int64, vb any) int {
 //line collection_mutable/treemap.gala:133
 	var b = func(obj any) int64 {
+		var _tmp_29 int64
+		_tmp_26 := 0
+		switch _tmp_27 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_28 bool
+			if _tmp_29, _tmp_28 = As[int64](obj); _tmp_28 {
+				_tmp_26 = 1
+			}
+		case int64:
+			_tmp_29, _tmp_26 = _tmp_27, 1
+		}
 		{
-			bi, _tmp_17 := As[int64](obj)
-			if _tmp_17 {
+			bi, _tmp_25 := _tmp_29, _tmp_26 == 1
+			if _tmp_25 {
 				return bi
 			} else {
 				return int64(0)
@@ -334,9 +367,20 @@ func mutableTreeMapCompareInt64sAny(a int64, vb any) int {
 func mutableTreeMapCompareInt32sAny(a int32, vb any) int {
 //line collection_mutable/treemap.gala:140
 	var b = func(obj any) int32 {
+		var _tmp_34 int32
+		_tmp_31 := 0
+		switch _tmp_32 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_33 bool
+			if _tmp_34, _tmp_33 = As[int32](obj); _tmp_33 {
+				_tmp_31 = 1
+			}
+		case int32:
+			_tmp_34, _tmp_31 = _tmp_32, 1
+		}
 		{
-			bi, _tmp_18 := As[int32](obj)
-			if _tmp_18 {
+			bi, _tmp_30 := _tmp_34, _tmp_31 == 1
+			if _tmp_30 {
 				return bi
 			} else {
 				return int32(0)
@@ -361,9 +405,20 @@ func mutableTreeMapCompareInt32sAny(a int32, vb any) int {
 func mutableTreeMapCompareInt16sAny(a int16, vb any) int {
 //line collection_mutable/treemap.gala:147
 	var b = func(obj any) int16 {
+		var _tmp_39 int16
+		_tmp_36 := 0
+		switch _tmp_37 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_38 bool
+			if _tmp_39, _tmp_38 = As[int16](obj); _tmp_38 {
+				_tmp_36 = 1
+			}
+		case int16:
+			_tmp_39, _tmp_36 = _tmp_37, 1
+		}
 		{
-			bi, _tmp_19 := As[int16](obj)
-			if _tmp_19 {
+			bi, _tmp_35 := _tmp_39, _tmp_36 == 1
+			if _tmp_35 {
 				return bi
 			} else {
 				return int16(0)
@@ -388,9 +443,20 @@ func mutableTreeMapCompareInt16sAny(a int16, vb any) int {
 func mutableTreeMapCompareInt8sAny(a int8, vb any) int {
 //line collection_mutable/treemap.gala:154
 	var b = func(obj any) int8 {
+		var _tmp_44 int8
+		_tmp_41 := 0
+		switch _tmp_42 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_43 bool
+			if _tmp_44, _tmp_43 = As[int8](obj); _tmp_43 {
+				_tmp_41 = 1
+			}
+		case int8:
+			_tmp_44, _tmp_41 = _tmp_42, 1
+		}
 		{
-			bi, _tmp_20 := As[int8](obj)
-			if _tmp_20 {
+			bi, _tmp_40 := _tmp_44, _tmp_41 == 1
+			if _tmp_40 {
 				return bi
 			} else {
 				return int8(0)
@@ -415,9 +481,20 @@ func mutableTreeMapCompareInt8sAny(a int8, vb any) int {
 func mutableTreeMapCompareFloat64sAny(a float64, vb any) int {
 //line collection_mutable/treemap.gala:161
 	var b = func(obj any) float64 {
+		var _tmp_49 float64
+		_tmp_46 := 0
+		switch _tmp_47 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_48 bool
+			if _tmp_49, _tmp_48 = As[float64](obj); _tmp_48 {
+				_tmp_46 = 1
+			}
+		case float64:
+			_tmp_49, _tmp_46 = _tmp_47, 1
+		}
 		{
-			bf, _tmp_21 := As[float64](obj)
-			if _tmp_21 {
+			bf, _tmp_45 := _tmp_49, _tmp_46 == 1
+			if _tmp_45 {
 				return bf
 			} else {
 				return float64(0)
@@ -442,9 +519,20 @@ func mutableTreeMapCompareFloat64sAny(a float64, vb any) int {
 func mutableTreeMapCompareFloat32sAny(a float32, vb any) int {
 //line collection_mutable/treemap.gala:168
 	var b = func(obj any) float32 {
+		var _tmp_54 float32
+		_tmp_51 := 0
+		switch _tmp_52 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_53 bool
+			if _tmp_54, _tmp_53 = As[float32](obj); _tmp_53 {
+				_tmp_51 = 1
+			}
+		case float32:
+			_tmp_54, _tmp_51 = _tmp_52, 1
+		}
 		{
-			bf, _tmp_22 := As[float32](obj)
-			if _tmp_22 {
+			bf, _tmp_50 := _tmp_54, _tmp_51 == 1
+			if _tmp_50 {
 				return bf
 			} else {
 				return float32(0)
@@ -469,9 +557,20 @@ func mutableTreeMapCompareFloat32sAny(a float32, vb any) int {
 func mutableTreeMapCompareUintsAny(a uint, vb any) int {
 //line collection_mutable/treemap.gala:175
 	var b = func(obj any) uint {
+		var _tmp_59 uint
+		_tmp_56 := 0
+		switch _tmp_57 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_58 bool
+			if _tmp_59, _tmp_58 = As[uint](obj); _tmp_58 {
+				_tmp_56 = 1
+			}
+		case uint:
+			_tmp_59, _tmp_56 = _tmp_57, 1
+		}
 		{
-			bu, _tmp_23 := As[uint](obj)
-			if _tmp_23 {
+			bu, _tmp_55 := _tmp_59, _tmp_56 == 1
+			if _tmp_55 {
 				return bu
 			} else {
 				return uint(0)
@@ -496,9 +595,20 @@ func mutableTreeMapCompareUintsAny(a uint, vb any) int {
 func mutableTreeMapCompareUint64sAny(a uint64, vb any) int {
 //line collection_mutable/treemap.gala:182
 	var b = func(obj any) uint64 {
+		var _tmp_64 uint64
+		_tmp_61 := 0
+		switch _tmp_62 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_63 bool
+			if _tmp_64, _tmp_63 = As[uint64](obj); _tmp_63 {
+				_tmp_61 = 1
+			}
+		case uint64:
+			_tmp_64, _tmp_61 = _tmp_62, 1
+		}
 		{
-			bu, _tmp_24 := As[uint64](obj)
-			if _tmp_24 {
+			bu, _tmp_60 := _tmp_64, _tmp_61 == 1
+			if _tmp_60 {
 				return bu
 			} else {
 				return uint64(0)
@@ -523,9 +633,20 @@ func mutableTreeMapCompareUint64sAny(a uint64, vb any) int {
 func mutableTreeMapCompareUint32sAny(a uint32, vb any) int {
 //line collection_mutable/treemap.gala:189
 	var b = func(obj any) uint32 {
+		var _tmp_69 uint32
+		_tmp_66 := 0
+		switch _tmp_67 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_68 bool
+			if _tmp_69, _tmp_68 = As[uint32](obj); _tmp_68 {
+				_tmp_66 = 1
+			}
+		case uint32:
+			_tmp_69, _tmp_66 = _tmp_67, 1
+		}
 		{
-			bu, _tmp_25 := As[uint32](obj)
-			if _tmp_25 {
+			bu, _tmp_65 := _tmp_69, _tmp_66 == 1
+			if _tmp_65 {
 				return bu
 			} else {
 				return uint32(0)
@@ -550,9 +671,20 @@ func mutableTreeMapCompareUint32sAny(a uint32, vb any) int {
 func mutableTreeMapCompareUint16sAny(a uint16, vb any) int {
 //line collection_mutable/treemap.gala:196
 	var b = func(obj any) uint16 {
+		var _tmp_74 uint16
+		_tmp_71 := 0
+		switch _tmp_72 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_73 bool
+			if _tmp_74, _tmp_73 = As[uint16](obj); _tmp_73 {
+				_tmp_71 = 1
+			}
+		case uint16:
+			_tmp_74, _tmp_71 = _tmp_72, 1
+		}
 		{
-			bu, _tmp_26 := As[uint16](obj)
-			if _tmp_26 {
+			bu, _tmp_70 := _tmp_74, _tmp_71 == 1
+			if _tmp_70 {
 				return bu
 			} else {
 				return uint16(0)
@@ -577,9 +709,20 @@ func mutableTreeMapCompareUint16sAny(a uint16, vb any) int {
 func mutableTreeMapCompareUint8sAny(a uint8, vb any) int {
 //line collection_mutable/treemap.gala:203
 	var b = func(obj any) uint8 {
+		var _tmp_79 uint8
+		_tmp_76 := 0
+		switch _tmp_77 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_78 bool
+			if _tmp_79, _tmp_78 = As[uint8](obj); _tmp_78 {
+				_tmp_76 = 1
+			}
+		case uint8:
+			_tmp_79, _tmp_76 = _tmp_77, 1
+		}
 		{
-			bu, _tmp_27 := As[uint8](obj)
-			if _tmp_27 {
+			bu, _tmp_75 := _tmp_79, _tmp_76 == 1
+			if _tmp_75 {
 				return bu
 			} else {
 				return uint8(0)
@@ -700,16 +843,16 @@ func (m *TreeMap[K, V]) Apply(key K) V {
 	{
 		obj := m.Get(key)
 		{
-			_tmp_28 := _unapply_Some_ee831ca6(obj)
-			_tmp_29 := _tmp_28.IsDefined()
-			_tmp_30 := _tmp_28.Value.Get()
-			_ = _tmp_30
-			v := _tmp_30
-			if _tmp_29 {
+			_tmp_80 := _unapply_Some_ee831ca6(obj)
+			_tmp_81 := _tmp_80.IsDefined()
+			_tmp_82 := _tmp_80.Value.Get()
+			_ = _tmp_82
+			v := _tmp_82
+			if _tmp_81 {
 				return v
 			} else {
-				_tmp_31 := _unapply_None_ee831ca6(obj)
-				if _tmp_31 {
+				_tmp_83 := _unapply_None_ee831ca6(obj)
+				if _tmp_83 {
 					panic(fmt.Sprintf("TreeMap: key not found: %v", key))
 				} else {
 					panic("unreachable")
@@ -797,7 +940,7 @@ func (m *TreeMap[K, V]) fixAfterInsert(node *treeMapNode[K, V]) {
 //line collection_mutable/treemap.gala:316
 		var grand = parent.parent.Get()
 //line collection_mutable/treemap.gala:317
-		if grand.left == node.parent {
+		if grand.left.Equal(node.parent) {
 //line collection_mutable/treemap.gala:318
 			var uncle = grand.right
 //line collection_mutable/treemap.gala:319
@@ -812,7 +955,7 @@ func (m *TreeMap[K, V]) fixAfterInsert(node *treeMapNode[K, V]) {
 				node = grand
 			} else {
 //line collection_mutable/treemap.gala:326
-				if parent.right == SomePtr(node) {
+				if parent.right.Equal(SomePtr(node)) {
 //line collection_mutable/treemap.gala:328
 					node = parent
 //line collection_mutable/treemap.gala:329
@@ -844,7 +987,7 @@ func (m *TreeMap[K, V]) fixAfterInsert(node *treeMapNode[K, V]) {
 				node = grand
 			} else {
 //line collection_mutable/treemap.gala:347
-				if parent.left == SomePtr(node) {
+				if parent.left.Equal(SomePtr(node)) {
 //line collection_mutable/treemap.gala:349
 					node = parent
 //line collection_mutable/treemap.gala:350
@@ -882,7 +1025,7 @@ func (m *TreeMap[K, V]) replaceChild(old *treeMapNode[K, V], replacement OptionP
 //line collection_mutable/treemap.gala:371
 	var parent = old.parent.Get()
 //line collection_mutable/treemap.gala:372
-	if parent.left == SomePtr(old) {
+	if parent.left.Equal(SomePtr(old)) {
 //line collection_mutable/treemap.gala:373
 		parent.left = replacement
 	} else {
@@ -1110,7 +1253,7 @@ func (m *TreeMap[K, V]) fixAfterDelete(node *treeMapNode[K, V]) {
 //line collection_mutable/treemap.gala:501
 		var parent = node.parent.Get()
 //line collection_mutable/treemap.gala:502
-		if parent.left == SomePtr(node) {
+		if parent.left.Equal(SomePtr(node)) {
 //line collection_mutable/treemap.gala:503
 			var sibling = parent.right
 //line collection_mutable/treemap.gala:504
@@ -2007,16 +2150,16 @@ func (m *TreeMap[K, V]) Merge(other *TreeMap[K, V], f func(V, V) V) {
 		func() {
 			obj := m.Get(k)
 			{
-				_tmp_32 := _unapply_Some_ee831ca6(obj)
-				_tmp_33 := _tmp_32.IsDefined()
-				_tmp_34 := _tmp_32.Value.Get()
-				_ = _tmp_34
-				e := _tmp_34
-				if _tmp_33 {
+				_tmp_84 := _unapply_Some_ee831ca6(obj)
+				_tmp_85 := _tmp_84.IsDefined()
+				_tmp_86 := _tmp_84.Value.Get()
+				_ = _tmp_86
+				e := _tmp_86
+				if _tmp_85 {
 					m.Put(k, f(e, v))
 				} else {
-					_tmp_35 := _unapply_None_ee831ca6(obj)
-					if _tmp_35 {
+					_tmp_87 := _unapply_None_ee831ca6(obj)
+					if _tmp_87 {
 						m.Put(k, v)
 					} else {
 						panic("unreachable")

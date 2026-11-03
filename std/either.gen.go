@@ -120,8 +120,19 @@ func (e Either[A, B]) IsRight() bool {
 // isLeft returns true if this is a Left, false otherwise.
 func isLeft(e any) bool {
 	return func(obj any) bool {
+		var _tmp_5 Either[any, any]
+		_tmp_2 := 0
+		switch _tmp_3 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_4 bool
+			if _tmp_5, _tmp_4 = As[Either[any, any]](obj); _tmp_4 {
+				_tmp_2 = 1
+			}
+		case Either[any, any]:
+			_tmp_5, _tmp_2 = _tmp_3, 1
+		}
 		{
-			ei, _tmp_1 := As[Either[any, any]](obj)
+			ei, _tmp_1 := _tmp_5, _tmp_2 == 1
 			if _tmp_1 {
 				return ei.isLeft()
 			} else {
@@ -136,9 +147,20 @@ func isLeft(e any) bool {
 // isRight returns true if this is a Right, false otherwise.
 func isRight(e any) bool {
 	return func(obj any) bool {
+		var _tmp_10 Either[any, any]
+		_tmp_7 := 0
+		switch _tmp_8 := any(obj).(type) {
+		case ImmutableUnwrapper, Transparent:
+			var _tmp_9 bool
+			if _tmp_10, _tmp_9 = As[Either[any, any]](obj); _tmp_9 {
+				_tmp_7 = 1
+			}
+		case Either[any, any]:
+			_tmp_10, _tmp_7 = _tmp_8, 1
+		}
 		{
-			ei, _tmp_2 := As[Either[any, any]](obj)
-			if _tmp_2 {
+			ei, _tmp_6 := _tmp_10, _tmp_7 == 1
+			if _tmp_6 {
 				return ei.isRight()
 			} else {
 				return false
@@ -153,8 +175,8 @@ func isRight(e any) bool {
 func getLeftValue(e any) any {
 	return func(obj any) any {
 		{
-			ei, _tmp_3 := As[Either[any, any]](obj)
-			if _tmp_3 && ei.isLeft() {
+			ei, _tmp_11 := As[Either[any, any]](obj)
+			if _tmp_11 && ei.isLeft() {
 				return ei.LeftValue.Get()
 			} else {
 				return nil
@@ -169,8 +191,8 @@ func getLeftValue(e any) any {
 func getRightValue(e any) any {
 	return func(obj any) any {
 		{
-			ei, _tmp_4 := As[Either[any, any]](obj)
-			if _tmp_4 && ei.isRight() {
+			ei, _tmp_12 := As[Either[any, any]](obj)
+			if _tmp_12 && ei.isRight() {
 				return ei.RightValue.Get()
 			} else {
 				return nil
