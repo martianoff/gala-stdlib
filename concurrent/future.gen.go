@@ -29,10 +29,10 @@ type FutureState[T any] struct {
 }
 
 func (s FutureState[T]) Copy() FutureState[T] {
-	return FutureState[T]{result: Copy(s.result), done: Copy(s.done), once: Copy(s.once), mu: Copy(s.mu), complete: Copy(s.complete), ec: Copy(s.ec), cancel: Copy(s.cancel)}
+	return FutureState[T]{result: Copy(s.result), done: Copy(s.done), once: Copy(s.once), mu: Copy(s.mu), complete: s.complete, ec: Copy(s.ec), cancel: Copy(s.cancel)}
 }
 func (s FutureState[T]) Equal(other FutureState[T]) bool {
-	return Equal(s.result, other.result) && Equal(s.done, other.done) && Equal(s.once, other.once) && Equal(s.mu, other.mu) && Equal(s.complete, other.complete) && Equal(s.ec, other.ec) && Equal(s.cancel, other.cancel)
+	return Equal(s.result, other.result) && Equal(s.done, other.done) && Equal(s.once, other.once) && Equal(s.mu, other.mu) && s.complete == other.complete && Equal(s.ec, other.ec) && Equal(s.cancel, other.cancel)
 }
 
 type FutureStateInstance interface {
@@ -93,15 +93,22 @@ func (s Future[T]) isfut() bool {
 	return s._variant == _Future_fut
 }
 func (s Future[T]) Copy() Future[T] {
-	return Future[T]{state: Copy(s.state), _variant: Copy(s._variant)}
+	return Future[T]{state: s.state.Copy(), _variant: s._variant}
 }
 func (s Future[T]) Equal(other Future[T]) bool {
-	return Equal(s.state, other.state) && Equal(s._variant, other._variant)
+	if s._variant != other._variant {
+		return false
+	}
+	switch s._variant {
+	case _Future_fut:
+		return s.state.Equal(other.state)
+	}
+	return true
 }
 func (s Future[T]) String() string {
 	switch s._variant {
 	case _Future_fut:
-		return fmt.Sprintf("fut(%v)", s.state.Get())
+		return FormatStruct("fut", s.state.Get())
 	default:
 		return "Future(<unknown>)"
 	}
@@ -127,10 +134,13 @@ type Promise[T any] struct {
 }
 
 func (s Promise[T]) Copy() Promise[T] {
-	return Promise[T]{future: Copy(s.future)}
+	return Promise[T]{future: s.future.Copy()}
 }
 func (s Promise[T]) Equal(other Promise[T]) bool {
-	return Equal(s.future, other.future)
+	return s.future.Equal(other.future)
+}
+func (s Promise[T]) String() string {
+	return FormatStruct("Promise", s.future)
 }
 
 type PromiseInstance interface {
@@ -196,7 +206,7 @@ func newPromiseWith[T any](ec go_interop.ExecutionContext, cancel Option[go_inte
 //line concurrent/future.gala:101
 
 // Future returns the Future associated with this Promise.
-func (p Promise[T]) Future() Future[T] {
+func Promise_Future[T any](p Promise[T]) Future[T] {
 	return p.future.Get()
 }
 
@@ -206,7 +216,7 @@ func (p Promise[T]) Future() Future[T] {
 // Returns true if the Promise was completed, false if already completed.
 func (p Promise[T]) Success(value T) bool {
 //line concurrent/future.gala:108
-	return p.Complete(Success[T]{}.Apply(value))
+	return Promise_Complete[T](p, Success[T]{}.Apply(value))
 }
 
 //line concurrent/future.gala:110
@@ -215,14 +225,14 @@ func (p Promise[T]) Success(value T) bool {
 // Returns true if the Promise was completed, false if already completed.
 func (p Promise[T]) Failure(err error) bool {
 //line concurrent/future.gala:114
-	return p.Complete(Failure[T]{}.Apply(err))
+	return Promise_Complete[T](p, Failure[T]{}.Apply(err))
 }
 
 //line concurrent/future.gala:116
 
 // Complete completes the Promise with a Try result.
 // Returns true if the Promise was completed, false if already completed.
-func (p Promise[T]) Complete(result Try[T]) bool {
+func Promise_Complete[T any](p Promise[T], result Try[T]) bool {
 //line concurrent/future.gala:120
 	return p.future.Get().state.Get().once.Do(func() {
 //line concurrent/future.gala:121
@@ -262,7 +272,7 @@ func FutureOf[T any](value T, ec go_interop.ExecutionContext) Future[T] {
 //line concurrent/future.gala:141
 	p.Success(value)
 //line concurrent/future.gala:142
-	return p.Future()
+	return Promise_Future[T](p)
 }
 
 //line concurrent/future.gala:144
@@ -275,7 +285,7 @@ func FutureFailed[T any](err error, ec go_interop.ExecutionContext) Future[T] {
 //line concurrent/future.gala:149
 	p.Failure(err)
 //line concurrent/future.gala:150
-	return p.Future()
+	return Promise_Future[T](p)
 }
 
 //line concurrent/future.gala:152
@@ -300,7 +310,7 @@ func runAsync[T any](body func() T, ec go_interop.ExecutionContext) Future[T] {
 //line concurrent/future.gala:163
 	ec.ExecuteWithRecover(onSuccess, onPanic)
 //line concurrent/future.gala:164
-	return p.Future()
+	return Promise_Future[T](p)
 }
 
 //line concurrent/future.gala:166
@@ -339,10 +349,13 @@ type FutureError struct {
 }
 
 func (s FutureError) Copy() FutureError {
-	return FutureError{Message: Copy(s.Message)}
+	return FutureError{Message: s.Message}
 }
 func (s FutureError) Equal(other FutureError) bool {
-	return Equal(s.Message, other.Message)
+	return s.Message.Get() == other.Message.Get()
+}
+func (s FutureError) String() string {
+	return FormatStruct("FutureError", s.Message)
 }
 func (s FutureError) Unapply(v any) (Immutable[string], bool) {
 	if p, ok := v.(FutureError); ok {
@@ -373,10 +386,13 @@ type TimeoutError struct {
 }
 
 func (s TimeoutError) Copy() TimeoutError {
-	return TimeoutError{Timeout: Copy(s.Timeout)}
+	return TimeoutError{Timeout: s.Timeout.Copy()}
 }
 func (s TimeoutError) Equal(other TimeoutError) bool {
-	return Equal(s.Timeout, other.Timeout)
+	return s.Timeout.Equal(other.Timeout)
+}
+func (s TimeoutError) String() string {
+	return FormatStruct("TimeoutError", s.Timeout)
 }
 func (s TimeoutError) Unapply(v any) (Immutable[Duration], bool) {
 	if p, ok := v.(TimeoutError); ok {
@@ -411,10 +427,13 @@ type CancellationError struct {
 }
 
 func (s CancellationError) Copy() CancellationError {
-	return CancellationError{Message: Copy(s.Message)}
+	return CancellationError{Message: s.Message}
 }
 func (s CancellationError) Equal(other CancellationError) bool {
-	return Equal(s.Message, other.Message)
+	return s.Message.Get() == other.Message.Get()
+}
+func (s CancellationError) String() string {
+	return FormatStruct("CancellationError", s.Message)
 }
 func (s CancellationError) Unapply(v any) (Immutable[string], bool) {
 	if p, ok := v.(CancellationError); ok {
@@ -471,7 +490,7 @@ func (f Future[T]) IsCompleted() bool {
 
 // Value returns the current result as an Option[Try[T]].
 // Returns None if the Future is not yet completed.
-func (f Future[T]) Value() Option[Try[T]] {
+func Future_Value[T any](f Future[T]) Option[Try[T]] {
 //line concurrent/future.gala:227
 	f.state.Get().mu.RLock()
 //line concurrent/future.gala:228
@@ -487,7 +506,7 @@ func (f Future[T]) Value() Option[Try[T]] {
 //line concurrent/future.gala:233
 
 // Await blocks until the Future is completed and returns the result.
-func (f Future[T]) Await() Try[T] {
+func Future_Await[T any](f Future[T]) Try[T] {
 //line concurrent/future.gala:236
 	go_interop.WaitSignal(f.state.Get().done)
 //line concurrent/future.gala:237
@@ -504,9 +523,9 @@ func (f Future[T]) Await() Try[T] {
 
 // AwaitFor blocks until the Future is completed or the timeout expires.
 // Returns None if the timeout expires before the Future completes.
-func (f Future[T]) AwaitFor(timeout Duration) Option[Try[T]] {
+func Future_AwaitFor[T any](f Future[T], timeout Duration) Option[Try[T]] {
 //line concurrent/future.gala:246
-	var received = go_interop.WaitSignalTimeout(f.state.Get().done, timeout.ToGoDuration())
+	var received = go_interop.WaitSignalTimeout(EvalOperand(f.state.Get().done), timeout.ToGoDuration())
 //line concurrent/future.gala:247
 	if received {
 //line concurrent/future.gala:248
@@ -549,14 +568,14 @@ func (f Future[T]) WithTimeout(timeout Duration) Future[T] {
 //line concurrent/future.gala:275
 	var p = NewPromise[T](f.state.Get().ec)
 //line concurrent/future.gala:276
-	f.OnComplete(func(r Try[T]) {
+	Future_whenComplete[T](f, func(r Try[T]) {
 //line concurrent/future.gala:277
-		p.Complete(r)
+		Promise_Complete[T](p, r)
 	})
 //line concurrent/future.gala:279
 	f.state.Get().ec.Execute(func() {
 //line concurrent/future.gala:280
-		var received = go_interop.WaitSignalTimeout(f.state.Get().done, timeout.ToGoDuration())
+		var received = go_interop.WaitSignalTimeout(EvalOperand(f.state.Get().done), timeout.ToGoDuration())
 //line concurrent/future.gala:281
 		if !received {
 //line concurrent/future.gala:285
@@ -566,7 +585,7 @@ func (f Future[T]) WithTimeout(timeout Duration) Future[T] {
 		}
 	})
 //line concurrent/future.gala:289
-	return p.Future()
+	return Promise_Future[T](p)
 }
 
 //line concurrent/future.gala:291
@@ -574,7 +593,7 @@ func (f Future[T]) WithTimeout(timeout Duration) Future[T] {
 // Get blocks until the Future is completed and returns the value.
 // Panics if the Future completed with a failure.
 func (f Future[T]) Get() T {
-	return f.Await().Get()
+	return Future_Await[T](f).Get()
 }
 
 //line concurrent/future.gala:295
@@ -582,7 +601,7 @@ func (f Future[T]) Get() T {
 // GetOrElse blocks until the Future is completed and returns the value,
 // or the default value if the Future completed with a failure.
 func (f Future[T]) GetOrElse(defaultValue T) T {
-	return f.Await().GetOrElse(defaultValue)
+	return Future_Await[T](f).GetOrElse(defaultValue)
 }
 
 //line concurrent/future.gala:299
@@ -596,42 +615,58 @@ func (f Future[T]) ExecutionContext() go_interop.ExecutionContext {
 
 // OnComplete registers a callback to be executed when the Future completes.
 // The callback is executed asynchronously using this Future's ExecutionContext.
-func (f Future[T]) OnComplete(callback func(Try[T])) {
-//line concurrent/future.gala:306
-	f.state.Get().ec.Execute(func() {
-//line concurrent/future.gala:307
-		go_interop.WaitSignal(f.state.Get().done)
+// A panic in the callback is reported to that ExecutionContext's ReportFailure
+// rather than crashing the process.
+func Future_OnComplete[T any](f Future[T], callback func(Try[T])) {
 //line concurrent/future.gala:308
-		f.state.Get().mu.RLock()
-//line concurrent/future.gala:309
-		var r = f.state.Get().result
+	Future_whenComplete[T](f, func(r Try[T]) {
+//line concurrent/future.gala:308
+		runCallback(f.state.Get().ec, r, callback)
+	})
+}
+
 //line concurrent/future.gala:310
+
+// whenComplete runs callback with this Future's result on its
+// ExecutionContext once it completes. It is OnComplete for the callbacks the
+// combinators register themselves, which guard the user's functions they call.
+func Future_whenComplete[T any](f Future[T], callback func(Try[T])) {
+//line concurrent/future.gala:315
+	f.state.Get().ec.Execute(func() {
+//line concurrent/future.gala:316
+		go_interop.WaitSignal(f.state.Get().done)
+//line concurrent/future.gala:317
+		f.state.Get().mu.RLock()
+//line concurrent/future.gala:318
+		var r = f.state.Get().result
+//line concurrent/future.gala:319
 		f.state.Get().mu.RUnlock()
-//line concurrent/future.gala:311
+//line concurrent/future.gala:320
 		callback(r)
 	})
 }
 
-//line concurrent/future.gala:314
+//line concurrent/future.gala:323
 
 // OnSuccess registers a callback to be executed if the Future completes successfully.
 // The callback is executed asynchronously.
 func (f Future[T]) OnSuccess(callback func(T)) {
-//line concurrent/future.gala:318
-	f.OnComplete(func(r Try[T]) {
-//line concurrent/future.gala:319
+//line concurrent/future.gala:327
+	Future_OnComplete[T](f, func(r Try[T]) {
+//line concurrent/future.gala:328
 		func() {
-			obj := r
+			_subj := r
 			{
-				_tmp_1 := _unapply_Success_3efd068b(obj)
+				_tmp_1 := _unapply_Success_3efd068b(_subj)
 				_tmp_2 := _tmp_1.IsDefined()
 				_tmp_3 := _tmp_1.Value.Get()
 				_ = _tmp_3
-				v := _tmp_3
+				_tmp_v := _tmp_3
 				if _tmp_2 {
+					v := _tmp_v
 					callback(v)
 				} else {
-					_tmp_4 := _unapply_Failure_3efd068b(obj)
+					_tmp_4 := _unapply_Failure_3efd068b(_subj)
 					_tmp_5 := _tmp_4.IsDefined()
 					_tmp_6 := _tmp_4.Value.Get()
 					_ = _tmp_6
@@ -645,29 +680,30 @@ func (f Future[T]) OnSuccess(callback func(T)) {
 	})
 }
 
-//line concurrent/future.gala:325
+//line concurrent/future.gala:334
 
 // OnFailure registers a callback to be executed if the Future completes with a failure.
 // The callback is executed asynchronously.
 func (f Future[T]) OnFailure(callback func(error)) {
-//line concurrent/future.gala:329
-	f.OnComplete(func(r Try[T]) {
-//line concurrent/future.gala:330
+//line concurrent/future.gala:338
+	Future_OnComplete[T](f, func(r Try[T]) {
+//line concurrent/future.gala:339
 		func() {
-			obj := r
+			_subj := r
 			{
-				_tmp_7 := _unapply_Success_3efd068b(obj)
+				_tmp_7 := _unapply_Success_3efd068b(_subj)
 				_tmp_8 := _tmp_7.IsDefined()
 				_tmp_9 := _tmp_7.Value.Get()
 				_ = _tmp_9
 				if _tmp_8 {
 				} else {
-					_tmp_10 := _unapply_Failure_3efd068b(obj)
+					_tmp_10 := _unapply_Failure_3efd068b(_subj)
 					_tmp_11 := _tmp_10.IsDefined()
 					_tmp_12 := _tmp_10.Value.Get()
 					_ = _tmp_12
-					e := _tmp_12
+					_tmp_e := _tmp_12
 					if _tmp_11 {
+						e := _tmp_e
 						callback(e)
 					} else {
 						panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
@@ -678,7 +714,70 @@ func (f Future[T]) OnFailure(callback func(error)) {
 	})
 }
 
-//line concurrent/future.gala:336
+//line concurrent/future.gala:345
+
+// applyGuarded applies f to a as the Try combinators do: a panic in f becomes
+// a Failure holding the panic's error and stack (see Try.Map).
+func applyGuarded[A any, R any](a A, f func(A) R) Try[R] {
+	return Try_Map(Success[A]{}.Apply(a), f)
+}
+
+//line concurrent/future.gala:349
+
+// runCallback runs callback(a) on an ExecutionContext worker. As with
+// Try.ForEach, a panic in the callback is not turned into a result; it is
+// reported to ec, since re-raising it on the worker would crash the process.
+func runCallback[A any](ec go_interop.ExecutionContext, a A, callback func(A)) {
+//line concurrent/future.gala:354
+	applyGuarded(a, func(x A) Void {
+//line concurrent/future.gala:355
+		callback(x)
+//line concurrent/future.gala:356
+		return Void{}
+	}).OnFailure(func(err error) {
+//line concurrent/future.gala:357
+		ec.ReportFailure(err)
+	})
+}
+
+//line concurrent/future.gala:359
+
+// completeWith completes p with the result of next, the Future a combinator's
+// function returned, or with next's error when the function panicked.
+func Promise_completeWith[T any](p Promise[T], next Try[Future[T]]) {
+//line concurrent/future.gala:363
+	func() {
+		_subj := next
+		{
+			_tmp_13 := _unapply_Success_3efd068b(_subj)
+			_tmp_14 := _tmp_13.IsDefined()
+			_tmp_15 := _tmp_13.Value.Get()
+			_ = _tmp_15
+			_tmp_stage := _tmp_15
+			if _tmp_14 {
+				stage := _tmp_stage
+				Future_whenComplete[T](stage, func(r Try[T]) {
+//line concurrent/future.gala:364
+					Promise_Complete[T](p, r)
+				})
+			} else {
+				_tmp_16 := _unapply_Failure_3efd068b(_subj)
+				_tmp_17 := _tmp_16.IsDefined()
+				_tmp_18 := _tmp_16.Value.Get()
+				_ = _tmp_18
+				_tmp_err := _tmp_18
+				if _tmp_17 {
+					err := _tmp_err
+					p.Failure(err)
+				} else {
+					panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
+				}
+			}
+		}
+	}()
+}
+
+//line concurrent/future.gala:368
 
 // derive builds a new Future stage that inherits this Future's ExecutionContext
 // and cancellation token. Once this Future completes it runs handle(p, r) on the
@@ -687,21 +786,21 @@ func (f Future[T]) OnFailure(callback func(error)) {
 // never runs. Every linear combinator below is expressed through it, so the
 // promise-creation + OnComplete + cancellation-guard scaffold lives in one place.
 func Future_derive[U any, T any](f Future[T], handle func(Promise[U], Try[T])) Future[U] {
-//line concurrent/future.gala:344
-	var p = newPromiseWith[U](f.state.Get().ec, Some[go_interop.CancelToken]{}.Apply(f.state.Get().cancel))
-//line concurrent/future.gala:345
-	f.OnComplete(func(r Try[T]) {
-//line concurrent/future.gala:346
+//line concurrent/future.gala:376
+	var p = newPromiseWith[U](EvalOperand(f.state.Get().ec), Some[go_interop.CancelToken]{}.Apply(f.state.Get().cancel))
+//line concurrent/future.gala:377
+	Future_whenComplete[T](f, func(r Try[T]) {
+//line concurrent/future.gala:378
 		if !checkCancelled(p, f.state.Get().cancel) {
-//line concurrent/future.gala:347
+//line concurrent/future.gala:379
 			handle(p, r)
 		}
 	})
-//line concurrent/future.gala:350
-	return p.Future()
+//line concurrent/future.gala:382
+	return Promise_Future[U](p)
 }
 
-//line concurrent/future.gala:352
+//line concurrent/future.gala:384
 
 // Map transforms the successful value of this Future using the given function.
 // If this Future fails, the resulting Future will also fail with the same error.
@@ -709,50 +808,25 @@ func Future_derive[U any, T any](f Future[T], handle func(Promise[U], Try[T])) F
 // token; if the token is cancelled before this stage runs, it short-circuits.
 func Future_Map[U any, T any](f Future[T], fn func(T) U) Future[U] {
 	return Future_derive[U, T](f, func(p Promise[U], r Try[T]) {
-//line concurrent/future.gala:358
-		p.Complete(Try_Map[U, T](r, fn))
+//line concurrent/future.gala:390
+		Promise_Complete[U](p, Try_Map[U, T](r, fn))
 	})
 }
 
-//line concurrent/future.gala:359
+//line concurrent/future.gala:391
 
 // FlatMap transforms the successful value of this Future using a function
 // that returns another Future. This allows chaining asynchronous operations.
-// The resulting Future inherits this Future's ExecutionContext.
+// The resulting Future inherits this Future's ExecutionContext. If fn panics,
+// the resulting Future fails with the panic.
 func Future_FlatMap[U any, T any](f Future[T], fn func(T) Future[U]) Future[U] {
 	return Future_derive[U, T](f, func(p Promise[U], r Try[T]) {
-//line concurrent/future.gala:365
-		func() {
-			obj := r
-			{
-				_tmp_13 := _unapply_Success_3efd068b(obj)
-				_tmp_14 := _tmp_13.IsDefined()
-				_tmp_15 := _tmp_13.Value.Get()
-				_ = _tmp_15
-				v := _tmp_15
-				if _tmp_14 {
-					fn(v).OnComplete(func(innerResult Try[U]) {
-//line concurrent/future.gala:367
-						p.Complete(innerResult)
-					})
-				} else {
-					_tmp_16 := _unapply_Failure_3efd068b(obj)
-					_tmp_17 := _tmp_16.IsDefined()
-					_tmp_18 := _tmp_16.Value.Get()
-					_ = _tmp_18
-					e := _tmp_18
-					if _tmp_17 {
-						p.Failure(e)
-					} else {
-						panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
-					}
-				}
-			}
-		}()
+//line concurrent/future.gala:397
+		Promise_completeWith[U](p, Try_Map[Future[U], T](r, fn))
 	})
 }
 
-//line concurrent/future.gala:372
+//line concurrent/future.gala:398
 
 // Filter returns a new Future that contains the value only if it satisfies
 // the predicate. If the predicate returns false, the Future fails with
@@ -760,12 +834,12 @@ func Future_FlatMap[U any, T any](f Future[T], fn func(T) Future[U]) Future[U] {
 // The resulting Future inherits this Future's ExecutionContext.
 func (f Future[T]) Filter(predicate func(T) bool) Future[T] {
 	return Future_derive[T, T](f, func(p Promise[T], r Try[T]) {
-//line concurrent/future.gala:378
-		p.Complete(r.Filter(predicate))
+//line concurrent/future.gala:404
+		Promise_Complete[T](p, r.Filter(predicate))
 	})
 }
 
-//line concurrent/future.gala:379
+//line concurrent/future.gala:405
 
 // Recover handles failures by applying a recovery function.
 // If this Future fails, the recovery function is applied to the error
@@ -773,40 +847,40 @@ func (f Future[T]) Filter(predicate func(T) bool) Future[T] {
 // The resulting Future inherits this Future's ExecutionContext.
 func (f Future[T]) Recover(pf func(error) T) Future[T] {
 	return Future_derive[T, T](f, func(p Promise[T], r Try[T]) {
-//line concurrent/future.gala:385
-		p.Complete(r.Recover(pf))
+//line concurrent/future.gala:411
+		Promise_Complete[T](p, r.Recover(pf))
 	})
 }
 
-//line concurrent/future.gala:386
+//line concurrent/future.gala:412
 
 // RecoverWith handles failures by applying a recovery function
 // that returns another Future.
-// The resulting Future inherits this Future's ExecutionContext.
+// The resulting Future inherits this Future's ExecutionContext. If pf panics,
+// the resulting Future fails with the panic.
 func (f Future[T]) RecoverWith(pf func(error) Future[T]) Future[T] {
 	return Future_derive[T, T](f, func(p Promise[T], r Try[T]) {
-//line concurrent/future.gala:392
+//line concurrent/future.gala:419
 		func() {
-			obj := r
+			_subj := r
 			{
-				_tmp_19 := _unapply_Success_3efd068b(obj)
+				_tmp_19 := _unapply_Success_3efd068b(_subj)
 				_tmp_20 := _tmp_19.IsDefined()
 				_tmp_21 := _tmp_19.Value.Get()
 				_ = _tmp_21
-				v := _tmp_21
+				_tmp_v := _tmp_21
 				if _tmp_20 {
+					v := _tmp_v
 					p.Success(v)
 				} else {
-					_tmp_22 := _unapply_Failure_3efd068b(obj)
+					_tmp_22 := _unapply_Failure_3efd068b(_subj)
 					_tmp_23 := _tmp_22.IsDefined()
 					_tmp_24 := _tmp_22.Value.Get()
 					_ = _tmp_24
-					e := _tmp_24
+					_tmp_e := _tmp_24
 					if _tmp_23 {
-						pf(e).OnComplete(func(recovered Try[T]) {
-//line concurrent/future.gala:395
-							p.Complete(recovered)
-						})
+						e := _tmp_e
+						Promise_completeWith[T](p, applyGuarded(e, pf))
 					} else {
 						panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 					}
@@ -816,31 +890,46 @@ func (f Future[T]) RecoverWith(pf func(error) Future[T]) Future[T] {
 	})
 }
 
-//line concurrent/future.gala:399
+//line concurrent/future.gala:424
 
 // Transform applies success or failure function based on the result.
-// The resulting Future inherits this Future's ExecutionContext.
+// The resulting Future inherits this Future's ExecutionContext. If the function
+// applied panics, the resulting Future fails with the panic.
 func Future_Transform[U any, T any](f Future[T], s func(T) Try[U], fn func(error) Try[U]) Future[U] {
 	return Future_derive[U, T](f, func(p Promise[U], r Try[T]) {
-//line concurrent/future.gala:404
+//line concurrent/future.gala:429
+		Promise_Complete[U](p, Try_Transform[U, T](r, s, fn))
+	})
+}
+
+//line concurrent/future.gala:430
+
+// TransformWith applies success or failure function that returns a Future.
+// The resulting Future inherits this Future's ExecutionContext. If the function
+// applied panics, the resulting Future fails with the panic.
+func Future_TransformWith[U any, T any](f Future[T], s func(T) Future[U], fn func(error) Future[U]) Future[U] {
+	return Future_derive[U, T](f, func(p Promise[U], r Try[T]) {
+//line concurrent/future.gala:436
 		func() {
-			obj := r
+			_subj := r
 			{
-				_tmp_25 := _unapply_Success_3efd068b(obj)
+				_tmp_25 := _unapply_Success_3efd068b(_subj)
 				_tmp_26 := _tmp_25.IsDefined()
 				_tmp_27 := _tmp_25.Value.Get()
 				_ = _tmp_27
-				v := _tmp_27
+				_tmp_v := _tmp_27
 				if _tmp_26 {
-					p.Complete(s(v))
+					v := _tmp_v
+					Promise_completeWith[U](p, applyGuarded(v, s))
 				} else {
-					_tmp_28 := _unapply_Failure_3efd068b(obj)
+					_tmp_28 := _unapply_Failure_3efd068b(_subj)
 					_tmp_29 := _tmp_28.IsDefined()
 					_tmp_30 := _tmp_28.Value.Get()
 					_ = _tmp_30
-					e := _tmp_30
+					_tmp_e := _tmp_30
 					if _tmp_29 {
-						p.Complete(fn(e))
+						e := _tmp_e
+						Promise_completeWith[U](p, applyGuarded(e, fn))
 					} else {
 						panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
 					}
@@ -850,82 +939,42 @@ func Future_Transform[U any, T any](f Future[T], s func(T) Try[U], fn func(error
 	})
 }
 
-//line concurrent/future.gala:409
-
-// TransformWith applies success or failure function that returns a Future.
-// The resulting Future inherits this Future's ExecutionContext.
-func Future_TransformWith[U any, T any](f Future[T], s func(T) Future[U], fn func(error) Future[U]) Future[U] {
-	return Future_derive[U, T](f, func(p Promise[U], r Try[T]) {
-//line concurrent/future.gala:414
-		func() {
-			obj := r
-			{
-				_tmp_31 := _unapply_Success_3efd068b(obj)
-				_tmp_32 := _tmp_31.IsDefined()
-				_tmp_33 := _tmp_31.Value.Get()
-				_ = _tmp_33
-				v := _tmp_33
-				if _tmp_32 {
-					s(v).OnComplete(func(res Try[U]) {
-//line concurrent/future.gala:416
-						p.Complete(res)
-					})
-				} else {
-					_tmp_34 := _unapply_Failure_3efd068b(obj)
-					_tmp_35 := _tmp_34.IsDefined()
-					_tmp_36 := _tmp_34.Value.Get()
-					_ = _tmp_36
-					e := _tmp_36
-					if _tmp_35 {
-						fn(e).OnComplete(func(res Try[U]) {
-//line concurrent/future.gala:419
-							p.Complete(res)
-						})
-					} else {
-						panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
-					}
-				}
-			}
-		}()
-	})
-}
-
-//line concurrent/future.gala:423
+//line concurrent/future.gala:441
 
 // Zip combines two Futures into a Future of a tuple.
 // The resulting Future inherits this Future's ExecutionContext. Zip, ZipWith,
 // Zip2..Zip10 and Fallback are defined in terms of FlatMap/Map/RecoverWith, so
 // they inherit this Future's cancellation token and boundary check transitively.
 func Future_Zip[U any, T any](f Future[T], other Future[U]) Future[Tuple[T, U]] {
-//line concurrent/future.gala:429
+//line concurrent/future.gala:447
 	return Future_FlatMap[Tuple[T, U], T](f, func(t T) Future[Tuple[T, U]] {
-//line concurrent/future.gala:430
+//line concurrent/future.gala:448
 		return Future_Map[Tuple[T, U], U](other, func(u U) Tuple[T, U] {
 			return Tuple[T, U]{V1: NewImmutable(t), V2: NewImmutable(u)}
 		})
 	})
 }
 
-//line concurrent/future.gala:433
+//line concurrent/future.gala:451
 
 // ZipWith combines two Futures using a combining function.
 // The resulting Future inherits this Future's ExecutionContext.
 func Future_ZipWith[U any, V any, T any](f Future[T], other Future[U], fn func(T, U) V) Future[V] {
-//line concurrent/future.gala:437
+//line concurrent/future.gala:455
 	return Future_FlatMap[V, T](f, func(t T) Future[V] {
-//line concurrent/future.gala:438
+//line concurrent/future.gala:456
 		return Future_Map[V, U](other, func(u U) V {
 			return fn(t, u)
 		})
 	})
 }
 
-//line concurrent/future.gala:447
+//line concurrent/future.gala:465
 func Future_Zip2[U any, T any](f Future[T], other Future[U]) Future[Tuple[T, U]] {
 	return Future_Zip(f, other)
 }
 
-//line concurrent/future.gala:449
+//line concurrent/future.gala:467
 func Future_Zip3[U any, V any, T any](f Future[T], fu Future[U], fv Future[V]) Future[Tuple3[T, U, V]] {
 	return Future_FlatMap[Tuple3[T, U, V], T](f, func(t T) Future[Tuple3[T, U, V]] {
 		return Future_FlatMap[Tuple3[T, U, V], U](fu, func(u U) Future[Tuple3[T, U, V]] {
@@ -936,7 +985,7 @@ func Future_Zip3[U any, V any, T any](f Future[T], fu Future[U], fv Future[V]) F
 	})
 }
 
-//line concurrent/future.gala:454
+//line concurrent/future.gala:472
 func Future_Zip4[U any, V any, W any, T any](f Future[T], fu Future[U], fv Future[V], fw Future[W]) Future[Tuple4[T, U, V, W]] {
 	return Future_FlatMap[Tuple4[T, U, V, W], T](f, func(t T) Future[Tuple4[T, U, V, W]] {
 		return Future_FlatMap[Tuple4[T, U, V, W], U](fu, func(u U) Future[Tuple4[T, U, V, W]] {
@@ -949,7 +998,7 @@ func Future_Zip4[U any, V any, W any, T any](f Future[T], fu Future[U], fv Futur
 	})
 }
 
-//line concurrent/future.gala:460
+//line concurrent/future.gala:478
 func Future_Zip5[U any, V any, W any, X any, T any](f Future[T], fu Future[U], fv Future[V], fw Future[W], fx Future[X]) Future[Tuple5[T, U, V, W, X]] {
 	return Future_FlatMap[Tuple5[T, U, V, W, X], T](f, func(t T) Future[Tuple5[T, U, V, W, X]] {
 		return Future_FlatMap[Tuple5[T, U, V, W, X], U](fu, func(u U) Future[Tuple5[T, U, V, W, X]] {
@@ -964,7 +1013,7 @@ func Future_Zip5[U any, V any, W any, X any, T any](f Future[T], fu Future[U], f
 	})
 }
 
-//line concurrent/future.gala:467
+//line concurrent/future.gala:485
 func Future_Zip6[U any, V any, W any, X any, Y any, T any](f Future[T], fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y]) Future[Tuple6[T, U, V, W, X, Y]] {
 	return Future_FlatMap[Tuple6[T, U, V, W, X, Y], T](f, func(t T) Future[Tuple6[T, U, V, W, X, Y]] {
 		return Future_FlatMap[Tuple6[T, U, V, W, X, Y], U](fu, func(u U) Future[Tuple6[T, U, V, W, X, Y]] {
@@ -981,7 +1030,7 @@ func Future_Zip6[U any, V any, W any, X any, Y any, T any](f Future[T], fu Futur
 	})
 }
 
-//line concurrent/future.gala:475
+//line concurrent/future.gala:493
 func Future_Zip7[U any, V any, W any, X any, Y any, Z any, T any](f Future[T], fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y], fz Future[Z]) Future[Tuple7[T, U, V, W, X, Y, Z]] {
 	return Future_FlatMap[Tuple7[T, U, V, W, X, Y, Z], T](f, func(t T) Future[Tuple7[T, U, V, W, X, Y, Z]] {
 		return Future_FlatMap[Tuple7[T, U, V, W, X, Y, Z], U](fu, func(u U) Future[Tuple7[T, U, V, W, X, Y, Z]] {
@@ -1000,7 +1049,7 @@ func Future_Zip7[U any, V any, W any, X any, Y any, Z any, T any](f Future[T], f
 	})
 }
 
-//line concurrent/future.gala:484
+//line concurrent/future.gala:502
 func Future_Zip8[U any, V any, W any, X any, Y any, Z any, P any, T any](f Future[T], fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y], fz Future[Z], fp Future[P]) Future[Tuple8[T, U, V, W, X, Y, Z, P]] {
 	return Future_FlatMap[Tuple8[T, U, V, W, X, Y, Z, P], T](f, func(t T) Future[Tuple8[T, U, V, W, X, Y, Z, P]] {
 		return Future_FlatMap[Tuple8[T, U, V, W, X, Y, Z, P], U](fu, func(u U) Future[Tuple8[T, U, V, W, X, Y, Z, P]] {
@@ -1021,7 +1070,7 @@ func Future_Zip8[U any, V any, W any, X any, Y any, Z any, P any, T any](f Futur
 	})
 }
 
-//line concurrent/future.gala:494
+//line concurrent/future.gala:512
 func Future_Zip9[U any, V any, W any, X any, Y any, Z any, P any, Q any, T any](f Future[T], fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y], fz Future[Z], fp Future[P], fq Future[Q]) Future[Tuple9[T, U, V, W, X, Y, Z, P, Q]] {
 	return Future_FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q], T](f, func(t T) Future[Tuple9[T, U, V, W, X, Y, Z, P, Q]] {
 		return Future_FlatMap[Tuple9[T, U, V, W, X, Y, Z, P, Q], U](fu, func(u U) Future[Tuple9[T, U, V, W, X, Y, Z, P, Q]] {
@@ -1044,7 +1093,7 @@ func Future_Zip9[U any, V any, W any, X any, Y any, Z any, P any, Q any, T any](
 	})
 }
 
-//line concurrent/future.gala:505
+//line concurrent/future.gala:523
 func Future_Zip10[U any, V any, W any, X any, Y any, Z any, P any, Q any, R any, T any](f Future[T], fu Future[U], fv Future[V], fw Future[W], fx Future[X], fy Future[Y], fz Future[Z], fp Future[P], fq Future[Q], fr Future[R]) Future[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]] {
 	return Future_FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R], T](f, func(t T) Future[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]] {
 		return Future_FlatMap[Tuple10[T, U, V, W, X, Y, Z, P, Q, R], U](fu, func(u U) Future[Tuple10[T, U, V, W, X, Y, Z, P, Q, R]] {
@@ -1069,123 +1118,127 @@ func Future_Zip10[U any, V any, W any, X any, Y any, Z any, P any, Q any, R any,
 	})
 }
 
-//line concurrent/future.gala:516
+//line concurrent/future.gala:534
 
 // Fallback returns the first successful Future, or the last failure if both fail.
 // The resulting Future inherits this Future's ExecutionContext.
 func (f Future[T]) Fallback(that Future[T]) Future[T] {
-//line concurrent/future.gala:520
+//line concurrent/future.gala:538
 	return f.RecoverWith(func(e error) Future[T] {
 		return that
 	})
 }
 
-//line concurrent/future.gala:522
+//line concurrent/future.gala:540
 
 // AndThen registers a callback and returns a new Future that completes
 // with the same result after the callback executes.
-// The resulting Future inherits this Future's ExecutionContext.
-func (f Future[T]) AndThen(callback func(Try[T])) Future[T] {
+// The resulting Future inherits this Future's ExecutionContext. A panic in the
+// callback is reported to the ExecutionContext's ReportFailure, and the
+// resulting Future still completes with this Future's result.
+func Future_AndThen[T any](f Future[T], callback func(Try[T])) Future[T] {
 	return Future_derive[T, T](f, func(p Promise[T], r Try[T]) {
-//line concurrent/future.gala:528
-		callback(r)
-//line concurrent/future.gala:529
-		p.Complete(r)
+//line concurrent/future.gala:548
+		runCallback(f.state.Get().ec, r, callback)
+//line concurrent/future.gala:549
+		Promise_Complete[T](p, r)
 	})
 }
 
-//line concurrent/future.gala:531
+//line concurrent/future.gala:551
 
 // ToTry converts the Future to a Try by blocking until completion.
-func (f Future[T]) ToTry() Try[T] {
-	return f.Await()
+func Future_ToTry[T any](f Future[T]) Try[T] {
+	return Future_Await[T](f)
 }
 
-//line concurrent/future.gala:534
+//line concurrent/future.gala:554
 
 // ToOption converts the successful value to an Option by blocking.
 // Returns None if the Future fails.
-func (f Future[T]) ToOption() Option[T] {
-	return f.Await().ToOption()
+func Future_ToOption[T any](f Future[T]) Option[T] {
+	return Try_ToOption[T](Future_Await[T](f))
 }
 
-//line concurrent/future.gala:538
+//line concurrent/future.gala:558
 
 // ToEither converts the Future result to an Either by blocking.
-func (f Future[T]) ToEither() Either[error, T] {
-	return f.Await().ToEither()
+func Future_ToEither[T any](f Future[T]) Either[error, T] {
+	return Try_ToEither[T](Future_Await[T](f))
 }
 
-//line concurrent/future.gala:541
+//line concurrent/future.gala:561
 
 // Sequence converts an Array of Futures into a Future of an Array.
 // If any Future fails, the resulting Future fails with that error.
 func Sequence[T any](futures Array[Future[T]]) Future[Array[T]] {
-//line concurrent/future.gala:545
+//line concurrent/future.gala:565
 	if futures.IsEmpty() {
-//line concurrent/future.gala:546
+//line concurrent/future.gala:566
 		return FutureOf[Array[T]](EmptyArray[T](), nil)
 	}
-//line concurrent/future.gala:549
-	var p = NewPromise[Array[T]](nil)
-//line concurrent/future.gala:550
-	var size = futures.Size()
-//line concurrent/future.gala:551
-	var mu = go_interop.NewMutex()
-//line concurrent/future.gala:552
-	var remaining = size
-//line concurrent/future.gala:553
-	var failed = false
-//line concurrent/future.gala:556
-	var resultMap = EmptyHashMap[int, T]()
-//line concurrent/future.gala:559
-	Array_ZipWithIndex[Future[T]](futures).ForEach(func(pair Tuple[Future[T], int]) {
-//line concurrent/future.gala:560
-		var fut = pair.V1.Get()
-//line concurrent/future.gala:561
-		var idx = pair.V2.Get()
-//line concurrent/future.gala:562
-		fut.OnComplete(func(r Try[T]) {
-//line concurrent/future.gala:563
-			mu.Lock()
-//line concurrent/future.gala:565
-			if !failed {
-//line concurrent/future.gala:566
-				func() {
-					obj := r
-					{
-						_tmp_37 := _unapply_Success_3efd068b(obj)
-						_tmp_38 := _tmp_37.IsDefined()
-						_tmp_39 := _tmp_37.Value.Get()
-						_ = _tmp_39
-						v := _tmp_39
-						if _tmp_38 {
-//line concurrent/future.gala:568
-							resultMap = resultMap.Put(idx, v)
 //line concurrent/future.gala:569
-							remaining = remaining - 1
+	var p = NewPromise[Array[T]](nil)
 //line concurrent/future.gala:570
-							if remaining == 0 {
+	var size = futures.Size()
+//line concurrent/future.gala:571
+	var mu = go_interop.NewMutex()
 //line concurrent/future.gala:572
-								var result = EmptyArray[T]()
+	var remaining = size
 //line concurrent/future.gala:573
-								for i := 0; i < size; i++ {
-//line concurrent/future.gala:574
-									result = result.Append(resultMap.GetOrElse(i, v))
-								}
+	var failed = false
 //line concurrent/future.gala:576
+	var resultMap = EmptyHashMap[int, T]()
+//line concurrent/future.gala:579
+	Array_ZipWithIndex[Future[T]](futures).ForEach(func(pair Tuple[Future[T], int]) {
+//line concurrent/future.gala:580
+		var fut = pair.V1.Get()
+//line concurrent/future.gala:581
+		var idx = pair.V2.Get()
+//line concurrent/future.gala:582
+		Future_whenComplete[T](fut, func(r Try[T]) {
+//line concurrent/future.gala:583
+			mu.Lock()
+//line concurrent/future.gala:585
+			if !failed {
+//line concurrent/future.gala:586
+				func() {
+					_subj := r
+					{
+						_tmp_31 := _unapply_Success_3efd068b(_subj)
+						_tmp_32 := _tmp_31.IsDefined()
+						_tmp_33 := _tmp_31.Value.Get()
+						_ = _tmp_33
+						_tmp_v := _tmp_33
+						if _tmp_32 {
+							v := _tmp_v
+//line concurrent/future.gala:588
+							resultMap = resultMap.Put(idx, v)
+//line concurrent/future.gala:589
+							remaining = remaining - 1
+//line concurrent/future.gala:590
+							if remaining == 0 {
+//line concurrent/future.gala:592
+								var result = EmptyArray[T]()
+//line concurrent/future.gala:593
+								for i := 0; i < size; i++ {
+//line concurrent/future.gala:594
+									result = EvalOperand(result).Append(resultMap.GetOrElse(i, v))
+								}
+//line concurrent/future.gala:596
 								p.Success(result)
 							}
 						} else {
-							_tmp_40 := _unapply_Failure_3efd068b(obj)
-							_tmp_41 := _tmp_40.IsDefined()
-							_tmp_42 := _tmp_40.Value.Get()
-							_ = _tmp_42
-							e := _tmp_42
-							if _tmp_41 {
-//line concurrent/future.gala:580
+							_tmp_34 := _unapply_Failure_3efd068b(_subj)
+							_tmp_35 := _tmp_34.IsDefined()
+							_tmp_36 := _tmp_34.Value.Get()
+							_ = _tmp_36
+							_tmp_e := _tmp_36
+							if _tmp_35 {
+								e := _tmp_e
+//line concurrent/future.gala:600
 								failed = true
-//line concurrent/future.gala:581
+//line concurrent/future.gala:601
 								{
 									p.Failure(e)
 									return
@@ -1197,34 +1250,34 @@ func Sequence[T any](futures Array[Future[T]]) Future[Array[T]] {
 					}
 				}()
 			}
-//line concurrent/future.gala:586
+//line concurrent/future.gala:606
 			mu.Unlock()
 		})
 	})
-//line concurrent/future.gala:590
-	return p.Future()
+//line concurrent/future.gala:610
+	return Promise_Future[Array[T]](p)
 }
 
-//line concurrent/future.gala:592
+//line concurrent/future.gala:612
 
 // FirstCompletedOf returns a Future that completes with the result of
 // the first Future to complete from the given collection.
 func FirstCompletedOf[T any](futures Array[Future[T]]) Future[T] {
-//line concurrent/future.gala:596
+//line concurrent/future.gala:616
 	var p = NewPromise[T](nil)
-//line concurrent/future.gala:598
+//line concurrent/future.gala:618
 	futures.ForEach(func(fut Future[T]) {
-//line concurrent/future.gala:599
-		fut.OnComplete(func(r Try[T]) {
-//line concurrent/future.gala:600
-			p.Complete(r)
+//line concurrent/future.gala:619
+		Future_whenComplete[T](fut, func(r Try[T]) {
+//line concurrent/future.gala:620
+			Promise_Complete[T](p, r)
 		})
 	})
-//line concurrent/future.gala:604
-	return p.Future()
+//line concurrent/future.gala:624
+	return Promise_Future[T](p)
 }
 
-//line concurrent/future.gala:606
+//line concurrent/future.gala:626
 
 // Race returns a Future that completes with the result of the first Future to
 // finish, then cancels the losers via their cancellation tokens. It is the
@@ -1237,74 +1290,79 @@ func FirstCompletedOf[T any](futures Array[Future[T]]) Future[T] {
 // that has not yet started fails with a CancellationError. The Race result
 // itself carries a fresh token and is unaffected.
 func Race[T any](futures Array[Future[T]]) Future[T] {
-//line concurrent/future.gala:618
+//line concurrent/future.gala:638
 	var p = NewPromise[T](nil)
-//line concurrent/future.gala:620
+//line concurrent/future.gala:640
 	futures.ForEach(func(fut Future[T]) {
-//line concurrent/future.gala:621
-		fut.OnComplete(func(r Try[T]) {
-//line concurrent/future.gala:622
-			var won = p.Complete(r)
-//line concurrent/future.gala:623
+//line concurrent/future.gala:641
+		Future_whenComplete[T](fut, func(r Try[T]) {
+//line concurrent/future.gala:642
+			var won = Promise_Complete[T](p, r)
+//line concurrent/future.gala:643
 			if won {
-//line concurrent/future.gala:624
+//line concurrent/future.gala:644
 				futures.ForEach(func(other Future[T]) {
-//line concurrent/future.gala:625
+//line concurrent/future.gala:645
 					other.Cancel()
 				})
 			}
 		})
 	})
-//line concurrent/future.gala:631
-	return p.Future()
+//line concurrent/future.gala:651
+	return Promise_Future[T](p)
 }
 
-//line concurrent/future.gala:633
+//line concurrent/future.gala:653
 
 // Traverse applies a function that returns a Future to each element
 // and sequences the results.
+// If fn panics on an item, that item's Future fails with the panic.
 func Traverse[T any, U any](items Array[T], fn func(T) Future[U]) Future[Array[U]] {
-//line concurrent/future.gala:637
+//line concurrent/future.gala:658
 	var futures = Array_Map[Future[U], T](items, func(item T) Future[U] {
-		return fn(item)
+		return Try_Fold(applyGuarded(item, fn), func(err error) Future[U] {
+			return FutureFailed[U](err, nil)
+		}, func(stage Future[U]) Future[U] {
+			return stage
+		})
 	})
-//line concurrent/future.gala:638
+//line concurrent/future.gala:660
 	return Sequence[U](futures)
 }
 
-//line concurrent/future.gala:640
+//line concurrent/future.gala:662
 
 // Fold reduces a collection of Futures into a single Future.
 func Fold[T any, U any](futures Array[Future[T]], zero U, op func(U, T) U) Future[U] {
-//line concurrent/future.gala:643
+//line concurrent/future.gala:665
 	return Future_Map[U, Array[T]](Sequence[T](futures), func(results Array[T]) U {
-//line concurrent/future.gala:644
+//line concurrent/future.gala:666
 		return Array_FoldLeft[U, T](results, zero, op)
 	})
 }
 
-//line concurrent/future.gala:647
+//line concurrent/future.gala:669
 
 // ReduceLeft reduces a non-empty collection of Futures to a single Future.
 func ReduceLeft[T any](futures Array[Future[T]], op func(T, T) T) Future[T] {
-//line concurrent/future.gala:650
+//line concurrent/future.gala:672
 	if futures.IsEmpty() {
-//line concurrent/future.gala:651
+//line concurrent/future.gala:673
 		return FutureFailed[T](FutureError{Message: NewImmutable("Cannot reduce empty collection")}, nil)
 	}
-//line concurrent/future.gala:653
+//line concurrent/future.gala:675
 	if futures.Size() == 1 {
-//line concurrent/future.gala:654
+//line concurrent/future.gala:676
 		return futures.Get(0)
 	}
-//line concurrent/future.gala:657
+//line concurrent/future.gala:679
 	return Future_Map[T, Array[T]](Sequence[T](futures), func(results Array[T]) T {
-//line concurrent/future.gala:658
+//line concurrent/future.gala:680
 		return Array_FoldLeft[T, T](results.Tail(), results.Head(), op)
 	})
 }
 
-//line concurrent/future.gala:662
+//line concurrent/future.gala:684
 
 // Completed is an extractor for pattern matching on completed Futures.
 // It awaits the Future and extracts the Try result.
@@ -1334,14 +1392,14 @@ func (_ Completed[T]) IsCompleted() bool {
 	return true
 }
 
-//line concurrent/future.gala:674
+//line concurrent/future.gala:696
 
 // Unapply awaits the Future and extracts its Try result for pattern matching.
 func (c Completed[T]) Unapply(f Future[T]) Option[Try[T]] {
-	return Some[Try[T]]{}.Apply(f.Await())
+	return Some[Try[T]]{}.Apply(Future_Await[T](f))
 }
 
-//line concurrent/future.gala:676
+//line concurrent/future.gala:698
 
 // Succeeded is an extractor for pattern matching on successful Futures.
 // It awaits the Future and extracts the value if successful.
@@ -1371,26 +1429,27 @@ func (_ Succeeded[T]) IsSucceeded() bool {
 	return true
 }
 
-//line concurrent/future.gala:688
+//line concurrent/future.gala:710
 
 // Unapply awaits the Future and extracts its value if successful.
 func (s Succeeded[T]) Unapply(f Future[T]) Option[T] {
 	{
-		obj := f.Await()
+		_subj := Future_Await[T](f)
 		{
-			_tmp_43 := _unapply_Success_3efd068b(obj)
-			_tmp_44 := _tmp_43.IsDefined()
-			_tmp_45 := _tmp_43.Value.Get()
-			_ = _tmp_45
-			v := _tmp_45
-			if _tmp_44 {
+			_tmp_37 := _unapply_Success_3efd068b(_subj)
+			_tmp_38 := _tmp_37.IsDefined()
+			_tmp_39 := _tmp_37.Value.Get()
+			_ = _tmp_39
+			_tmp_v := _tmp_39
+			if _tmp_38 {
+				v := _tmp_v
 				return Some[T]{}.Apply(v)
 			} else {
-				_tmp_46 := _unapply_Failure_3efd068b(obj)
-				_tmp_47 := _tmp_46.IsDefined()
-				_tmp_48 := _tmp_46.Value.Get()
-				_ = _tmp_48
-				if _tmp_47 {
+				_tmp_40 := _unapply_Failure_3efd068b(_subj)
+				_tmp_41 := _tmp_40.IsDefined()
+				_tmp_42 := _tmp_40.Value.Get()
+				_ = _tmp_42
+				if _tmp_41 {
 					return None[T]{}.Apply()
 				} else {
 					panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
@@ -1400,7 +1459,7 @@ func (s Succeeded[T]) Unapply(f Future[T]) Option[T] {
 	}
 }
 
-//line concurrent/future.gala:693
+//line concurrent/future.gala:715
 
 // Failed is an extractor for pattern matching on failed Futures.
 // It awaits the Future and extracts the error if failed.
@@ -1430,26 +1489,27 @@ func (_ Failed[T]) IsFailed() bool {
 	return true
 }
 
-//line concurrent/future.gala:705
+//line concurrent/future.gala:727
 
 // Unapply awaits the Future and extracts its error if failed.
 func (fa Failed[T]) Unapply(f Future[T]) Option[error] {
 	{
-		obj := f.Await()
+		_subj := Future_Await[T](f)
 		{
-			_tmp_49 := _unapply_Success_3efd068b(obj)
-			_tmp_50 := _tmp_49.IsDefined()
-			_tmp_51 := _tmp_49.Value.Get()
-			_ = _tmp_51
-			if _tmp_50 {
+			_tmp_43 := _unapply_Success_3efd068b(_subj)
+			_tmp_44 := _tmp_43.IsDefined()
+			_tmp_45 := _tmp_43.Value.Get()
+			_ = _tmp_45
+			if _tmp_44 {
 				return None[error]{}.Apply()
 			} else {
-				_tmp_52 := _unapply_Failure_3efd068b(obj)
-				_tmp_53 := _tmp_52.IsDefined()
-				_tmp_54 := _tmp_52.Value.Get()
-				_ = _tmp_54
-				e := _tmp_54
-				if _tmp_53 {
+				_tmp_46 := _unapply_Failure_3efd068b(_subj)
+				_tmp_47 := _tmp_46.IsDefined()
+				_tmp_48 := _tmp_46.Value.Get()
+				_ = _tmp_48
+				_tmp_e := _tmp_48
+				if _tmp_47 {
+					e := _tmp_e
 					return Some[error]{}.Apply(e)
 				} else {
 					panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
@@ -1459,7 +1519,7 @@ func (fa Failed[T]) Unapply(f Future[T]) Option[error] {
 	}
 }
 
-//line concurrent/future.gala:712
+//line concurrent/future.gala:734
 
 // AllSucceeded is an extractor for matching when all Futures in a sequence succeed.
 // It sequences the Futures and extracts the Array of values if all succeed.
@@ -1489,27 +1549,28 @@ func (_ AllSucceeded[T]) IsAllSucceeded() bool {
 	return true
 }
 
-//line concurrent/future.gala:724
+//line concurrent/future.gala:746
 
 // Unapply sequences the Futures and extracts all values if all succeed.
 func (a AllSucceeded[T]) Unapply(futures Array[Future[T]]) Option[Array[T]] {
-//line concurrent/future.gala:727
+//line concurrent/future.gala:749
 	{
-		obj := Sequence[T](futures).Await()
+		_subj := Future_Await[Array[T]](Sequence[T](futures))
 		{
-			_tmp_55 := _unapply_Success_3efd068b(obj)
-			_tmp_56 := _tmp_55.IsDefined()
-			_tmp_57 := _tmp_55.Value.Get()
-			_ = _tmp_57
-			v := _tmp_57
-			if _tmp_56 {
+			_tmp_49 := _unapply_Success_3efd068b(_subj)
+			_tmp_50 := _tmp_49.IsDefined()
+			_tmp_51 := _tmp_49.Value.Get()
+			_ = _tmp_51
+			_tmp_v := _tmp_51
+			if _tmp_50 {
+				v := _tmp_v
 				return Some[Array[T]]{}.Apply(v)
 			} else {
-				_tmp_58 := _unapply_Failure_3efd068b(obj)
-				_tmp_59 := _tmp_58.IsDefined()
-				_tmp_60 := _tmp_58.Value.Get()
-				_ = _tmp_60
-				if _tmp_59 {
+				_tmp_52 := _unapply_Failure_3efd068b(_subj)
+				_tmp_53 := _tmp_52.IsDefined()
+				_tmp_54 := _tmp_52.Value.Get()
+				_ = _tmp_54
+				if _tmp_53 {
 					return None[Array[T]]{}.Apply()
 				} else {
 					panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
@@ -1519,7 +1580,7 @@ func (a AllSucceeded[T]) Unapply(futures Array[Future[T]]) Option[Array[T]] {
 	}
 }
 
-//line concurrent/future.gala:731
+//line concurrent/future.gala:753
 
 // AnyFailed is an extractor for matching when any Future in a sequence fails.
 // It returns the first error encountered.
@@ -1549,27 +1610,28 @@ func (_ AnyFailed[T]) IsAnyFailed() bool {
 	return true
 }
 
-//line concurrent/future.gala:743
+//line concurrent/future.gala:765
 
 // Unapply returns the first error if any Future in the sequence fails.
 func (a AnyFailed[T]) Unapply(futures Array[Future[T]]) Option[error] {
-//line concurrent/future.gala:746
+//line concurrent/future.gala:768
 	{
-		obj := Sequence[T](futures).Await()
+		_subj := Future_Await[Array[T]](Sequence[T](futures))
 		{
-			_tmp_61 := _unapply_Success_3efd068b(obj)
-			_tmp_62 := _tmp_61.IsDefined()
-			_tmp_63 := _tmp_61.Value.Get()
-			_ = _tmp_63
-			if _tmp_62 {
+			_tmp_55 := _unapply_Success_3efd068b(_subj)
+			_tmp_56 := _tmp_55.IsDefined()
+			_tmp_57 := _tmp_55.Value.Get()
+			_ = _tmp_57
+			if _tmp_56 {
 				return None[error]{}.Apply()
 			} else {
-				_tmp_64 := _unapply_Failure_3efd068b(obj)
-				_tmp_65 := _tmp_64.IsDefined()
-				_tmp_66 := _tmp_64.Value.Get()
-				_ = _tmp_66
-				e := _tmp_66
-				if _tmp_65 {
+				_tmp_58 := _unapply_Failure_3efd068b(_subj)
+				_tmp_59 := _tmp_58.IsDefined()
+				_tmp_60 := _tmp_58.Value.Get()
+				_ = _tmp_60
+				_tmp_e := _tmp_60
+				if _tmp_59 {
+					e := _tmp_e
 					return Some[error]{}.Apply(e)
 				} else {
 					panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")

@@ -115,62 +115,76 @@ func CompareValues[T any](a T, b T) int {
 //line std/ordered.gala:79
 	var vb any = b
 //line std/ordered.gala:80
-	return func(obj any) int {
+	return func(_subj any) int {
 		{
-			ai, _tmp_1 := As[int](obj)
+			_tmp_ai, _tmp_1 := As[int](_subj)
 			if _tmp_1 {
+				ai := _tmp_ai
 				return compareValuesInts(ai, vb)
 			} else {
-				as, _tmp_2 := As[string](obj)
+				_tmp_as, _tmp_2 := As[string](_subj)
 				if _tmp_2 {
+					as := _tmp_as
 					return compareValuesStrings(as, vb)
 				} else {
-					ai64, _tmp_3 := As[int64](obj)
+					_tmp_ai64, _tmp_3 := As[int64](_subj)
 					if _tmp_3 {
+						ai64 := _tmp_ai64
 						return compareValuesInt64s(ai64, vb)
 					} else {
-						ai32, _tmp_4 := As[int32](obj)
+						_tmp_ai32, _tmp_4 := As[int32](_subj)
 						if _tmp_4 {
+							ai32 := _tmp_ai32
 							return compareValuesInt32s(ai32, vb)
 						} else {
-							af64, _tmp_5 := As[float64](obj)
+							_tmp_af64, _tmp_5 := As[float64](_subj)
 							if _tmp_5 {
+								af64 := _tmp_af64
 								return compareValuesFloat64s(af64, vb)
 							} else {
-								af32, _tmp_6 := As[float32](obj)
+								_tmp_af32, _tmp_6 := As[float32](_subj)
 								if _tmp_6 {
+									af32 := _tmp_af32
 									return compareValuesFloat32s(af32, vb)
 								} else {
-									au, _tmp_7 := As[uint](obj)
+									_tmp_au, _tmp_7 := As[uint](_subj)
 									if _tmp_7 {
+										au := _tmp_au
 										return compareValuesUints(au, vb)
 									} else {
-										au64, _tmp_8 := As[uint64](obj)
+										_tmp_au64, _tmp_8 := As[uint64](_subj)
 										if _tmp_8 {
+											au64 := _tmp_au64
 											return compareValuesUint64s(au64, vb)
 										} else {
-											au32, _tmp_9 := As[uint32](obj)
+											_tmp_au32, _tmp_9 := As[uint32](_subj)
 											if _tmp_9 {
+												au32 := _tmp_au32
 												return compareValuesUint32s(au32, vb)
 											} else {
-												ai16, _tmp_10 := As[int16](obj)
+												_tmp_ai16, _tmp_10 := As[int16](_subj)
 												if _tmp_10 {
+													ai16 := _tmp_ai16
 													return compareValuesInt16s(ai16, vb)
 												} else {
-													ai8, _tmp_11 := As[int8](obj)
+													_tmp_ai8, _tmp_11 := As[int8](_subj)
 													if _tmp_11 {
+														ai8 := _tmp_ai8
 														return compareValuesInt8s(ai8, vb)
 													} else {
-														au16, _tmp_12 := As[uint16](obj)
+														_tmp_au16, _tmp_12 := As[uint16](_subj)
 														if _tmp_12 {
+															au16 := _tmp_au16
 															return compareValuesUint16s(au16, vb)
 														} else {
-															au8, _tmp_13 := As[uint8](obj)
+															_tmp_au8, _tmp_13 := As[uint8](_subj)
 															if _tmp_13 {
+																au8 := _tmp_au8
 																return compareValuesUint8s(au8, vb)
 															} else {
-																ao, _tmp_14 := As[Ordered[T]](obj)
+																_tmp_ao, _tmp_14 := As[Ordered[T]](_subj)
 																if _tmp_14 {
+																	ao := _tmp_ao
 																	return ao.Compare(b)
 																} else {
 																	return panicNotOrderable(va)
@@ -195,21 +209,22 @@ func CompareValues[T any](a T, b T) int {
 //line std/ordered.gala:99
 func compareValuesInts(a int, vb any) int {
 //line std/ordered.gala:100
-	var b = func(obj any) int {
+	var b = func(_subj any) int {
 		var _tmp_19 int
 		_tmp_16 := 0
-		switch _tmp_17 := any(obj).(type) {
+		switch _tmp_17 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_18 bool
-			if _tmp_19, _tmp_18 = As[int](obj); _tmp_18 {
+			if _tmp_19, _tmp_18 = As[int](_subj); _tmp_18 {
 				_tmp_16 = 1
 			}
 		case int:
 			_tmp_19, _tmp_16 = _tmp_17, 1
 		}
 		{
-			bi, _tmp_15 := _tmp_19, _tmp_16 == 1
+			_tmp_bi, _tmp_15 := _tmp_19, _tmp_16 == 1
 			if _tmp_15 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return 0
@@ -233,21 +248,22 @@ func compareValuesInts(a int, vb any) int {
 //line std/ordered.gala:106
 func compareValuesStrings(a string, vb any) int {
 //line std/ordered.gala:107
-	var b = func(obj any) string {
+	var b = func(_subj any) string {
 		var _tmp_24 string
 		_tmp_21 := 0
-		switch _tmp_22 := any(obj).(type) {
+		switch _tmp_22 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_23 bool
-			if _tmp_24, _tmp_23 = As[string](obj); _tmp_23 {
+			if _tmp_24, _tmp_23 = As[string](_subj); _tmp_23 {
 				_tmp_21 = 1
 			}
 		case string:
 			_tmp_24, _tmp_21 = _tmp_22, 1
 		}
 		{
-			bs, _tmp_20 := _tmp_24, _tmp_21 == 1
+			_tmp_bs, _tmp_20 := _tmp_24, _tmp_21 == 1
 			if _tmp_20 {
+				bs := _tmp_bs
 				return bs
 			} else {
 				return ""
@@ -271,21 +287,22 @@ func compareValuesStrings(a string, vb any) int {
 //line std/ordered.gala:113
 func compareValuesInt64s(a int64, vb any) int {
 //line std/ordered.gala:114
-	var b = func(obj any) int64 {
+	var b = func(_subj any) int64 {
 		var _tmp_29 int64
 		_tmp_26 := 0
-		switch _tmp_27 := any(obj).(type) {
+		switch _tmp_27 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_28 bool
-			if _tmp_29, _tmp_28 = As[int64](obj); _tmp_28 {
+			if _tmp_29, _tmp_28 = As[int64](_subj); _tmp_28 {
 				_tmp_26 = 1
 			}
 		case int64:
 			_tmp_29, _tmp_26 = _tmp_27, 1
 		}
 		{
-			bi, _tmp_25 := _tmp_29, _tmp_26 == 1
+			_tmp_bi, _tmp_25 := _tmp_29, _tmp_26 == 1
 			if _tmp_25 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return int64(0)
@@ -309,21 +326,22 @@ func compareValuesInt64s(a int64, vb any) int {
 //line std/ordered.gala:120
 func compareValuesInt32s(a int32, vb any) int {
 //line std/ordered.gala:121
-	var b = func(obj any) int32 {
+	var b = func(_subj any) int32 {
 		var _tmp_34 int32
 		_tmp_31 := 0
-		switch _tmp_32 := any(obj).(type) {
+		switch _tmp_32 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_33 bool
-			if _tmp_34, _tmp_33 = As[int32](obj); _tmp_33 {
+			if _tmp_34, _tmp_33 = As[int32](_subj); _tmp_33 {
 				_tmp_31 = 1
 			}
 		case int32:
 			_tmp_34, _tmp_31 = _tmp_32, 1
 		}
 		{
-			bi, _tmp_30 := _tmp_34, _tmp_31 == 1
+			_tmp_bi, _tmp_30 := _tmp_34, _tmp_31 == 1
 			if _tmp_30 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return int32(0)
@@ -347,21 +365,22 @@ func compareValuesInt32s(a int32, vb any) int {
 //line std/ordered.gala:127
 func compareValuesInt16s(a int16, vb any) int {
 //line std/ordered.gala:128
-	var b = func(obj any) int16 {
+	var b = func(_subj any) int16 {
 		var _tmp_39 int16
 		_tmp_36 := 0
-		switch _tmp_37 := any(obj).(type) {
+		switch _tmp_37 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_38 bool
-			if _tmp_39, _tmp_38 = As[int16](obj); _tmp_38 {
+			if _tmp_39, _tmp_38 = As[int16](_subj); _tmp_38 {
 				_tmp_36 = 1
 			}
 		case int16:
 			_tmp_39, _tmp_36 = _tmp_37, 1
 		}
 		{
-			bi, _tmp_35 := _tmp_39, _tmp_36 == 1
+			_tmp_bi, _tmp_35 := _tmp_39, _tmp_36 == 1
 			if _tmp_35 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return int16(0)
@@ -385,21 +404,22 @@ func compareValuesInt16s(a int16, vb any) int {
 //line std/ordered.gala:134
 func compareValuesInt8s(a int8, vb any) int {
 //line std/ordered.gala:135
-	var b = func(obj any) int8 {
+	var b = func(_subj any) int8 {
 		var _tmp_44 int8
 		_tmp_41 := 0
-		switch _tmp_42 := any(obj).(type) {
+		switch _tmp_42 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_43 bool
-			if _tmp_44, _tmp_43 = As[int8](obj); _tmp_43 {
+			if _tmp_44, _tmp_43 = As[int8](_subj); _tmp_43 {
 				_tmp_41 = 1
 			}
 		case int8:
 			_tmp_44, _tmp_41 = _tmp_42, 1
 		}
 		{
-			bi, _tmp_40 := _tmp_44, _tmp_41 == 1
+			_tmp_bi, _tmp_40 := _tmp_44, _tmp_41 == 1
 			if _tmp_40 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return int8(0)
@@ -423,21 +443,22 @@ func compareValuesInt8s(a int8, vb any) int {
 //line std/ordered.gala:141
 func compareValuesFloat64s(a float64, vb any) int {
 //line std/ordered.gala:142
-	var b = func(obj any) float64 {
+	var b = func(_subj any) float64 {
 		var _tmp_49 float64
 		_tmp_46 := 0
-		switch _tmp_47 := any(obj).(type) {
+		switch _tmp_47 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_48 bool
-			if _tmp_49, _tmp_48 = As[float64](obj); _tmp_48 {
+			if _tmp_49, _tmp_48 = As[float64](_subj); _tmp_48 {
 				_tmp_46 = 1
 			}
 		case float64:
 			_tmp_49, _tmp_46 = _tmp_47, 1
 		}
 		{
-			bf, _tmp_45 := _tmp_49, _tmp_46 == 1
+			_tmp_bf, _tmp_45 := _tmp_49, _tmp_46 == 1
 			if _tmp_45 {
+				bf := _tmp_bf
 				return bf
 			} else {
 				return float64(0)
@@ -461,21 +482,22 @@ func compareValuesFloat64s(a float64, vb any) int {
 //line std/ordered.gala:148
 func compareValuesFloat32s(a float32, vb any) int {
 //line std/ordered.gala:149
-	var b = func(obj any) float32 {
+	var b = func(_subj any) float32 {
 		var _tmp_54 float32
 		_tmp_51 := 0
-		switch _tmp_52 := any(obj).(type) {
+		switch _tmp_52 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_53 bool
-			if _tmp_54, _tmp_53 = As[float32](obj); _tmp_53 {
+			if _tmp_54, _tmp_53 = As[float32](_subj); _tmp_53 {
 				_tmp_51 = 1
 			}
 		case float32:
 			_tmp_54, _tmp_51 = _tmp_52, 1
 		}
 		{
-			bf, _tmp_50 := _tmp_54, _tmp_51 == 1
+			_tmp_bf, _tmp_50 := _tmp_54, _tmp_51 == 1
 			if _tmp_50 {
+				bf := _tmp_bf
 				return bf
 			} else {
 				return float32(0)
@@ -499,21 +521,22 @@ func compareValuesFloat32s(a float32, vb any) int {
 //line std/ordered.gala:155
 func compareValuesUints(a uint, vb any) int {
 //line std/ordered.gala:156
-	var b = func(obj any) uint {
+	var b = func(_subj any) uint {
 		var _tmp_59 uint
 		_tmp_56 := 0
-		switch _tmp_57 := any(obj).(type) {
+		switch _tmp_57 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_58 bool
-			if _tmp_59, _tmp_58 = As[uint](obj); _tmp_58 {
+			if _tmp_59, _tmp_58 = As[uint](_subj); _tmp_58 {
 				_tmp_56 = 1
 			}
 		case uint:
 			_tmp_59, _tmp_56 = _tmp_57, 1
 		}
 		{
-			bu, _tmp_55 := _tmp_59, _tmp_56 == 1
+			_tmp_bu, _tmp_55 := _tmp_59, _tmp_56 == 1
 			if _tmp_55 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint(0)
@@ -537,21 +560,22 @@ func compareValuesUints(a uint, vb any) int {
 //line std/ordered.gala:162
 func compareValuesUint64s(a uint64, vb any) int {
 //line std/ordered.gala:163
-	var b = func(obj any) uint64 {
+	var b = func(_subj any) uint64 {
 		var _tmp_64 uint64
 		_tmp_61 := 0
-		switch _tmp_62 := any(obj).(type) {
+		switch _tmp_62 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_63 bool
-			if _tmp_64, _tmp_63 = As[uint64](obj); _tmp_63 {
+			if _tmp_64, _tmp_63 = As[uint64](_subj); _tmp_63 {
 				_tmp_61 = 1
 			}
 		case uint64:
 			_tmp_64, _tmp_61 = _tmp_62, 1
 		}
 		{
-			bu, _tmp_60 := _tmp_64, _tmp_61 == 1
+			_tmp_bu, _tmp_60 := _tmp_64, _tmp_61 == 1
 			if _tmp_60 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint64(0)
@@ -575,21 +599,22 @@ func compareValuesUint64s(a uint64, vb any) int {
 //line std/ordered.gala:169
 func compareValuesUint32s(a uint32, vb any) int {
 //line std/ordered.gala:170
-	var b = func(obj any) uint32 {
+	var b = func(_subj any) uint32 {
 		var _tmp_69 uint32
 		_tmp_66 := 0
-		switch _tmp_67 := any(obj).(type) {
+		switch _tmp_67 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_68 bool
-			if _tmp_69, _tmp_68 = As[uint32](obj); _tmp_68 {
+			if _tmp_69, _tmp_68 = As[uint32](_subj); _tmp_68 {
 				_tmp_66 = 1
 			}
 		case uint32:
 			_tmp_69, _tmp_66 = _tmp_67, 1
 		}
 		{
-			bu, _tmp_65 := _tmp_69, _tmp_66 == 1
+			_tmp_bu, _tmp_65 := _tmp_69, _tmp_66 == 1
 			if _tmp_65 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint32(0)
@@ -613,21 +638,22 @@ func compareValuesUint32s(a uint32, vb any) int {
 //line std/ordered.gala:176
 func compareValuesUint16s(a uint16, vb any) int {
 //line std/ordered.gala:177
-	var b = func(obj any) uint16 {
+	var b = func(_subj any) uint16 {
 		var _tmp_74 uint16
 		_tmp_71 := 0
-		switch _tmp_72 := any(obj).(type) {
+		switch _tmp_72 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_73 bool
-			if _tmp_74, _tmp_73 = As[uint16](obj); _tmp_73 {
+			if _tmp_74, _tmp_73 = As[uint16](_subj); _tmp_73 {
 				_tmp_71 = 1
 			}
 		case uint16:
 			_tmp_74, _tmp_71 = _tmp_72, 1
 		}
 		{
-			bu, _tmp_70 := _tmp_74, _tmp_71 == 1
+			_tmp_bu, _tmp_70 := _tmp_74, _tmp_71 == 1
 			if _tmp_70 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint16(0)
@@ -651,21 +677,22 @@ func compareValuesUint16s(a uint16, vb any) int {
 //line std/ordered.gala:183
 func compareValuesUint8s(a uint8, vb any) int {
 //line std/ordered.gala:184
-	var b = func(obj any) uint8 {
+	var b = func(_subj any) uint8 {
 		var _tmp_79 uint8
 		_tmp_76 := 0
-		switch _tmp_77 := any(obj).(type) {
+		switch _tmp_77 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_78 bool
-			if _tmp_79, _tmp_78 = As[uint8](obj); _tmp_78 {
+			if _tmp_79, _tmp_78 = As[uint8](_subj); _tmp_78 {
 				_tmp_76 = 1
 			}
 		case uint8:
 			_tmp_79, _tmp_76 = _tmp_77, 1
 		}
 		{
-			bu, _tmp_75 := _tmp_79, _tmp_76 == 1
+			_tmp_bu, _tmp_75 := _tmp_79, _tmp_76 == 1
 			if _tmp_75 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint8(0)

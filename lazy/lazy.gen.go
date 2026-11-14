@@ -17,10 +17,10 @@ type Lazy[T any] struct {
 }
 
 func (s Lazy[T]) Copy() Lazy[T] {
-	return Lazy[T]{thunk: std.Copy(s.thunk), value: std.Copy(s.value), once: std.Copy(s.once), done: std.Copy(s.done)}
+	return Lazy[T]{thunk: std.Copy(s.thunk), value: std.Copy(s.value), once: std.Copy(s.once), done: s.done}
 }
 func (s Lazy[T]) Equal(other Lazy[T]) bool {
-	return std.Equal(s.thunk, other.thunk) && std.Equal(s.value, other.value) && std.Equal(s.once, other.once) && std.Equal(s.done, other.done)
+	return std.Equal(s.thunk, other.thunk) && std.Equal(s.value, other.value) && std.Equal(s.once, other.once) && s.done == other.done
 }
 
 type LazyInstance interface {

@@ -90,10 +90,10 @@ type JsonEncoder[T any] struct {
 }
 
 func (s JsonEncoder[T]) Copy() JsonEncoder[T] {
-	return JsonEncoder[T]{Meta: Copy(s.Meta), Config: Copy(s.Config), Keys: Copy(s.Keys)}
+	return JsonEncoder[T]{Meta: s.Meta.Copy(), Config: s.Config.Copy(), Keys: s.Keys.Copy()}
 }
 func (s JsonEncoder[T]) Equal(other JsonEncoder[T]) bool {
-	return Equal(s.Meta, other.Meta) && Equal(s.Config, other.Config) && Equal(s.Keys, other.Keys)
+	return s.Meta.Equal(other.Meta) && s.Config.Equal(other.Config) && s.Keys.Equal(other.Keys)
 }
 
 type JsonEncoderInstance interface {
@@ -147,7 +147,7 @@ func rebuildEncoder[T any](meta StructMeta[T], config KeyConfig) JsonEncoder[T] 
 // key.  An empty key signals an omitted field.
 func nameFnFromKeys(keys Array[string]) func(int) string {
 	return func(i int) string {
-		return keys.GetOption(i).GetOrElse("")
+		return Array_GetOption[string](keys, i).GetOrElse("")
 	}
 }
 
@@ -157,7 +157,7 @@ func nameFnFromKeys(keys Array[string]) func(int) string {
 // omitted — keys are pre-computed by BuildKeys and set to "" for omits.
 func omitFnFromKeys(keys Array[string]) func(int) bool {
 	return func(i int) bool {
-		return keys.GetOption(i).GetOrElse("") == ""
+		return Array_GetOption[string](keys, i).GetOrElse("") == ""
 	}
 }
 
@@ -257,7 +257,7 @@ func decodeJson[V any](s string, read func(FieldDecoder) V) Try[V] {
 //line json/json.gala:144
 
 // Encode serializes a value to a compact JSON string (zero-reflection).
-func (c JsonEncoder[T]) Encode(v T) Try[string] {
+func JsonEncoder_Encode[T any](c JsonEncoder[T], v T) Try[string] {
 //line json/json.gala:147
 	var write = c.writer()
 //line json/json.gala:148
@@ -269,8 +269,8 @@ func (c JsonEncoder[T]) Encode(v T) Try[string] {
 //line json/json.gala:150
 
 // EncodePretty serializes a value to a pretty-printed JSON string.
-func (c JsonEncoder[T]) EncodePretty(v T) Try[string] {
-	return Try_FlatMap(c.Encode(v), func(s string) Try[string] {
+func JsonEncoder_EncodePretty[T any](c JsonEncoder[T], v T) Try[string] {
+	return Try_FlatMap(JsonEncoder_Encode[T](c, v), func(s string) Try[string] {
 		return PrettyIndent(s, "  ")
 	})
 }
@@ -280,7 +280,7 @@ func (c JsonEncoder[T]) EncodePretty(v T) Try[string] {
 // Decode deserializes a JSON string into Try[T] (zero-reflection).
 // DecodeFields panics on malformed input; Try() catches the panic and
 // surfaces it as a Failure.
-func (c JsonEncoder[T]) Decode(s string) Try[T] {
+func JsonEncoder_Decode[T any](c JsonEncoder[T], s string) Try[T] {
 	return decodeJson(s, func(r FieldDecoder) T {
 //line json/json.gala:160
 		var read = c.reader()
@@ -294,7 +294,7 @@ func (c JsonEncoder[T]) Decode(s string) Try[T] {
 // Unapply attempts to decode a JSON string using the codec's naming config.
 // Returns Option[T] for pattern matching support.
 func (c JsonEncoder[T]) Unapply(s string) Option[T] {
-	return c.Decode(s).ToOption()
+	return Try_ToOption[T](JsonEncoder_Decode[T](c, s))
 }
 
 //line json/json.gala:167
@@ -302,14 +302,14 @@ func (c JsonEncoder[T]) Unapply(s string) Option[T] {
 // Array returns a codec for a JSON document whose root is an array of T —
 // `[{"id":1},{"id":2}]` — with this codec's Naming/Rename/Omit/OmitEmpty applied to
 // every element.
-func (c JsonEncoder[T]) Array() JsonArrayEncoder[T] {
+func JsonEncoder_Array[T any](c JsonEncoder[T]) JsonArrayEncoder[T] {
 	return JsonArrayEncoder[T]{Elem: NewImmutable(c)}
 }
 
 //line json/json.gala:172
 
 // List is Array for a List[T].
-func (c JsonEncoder[T]) List() JsonListEncoder[T] {
+func JsonEncoder_List[T any](c JsonEncoder[T]) JsonListEncoder[T] {
 	return JsonListEncoder[T]{Elem: NewImmutable(c)}
 }
 
@@ -322,10 +322,10 @@ type JsonArrayEncoder[T any] struct {
 }
 
 func (s JsonArrayEncoder[T]) Copy() JsonArrayEncoder[T] {
-	return JsonArrayEncoder[T]{Elem: Copy(s.Elem)}
+	return JsonArrayEncoder[T]{Elem: s.Elem.Copy()}
 }
 func (s JsonArrayEncoder[T]) Equal(other JsonArrayEncoder[T]) bool {
-	return Equal(s.Elem, other.Elem)
+	return s.Elem.Equal(other.Elem)
 }
 
 type JsonArrayEncoderInstance interface {
@@ -339,7 +339,7 @@ func (_ JsonArrayEncoder[T]) IsJsonArrayEncoder() bool {
 //line json/json.gala:181
 
 // encodeElems writes the elements as a JSON array.
-func (c JsonEncoder[T]) encodeElems(vs Traversable[T]) Try[string] {
+func JsonEncoder_encodeElems[T any](c JsonEncoder[T], vs Traversable[T]) Try[string] {
 //line json/json.gala:184
 	var write = c.writer()
 //line json/json.gala:185
@@ -379,15 +379,15 @@ func readElems[T any](r FieldDecoder, read func(FieldDecoder) T) []T {
 //line json/json.gala:206
 
 // Encode serializes the elements as a compact JSON array.
-func (c JsonArrayEncoder[T]) Encode(vs Array[T]) Try[string] {
-	return c.Elem.Get().encodeElems(vs)
+func JsonArrayEncoder_Encode[T any](c JsonArrayEncoder[T], vs Array[T]) Try[string] {
+	return JsonEncoder_encodeElems[T](c.Elem.Get(), vs)
 }
 
 //line json/json.gala:209
 
 // EncodePretty serializes the elements as a pretty-printed JSON array.
-func (c JsonArrayEncoder[T]) EncodePretty(vs Array[T]) Try[string] {
-	return Try_FlatMap(c.Encode(vs), func(s string) Try[string] {
+func JsonArrayEncoder_EncodePretty[T any](c JsonArrayEncoder[T], vs Array[T]) Try[string] {
+	return Try_FlatMap(JsonArrayEncoder_Encode[T](c, vs), func(s string) Try[string] {
 		return PrettyIndent(s, "  ")
 	})
 }
@@ -396,7 +396,7 @@ func (c JsonArrayEncoder[T]) EncodePretty(vs Array[T]) Try[string] {
 
 // Decode reads a JSON array of objects. Anything else at the root — an
 // object, a scalar, null — is a Failure.
-func (c JsonArrayEncoder[T]) Decode(s string) Try[Array[T]] {
+func JsonArrayEncoder_Decode[T any](c JsonArrayEncoder[T], s string) Try[Array[T]] {
 	return decodeJson(s, func(r FieldDecoder) Array[T] {
 		return ArrayFromSlice(readElems(r, c.Elem.Get().reader()))
 	})
@@ -406,7 +406,7 @@ func (c JsonArrayEncoder[T]) Decode(s string) Try[Array[T]] {
 
 // Unapply decodes for pattern matching.
 func (c JsonArrayEncoder[T]) Unapply(s string) Option[Array[T]] {
-	return c.Decode(s).ToOption()
+	return Try_ToOption[Array[T]](JsonArrayEncoder_Decode[T](c, s))
 }
 
 //line json/json.gala:221
@@ -418,10 +418,10 @@ type JsonListEncoder[T any] struct {
 }
 
 func (s JsonListEncoder[T]) Copy() JsonListEncoder[T] {
-	return JsonListEncoder[T]{Elem: Copy(s.Elem)}
+	return JsonListEncoder[T]{Elem: s.Elem.Copy()}
 }
 func (s JsonListEncoder[T]) Equal(other JsonListEncoder[T]) bool {
-	return Equal(s.Elem, other.Elem)
+	return s.Elem.Equal(other.Elem)
 }
 
 type JsonListEncoderInstance interface {
@@ -435,15 +435,15 @@ func (_ JsonListEncoder[T]) IsJsonListEncoder() bool {
 //line json/json.gala:227
 
 // Encode serializes the elements as a compact JSON array.
-func (c JsonListEncoder[T]) Encode(vs List[T]) Try[string] {
-	return c.Elem.Get().encodeElems(vs)
+func JsonListEncoder_Encode[T any](c JsonListEncoder[T], vs List[T]) Try[string] {
+	return JsonEncoder_encodeElems[T](c.Elem.Get(), vs)
 }
 
 //line json/json.gala:230
 
 // EncodePretty serializes the elements as a pretty-printed JSON array.
-func (c JsonListEncoder[T]) EncodePretty(vs List[T]) Try[string] {
-	return Try_FlatMap(c.Encode(vs), func(s string) Try[string] {
+func JsonListEncoder_EncodePretty[T any](c JsonListEncoder[T], vs List[T]) Try[string] {
+	return Try_FlatMap(JsonListEncoder_Encode[T](c, vs), func(s string) Try[string] {
 		return PrettyIndent(s, "  ")
 	})
 }
@@ -451,7 +451,7 @@ func (c JsonListEncoder[T]) EncodePretty(vs List[T]) Try[string] {
 //line json/json.gala:234
 
 // Decode reads a JSON array of objects into a List.
-func (c JsonListEncoder[T]) Decode(s string) Try[List[T]] {
+func JsonListEncoder_Decode[T any](c JsonListEncoder[T], s string) Try[List[T]] {
 	return decodeJson(s, func(r FieldDecoder) List[T] {
 		return ListFromSlice(readElems(r, c.Elem.Get().reader()))
 	})
@@ -461,7 +461,7 @@ func (c JsonListEncoder[T]) Decode(s string) Try[List[T]] {
 
 // Unapply decodes for pattern matching.
 func (c JsonListEncoder[T]) Unapply(s string) Option[List[T]] {
-	return c.Decode(s).ToOption()
+	return Try_ToOption[List[T]](JsonListEncoder_Decode[T](c, s))
 }
 
 //line json/json.gala:240
@@ -525,10 +525,10 @@ type JsonValueEncoder[T any] struct {
 }
 
 func (s JsonValueEncoder[T]) Copy() JsonValueEncoder[T] {
-	return JsonValueEncoder[T]{Meta: Copy(s.Meta), NamingStrategy: Copy(s.NamingStrategy)}
+	return JsonValueEncoder[T]{Meta: s.Meta.Copy(), NamingStrategy: s.NamingStrategy.Copy()}
 }
 func (s JsonValueEncoder[T]) Equal(other JsonValueEncoder[T]) bool {
-	return Equal(s.Meta, other.Meta) && Equal(s.NamingStrategy, other.NamingStrategy)
+	return s.Meta.Equal(other.Meta) && s.NamingStrategy.Equal(other.NamingStrategy)
 }
 
 type JsonValueEncoderInstance interface {
@@ -549,7 +549,7 @@ func (c JsonValueEncoder[T]) Naming(n Naming) JsonValueEncoder[T] {
 //line json/json.gala:271
 
 // Encode serializes the value to compact JSON.
-func (c JsonValueEncoder[T]) Encode(v T) Try[string] {
+func JsonValueEncoder_Encode[T any](c JsonValueEncoder[T], v T) Try[string] {
 	return encodeJson(func(w FieldEncoder) {
 		c.Meta.Get().EncodeValue(w, v, namingFn(c.NamingStrategy.Get()))
 	})
@@ -558,8 +558,8 @@ func (c JsonValueEncoder[T]) Encode(v T) Try[string] {
 //line json/json.gala:275
 
 // EncodePretty serializes the value to pretty-printed JSON.
-func (c JsonValueEncoder[T]) EncodePretty(v T) Try[string] {
-	return Try_FlatMap(c.Encode(v), func(s string) Try[string] {
+func JsonValueEncoder_EncodePretty[T any](c JsonValueEncoder[T], v T) Try[string] {
+	return Try_FlatMap(JsonValueEncoder_Encode[T](c, v), func(s string) Try[string] {
 		return PrettyIndent(s, "  ")
 	})
 }
@@ -568,7 +568,7 @@ func (c JsonValueEncoder[T]) EncodePretty(v T) Try[string] {
 
 // Decode reads a JSON document of T's shape. A document of another shape, or
 // a number outside T's range, is a Failure.
-func (c JsonValueEncoder[T]) Decode(s string) Try[T] {
+func JsonValueEncoder_Decode[T any](c JsonValueEncoder[T], s string) Try[T] {
 	return decodeJson(s, func(r FieldDecoder) T {
 		return c.Meta.Get().DecodeValue(r, namingFn(c.NamingStrategy.Get()))
 	})
@@ -578,7 +578,7 @@ func (c JsonValueEncoder[T]) Decode(s string) Try[T] {
 
 // Unapply decodes for pattern matching.
 func (c JsonValueEncoder[T]) Unapply(s string) Option[T] {
-	return c.Decode(s).ToOption()
+	return Try_ToOption[T](JsonValueEncoder_Decode[T](c, s))
 }
 
 //line json/json.gala:287
@@ -593,7 +593,7 @@ func buildLookup(reverseKeys HashMap[string, string], numFields int, fieldName f
 //line json/json.gala:297
 	for i < numFields {
 //line json/json.gala:298
-		nameToIdx = nameToIdx.Put(fieldName(i), i)
+		nameToIdx = EvalOperand(nameToIdx).Put(fieldName(i), i)
 //line json/json.gala:299
 		i = i + 1
 	}

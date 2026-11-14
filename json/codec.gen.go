@@ -27,10 +27,10 @@ type JsonEncoderImpl struct {
 }
 
 func (s JsonEncoderImpl) Copy() JsonEncoderImpl {
-	return JsonEncoderImpl{buf: Copy(s.buf), needsComma: Copy(s.needsComma), keyPending: Copy(s.keyPending)}
+	return JsonEncoderImpl{buf: Copy(s.buf), needsComma: s.needsComma, keyPending: s.keyPending}
 }
 func (s JsonEncoderImpl) Equal(other JsonEncoderImpl) bool {
-	return Equal(s.buf, other.buf) && Equal(s.needsComma, other.needsComma) && Equal(s.keyPending, other.keyPending)
+	return Equal(s.buf, other.buf) && s.needsComma == other.needsComma && s.keyPending == other.keyPending
 }
 
 //line json/codec.gala:27
@@ -348,32 +348,32 @@ func (e *JsonEncoderImpl) writeEscapedJsonString(s string) {
 func (e *JsonEncoderImpl) writeEscape(c byte) {
 //line json/codec.gala:185
 	func() {
-		obj := c
-		if obj == '"' {
+		_subj := c
+		if _subj == '"' {
 //line json/codec.gala:186
 			{
 				e.buf.WriteString("\\\"")
 				return
 			}
-		} else if obj == '\\' {
+		} else if _subj == '\\' {
 //line json/codec.gala:187
 			{
 				e.buf.WriteString("\\\\")
 				return
 			}
-		} else if obj == '\n' {
+		} else if _subj == '\n' {
 //line json/codec.gala:188
 			{
 				e.buf.WriteString("\\n")
 				return
 			}
-		} else if obj == '\r' {
+		} else if _subj == '\r' {
 //line json/codec.gala:189
 			{
 				e.buf.WriteString("\\r")
 				return
 			}
-		} else if obj == '\t' {
+		} else if _subj == '\t' {
 //line json/codec.gala:190
 			{
 				e.buf.WriteString("\\t")
@@ -422,10 +422,10 @@ type JsonDecoderImpl struct {
 }
 
 func (s JsonDecoderImpl) Copy() JsonDecoderImpl {
-	return JsonDecoderImpl{data: Copy(s.data), pos: Copy(s.pos), stack: Copy(s.stack), firstConsumed: Copy(s.firstConsumed), pendingKey: Copy(s.pendingKey), hasPendingKey: Copy(s.hasPendingKey)}
+	return JsonDecoderImpl{data: Copy(s.data), pos: s.pos, stack: Copy(s.stack), firstConsumed: Copy(s.firstConsumed), pendingKey: s.pendingKey, hasPendingKey: s.hasPendingKey}
 }
 func (s JsonDecoderImpl) Equal(other JsonDecoderImpl) bool {
-	return Equal(s.data, other.data) && Equal(s.pos, other.pos) && Equal(s.stack, other.stack) && Equal(s.firstConsumed, other.firstConsumed) && Equal(s.pendingKey, other.pendingKey) && Equal(s.hasPendingKey, other.hasPendingKey)
+	return Equal(s.data, other.data) && s.pos == other.pos && Equal(s.stack, other.stack) && Equal(s.firstConsumed, other.firstConsumed) && s.pendingKey == other.pendingKey && s.hasPendingKey == other.hasPendingKey
 }
 
 //line json/codec.gala:220
@@ -627,7 +627,7 @@ func (d *JsonDecoderImpl) ReadIntN(bitSize int) int64 {
 //line json/codec.gala:318
 	if err != nil {
 //line json/codec.gala:319
-		panic(fmt.Sprintf("json at pos %d: invalid %s %q", d.pos, intKindName("int", bitSize), s))
+		panic(fmt.Sprintf("json at pos %d: invalid %s %q", EvalOperand(d.pos), intKindName("int", bitSize), s))
 	}
 //line json/codec.gala:321
 	return v
@@ -648,7 +648,7 @@ func (d *JsonDecoderImpl) ReadUintN(bitSize int) uint64 {
 //line json/codec.gala:329
 	if err != nil {
 //line json/codec.gala:330
-		panic(fmt.Sprintf("json at pos %d: invalid %s %q", d.pos, intKindName("uint", bitSize), s))
+		panic(fmt.Sprintf("json at pos %d: invalid %s %q", EvalOperand(d.pos), intKindName("uint", bitSize), s))
 	}
 //line json/codec.gala:332
 	return v
@@ -917,24 +917,24 @@ func (d *JsonDecoderImpl) readEscape() rune {
 	d.pos = d.pos + 1
 //line json/codec.gala:487
 	{
-		obj := esc
-		if obj == '"' {
+		_subj := esc
+		if _subj == '"' {
 			return '"'
-		} else if obj == '\\' {
+		} else if _subj == '\\' {
 			return '\\'
-		} else if obj == '/' {
+		} else if _subj == '/' {
 			return '/'
-		} else if obj == 'n' {
+		} else if _subj == 'n' {
 			return '\n'
-		} else if obj == 'r' {
+		} else if _subj == 'r' {
 			return '\r'
-		} else if obj == 't' {
+		} else if _subj == 't' {
 			return '\t'
-		} else if obj == 'b' {
+		} else if _subj == 'b' {
 			return '\b'
-		} else if obj == 'f' {
+		} else if _subj == 'f' {
 			return '\f'
-		} else if obj == 'u' {
+		} else if _subj == 'u' {
 			return d.readUnicodeEscape()
 		} else {
 			panic("json: invalid escape sequence")
@@ -948,20 +948,21 @@ func (d *JsonDecoderImpl) readEscape() rune {
 // escape of a surrogate pair.
 func (d *JsonDecoderImpl) readUnicodeEscape() rune {
 	{
-		obj := d.hex4At(d.pos)
+		_subj := d.hex4At(d.pos)
 		{
-			_tmp_1 := _unapply_Some_54c03c3a(obj)
+			_tmp_1 := _unapply_Some_54c03c3a(_subj)
 			_tmp_2 := _tmp_1.IsDefined()
 			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
-			r := _tmp_3
+			_tmp_r := _tmp_3
 			if _tmp_2 {
+				r := _tmp_r
 //line json/codec.gala:505
 				d.pos = d.pos + 4
 //line json/codec.gala:506
 				return d.completeSurrogate(r)
 			} else {
-				_tmp_4 := _unapply_None_54c03c3a(obj)
+				_tmp_4 := _unapply_None_54c03c3a(_subj)
 				if _tmp_4 {
 					panic("json: invalid unicode escape")
 				} else {
@@ -981,7 +982,7 @@ func (d *JsonDecoderImpl) hex4At(pos int) Option[rune] {
 		if pos+4 > len(d.data) {
 			return None[rune]{}.Apply()
 		} else {
-			return Option_Map(GoTry(strconv.ParseUint(BytesToString(d.data, pos, pos+4), 16, 32)).ToOption(), func(cp uint64) rune {
+			return Option_Map(Try_ToOption[uint64](GoTry(strconv.ParseUint(BytesToString(d.data, pos, pos+4), 16, 32))), func(cp uint64) rune {
 				return rune(cp)
 			})
 		}
@@ -1016,20 +1017,21 @@ func (d *JsonDecoderImpl) completeSurrogate(r rune) rune {
 	})
 //line json/codec.gala:529
 	{
-		obj := pair
+		_subj := pair
 		{
-			_tmp_5 := _unapply_Some_54c03c3a(obj)
+			_tmp_5 := _unapply_Some_54c03c3a(_subj)
 			_tmp_6 := _tmp_5.IsDefined()
 			_tmp_7 := _tmp_5.Value.Get()
 			_ = _tmp_7
-			p := _tmp_7
+			_tmp_p := _tmp_7
 			if _tmp_6 {
+				p := _tmp_p
 //line json/codec.gala:531
 				d.pos = d.pos + 6
 //line json/codec.gala:532
 				return p
 			} else {
-				_tmp_8 := _unapply_None_54c03c3a(obj)
+				_tmp_8 := _unapply_None_54c03c3a(_subj)
 				if _tmp_8 {
 					return unicode.ReplacementChar
 				} else {
@@ -1125,46 +1127,51 @@ func (d *JsonDecoderImpl) skipValue(depth int) {
 	}
 //line json/codec.gala:588
 	func() {
-		obj := d.data[d.pos]
-		if obj == '"' {
+		_subj := d.data[d.pos]
+		if _subj == '"' {
 //line json/codec.gala:589
 			{
 				d.readJsonString()
 				return
 			}
-		} else if obj == '{' {
+		} else if _subj == '{' {
 //line json/codec.gala:590
 			{
 				d.skipContainer('}', depth+1)
 				return
 			}
-		} else if obj == '[' {
+		} else if _subj == '[' {
 //line json/codec.gala:591
 			{
 				d.skipContainer(']', depth+1)
 				return
 			}
-		} else if obj == 't' {
+		} else if _subj == 't' {
 //line json/codec.gala:592
 			{
 				d.expectLiteral("true")
 				return
 			}
-		} else if obj == 'f' {
+		} else if _subj == 'f' {
 //line json/codec.gala:593
 			{
 				d.expectLiteral("false")
 				return
 			}
-		} else if obj == 'n' {
+		} else if _subj == 'n' {
 //line json/codec.gala:594
 			{
 				d.expectLiteral("null")
 				return
 			}
 		} else {
-			c := obj
-			if true && (c == '-' || isDigit(c)) {
+			_tmp_c := _subj
+			var _tmp_9 bool
+			{
+				c := _tmp_c
+				_tmp_9 = c == '-' || isDigit(c)
+			}
+			if _tmp_9 {
 //line json/codec.gala:595
 				{
 					d.scanNumber()
@@ -1186,20 +1193,20 @@ func (d *JsonDecoderImpl) skipValue(depth int) {
 // skipContainer steps over the object or array whose opening byte is at pos
 // and whose closing byte is close: members separated by ',', each a
 // `"key": value` field in an object and a value in an array.
-func (d *JsonDecoderImpl) skipContainer(close byte, depth int) {
+func (d *JsonDecoderImpl) skipContainer(_gala_close byte, depth int) {
 //line json/codec.gala:604
 	d.checkDepth(depth)
 //line json/codec.gala:605
 	d.pos = d.pos + 1
 //line json/codec.gala:606
-	if d.skipByte(close) {
+	if d.skipByte(_gala_close) {
 //line json/codec.gala:607
 		return
 	}
 //line json/codec.gala:609
 	for {
 //line json/codec.gala:610
-		if close == '}' {
+		if _gala_close == '}' {
 //line json/codec.gala:611
 			d.readJsonString()
 //line json/codec.gala:612
@@ -1208,7 +1215,7 @@ func (d *JsonDecoderImpl) skipContainer(close byte, depth int) {
 //line json/codec.gala:614
 		d.skipValue(depth)
 //line json/codec.gala:615
-		if d.skipByte(close) {
+		if d.skipByte(_gala_close) {
 //line json/codec.gala:616
 			return
 		}

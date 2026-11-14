@@ -41,7 +41,7 @@ func Bracket[R any, A any](resource R, release func(R), body func(R) A) A {
 func Using[R Closeable, A any](res R, body func(R) A) A {
 	return Bracket(res, func(r R) {
 //line resource/resource.gala:41
-		r.Close()
+		FromError(r.Close())
 	}, body)
 }
 

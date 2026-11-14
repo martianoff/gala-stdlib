@@ -103,10 +103,10 @@ func (s Naming) IsAsIs() bool {
 	return s._variant == _Naming_AsIs
 }
 func (s Naming) Copy() Naming {
-	return Naming{_variant: std.Copy(s._variant)}
+	return Naming{_variant: s._variant}
 }
 func (s Naming) Equal(other Naming) bool {
-	return std.Equal(s._variant, other._variant)
+	return s._variant == other._variant
 }
 func (s Naming) String() string {
 	switch s._variant {
@@ -162,21 +162,21 @@ func NewNaming() Naming {
 // ApplyNaming converts a single PascalCase field name using the given strategy.
 func ApplyNaming(fieldName string, naming Naming) string {
 	{
-		obj := naming
+		_subj := naming
 		{
-			_tmp_1 := CamelCase{}.Unapply(obj)
+			_tmp_1 := CamelCase{}.Unapply(_subj)
 			if _tmp_1 {
 				return toCamelCase(fieldName)
 			} else {
-				_tmp_2 := SnakeCase{}.Unapply(obj)
+				_tmp_2 := SnakeCase{}.Unapply(_subj)
 				if _tmp_2 {
 					return toSnakeCase(fieldName)
 				} else {
-					_tmp_3 := KebabCase{}.Unapply(obj)
+					_tmp_3 := KebabCase{}.Unapply(_subj)
 					if _tmp_3 {
 						return toKebabCase(fieldName)
 					} else {
-						_tmp_4 := AsIs{}.Unapply(obj)
+						_tmp_4 := AsIs{}.Unapply(_subj)
 						if _tmp_4 {
 							return fieldName
 						} else {

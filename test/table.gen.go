@@ -14,10 +14,10 @@ type Case[In any, Out any] struct {
 }
 
 func (s Case[In, Out]) Copy() Case[In, Out] {
-	return Case[In, Out]{Name: std.Copy(s.Name), Input: std.Copy(s.Input), Expected: std.Copy(s.Expected)}
+	return Case[In, Out]{Name: s.Name, Input: s.Input.Copy(), Expected: s.Expected.Copy()}
 }
 func (s Case[In, Out]) Equal(other Case[In, Out]) bool {
-	return std.Equal(s.Name, other.Name) && std.Equal(s.Input, other.Input) && std.Equal(s.Expected, other.Expected)
+	return s.Name.Get() == other.Name.Get() && s.Input.Equal(other.Input) && s.Expected.Equal(other.Expected)
 }
 
 type CaseInstance interface {
@@ -47,7 +47,7 @@ func RunCases[In any, Out any](t T, f func(T, In, Out) T, cases ...Case[In, Out]
 //line test/table.gala:18
 	for _, c := range cases {
 //line test/table.gala:19
-		result = result.Run(c.Name.Get(), func(sub T) T {
+		result = std.EvalOperand(result).Run(c.Name.Get(), func(sub T) T {
 			return f(sub, c.Input.Get(), c.Expected.Get())
 		})
 	}

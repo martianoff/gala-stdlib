@@ -13,10 +13,10 @@ type Tuple[A any, B any] struct {
 }
 
 func (s Tuple[A, B]) Copy() Tuple[A, B] {
-	return Tuple[A, B]{V1: Copy(s.V1), V2: Copy(s.V2)}
+	return Tuple[A, B]{V1: s.V1.Copy(), V2: s.V2.Copy()}
 }
 func (s Tuple[A, B]) Equal(other Tuple[A, B]) bool {
-	return Equal(s.V1, other.V1) && Equal(s.V2, other.V2)
+	return s.V1.Equal(other.V1) && s.V2.Equal(other.V2)
 }
 
 type TupleInstance interface {
@@ -38,7 +38,7 @@ func (s Tuple[A, B]) Unapply(v any) (Immutable[A], Immutable[B], bool) {
 
 //line std/tuple.gala:9
 func (t Tuple[A, B]) String() string {
-	return fmt.Sprintf("(%v, %v)", t.V1.Get(), t.V2.Get())
+	return fmt.Sprintf("(%v, %v)", Printed(t.V1.Get()), Printed(t.V2.Get()))
 }
 
 //line std/tuple.gala:11
@@ -60,10 +60,10 @@ type Tuple3[A any, B any, C any] struct {
 }
 
 func (s Tuple3[A, B, C]) Copy() Tuple3[A, B, C] {
-	return Tuple3[A, B, C]{V1: Copy(s.V1), V2: Copy(s.V2), V3: Copy(s.V3)}
+	return Tuple3[A, B, C]{V1: s.V1.Copy(), V2: s.V2.Copy(), V3: s.V3.Copy()}
 }
 func (s Tuple3[A, B, C]) Equal(other Tuple3[A, B, C]) bool {
-	return Equal(s.V1, other.V1) && Equal(s.V2, other.V2) && Equal(s.V3, other.V3)
+	return s.V1.Equal(other.V1) && s.V2.Equal(other.V2) && s.V3.Equal(other.V3)
 }
 
 type Tuple3Instance interface {
@@ -85,7 +85,7 @@ func (s Tuple3[A, B, C]) Unapply(v any) (Immutable[A], Immutable[B], Immutable[C
 
 //line std/tuple.gala:24
 func (t Tuple3[A, B, C]) String() string {
-	return fmt.Sprintf("(%v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get())
+	return fmt.Sprintf("(%v, %v, %v)", Printed(t.V1.Get()), Printed(t.V2.Get()), Printed(t.V3.Get()))
 }
 
 //line std/tuple.gala:27
@@ -104,10 +104,10 @@ type Tuple4[A any, B any, C any, D any] struct {
 }
 
 func (s Tuple4[A, B, C, D]) Copy() Tuple4[A, B, C, D] {
-	return Tuple4[A, B, C, D]{V1: Copy(s.V1), V2: Copy(s.V2), V3: Copy(s.V3), V4: Copy(s.V4)}
+	return Tuple4[A, B, C, D]{V1: s.V1.Copy(), V2: s.V2.Copy(), V3: s.V3.Copy(), V4: s.V4.Copy()}
 }
 func (s Tuple4[A, B, C, D]) Equal(other Tuple4[A, B, C, D]) bool {
-	return Equal(s.V1, other.V1) && Equal(s.V2, other.V2) && Equal(s.V3, other.V3) && Equal(s.V4, other.V4)
+	return s.V1.Equal(other.V1) && s.V2.Equal(other.V2) && s.V3.Equal(other.V3) && s.V4.Equal(other.V4)
 }
 
 type Tuple4Instance interface {
@@ -129,7 +129,7 @@ func (s Tuple4[A, B, C, D]) Unapply(v any) (Immutable[A], Immutable[B], Immutabl
 
 //line std/tuple.gala:37
 func (t Tuple4[A, B, C, D]) String() string {
-	return fmt.Sprintf("(%v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get())
+	return fmt.Sprintf("(%v, %v, %v, %v)", Printed(t.V1.Get()), Printed(t.V2.Get()), Printed(t.V3.Get()), Printed(t.V4.Get()))
 }
 
 //line std/tuple.gala:40
@@ -149,10 +149,10 @@ type Tuple5[A any, B any, C any, D any, E any] struct {
 }
 
 func (s Tuple5[A, B, C, D, E]) Copy() Tuple5[A, B, C, D, E] {
-	return Tuple5[A, B, C, D, E]{V1: Copy(s.V1), V2: Copy(s.V2), V3: Copy(s.V3), V4: Copy(s.V4), V5: Copy(s.V5)}
+	return Tuple5[A, B, C, D, E]{V1: s.V1.Copy(), V2: s.V2.Copy(), V3: s.V3.Copy(), V4: s.V4.Copy(), V5: s.V5.Copy()}
 }
 func (s Tuple5[A, B, C, D, E]) Equal(other Tuple5[A, B, C, D, E]) bool {
-	return Equal(s.V1, other.V1) && Equal(s.V2, other.V2) && Equal(s.V3, other.V3) && Equal(s.V4, other.V4) && Equal(s.V5, other.V5)
+	return s.V1.Equal(other.V1) && s.V2.Equal(other.V2) && s.V3.Equal(other.V3) && s.V4.Equal(other.V4) && s.V5.Equal(other.V5)
 }
 
 type Tuple5Instance interface {
@@ -174,7 +174,7 @@ func (s Tuple5[A, B, C, D, E]) Unapply(v any) (Immutable[A], Immutable[B], Immut
 
 //line std/tuple.gala:52
 func (t Tuple5[A, B, C, D, E]) String() string {
-	return fmt.Sprintf("(%v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get())
+	return fmt.Sprintf("(%v, %v, %v, %v, %v)", Printed(t.V1.Get()), Printed(t.V2.Get()), Printed(t.V3.Get()), Printed(t.V4.Get()), Printed(t.V5.Get()))
 }
 
 //line std/tuple.gala:55
@@ -195,10 +195,10 @@ type Tuple6[A any, B any, C any, D any, E any, F any] struct {
 }
 
 func (s Tuple6[A, B, C, D, E, F]) Copy() Tuple6[A, B, C, D, E, F] {
-	return Tuple6[A, B, C, D, E, F]{V1: Copy(s.V1), V2: Copy(s.V2), V3: Copy(s.V3), V4: Copy(s.V4), V5: Copy(s.V5), V6: Copy(s.V6)}
+	return Tuple6[A, B, C, D, E, F]{V1: s.V1.Copy(), V2: s.V2.Copy(), V3: s.V3.Copy(), V4: s.V4.Copy(), V5: s.V5.Copy(), V6: s.V6.Copy()}
 }
 func (s Tuple6[A, B, C, D, E, F]) Equal(other Tuple6[A, B, C, D, E, F]) bool {
-	return Equal(s.V1, other.V1) && Equal(s.V2, other.V2) && Equal(s.V3, other.V3) && Equal(s.V4, other.V4) && Equal(s.V5, other.V5) && Equal(s.V6, other.V6)
+	return s.V1.Equal(other.V1) && s.V2.Equal(other.V2) && s.V3.Equal(other.V3) && s.V4.Equal(other.V4) && s.V5.Equal(other.V5) && s.V6.Equal(other.V6)
 }
 
 type Tuple6Instance interface {
@@ -220,7 +220,7 @@ func (s Tuple6[A, B, C, D, E, F]) Unapply(v any) (Immutable[A], Immutable[B], Im
 
 //line std/tuple.gala:68
 func (t Tuple6[A, B, C, D, E, F]) String() string {
-	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get())
+	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v)", Printed(t.V1.Get()), Printed(t.V2.Get()), Printed(t.V3.Get()), Printed(t.V4.Get()), Printed(t.V5.Get()), Printed(t.V6.Get()))
 }
 
 //line std/tuple.gala:71
@@ -242,10 +242,10 @@ type Tuple7[A any, B any, C any, D any, E any, F any, G any] struct {
 }
 
 func (s Tuple7[A, B, C, D, E, F, G]) Copy() Tuple7[A, B, C, D, E, F, G] {
-	return Tuple7[A, B, C, D, E, F, G]{V1: Copy(s.V1), V2: Copy(s.V2), V3: Copy(s.V3), V4: Copy(s.V4), V5: Copy(s.V5), V6: Copy(s.V6), V7: Copy(s.V7)}
+	return Tuple7[A, B, C, D, E, F, G]{V1: s.V1.Copy(), V2: s.V2.Copy(), V3: s.V3.Copy(), V4: s.V4.Copy(), V5: s.V5.Copy(), V6: s.V6.Copy(), V7: s.V7.Copy()}
 }
 func (s Tuple7[A, B, C, D, E, F, G]) Equal(other Tuple7[A, B, C, D, E, F, G]) bool {
-	return Equal(s.V1, other.V1) && Equal(s.V2, other.V2) && Equal(s.V3, other.V3) && Equal(s.V4, other.V4) && Equal(s.V5, other.V5) && Equal(s.V6, other.V6) && Equal(s.V7, other.V7)
+	return s.V1.Equal(other.V1) && s.V2.Equal(other.V2) && s.V3.Equal(other.V3) && s.V4.Equal(other.V4) && s.V5.Equal(other.V5) && s.V6.Equal(other.V6) && s.V7.Equal(other.V7)
 }
 
 type Tuple7Instance interface {
@@ -267,7 +267,7 @@ func (s Tuple7[A, B, C, D, E, F, G]) Unapply(v any) (Immutable[A], Immutable[B],
 
 //line std/tuple.gala:85
 func (t Tuple7[A, B, C, D, E, F, G]) String() string {
-	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get(), t.V7.Get())
+	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v)", Printed(t.V1.Get()), Printed(t.V2.Get()), Printed(t.V3.Get()), Printed(t.V4.Get()), Printed(t.V5.Get()), Printed(t.V6.Get()), Printed(t.V7.Get()))
 }
 
 //line std/tuple.gala:88
@@ -290,10 +290,10 @@ type Tuple8[A any, B any, C any, D any, E any, F any, G any, H any] struct {
 }
 
 func (s Tuple8[A, B, C, D, E, F, G, H]) Copy() Tuple8[A, B, C, D, E, F, G, H] {
-	return Tuple8[A, B, C, D, E, F, G, H]{V1: Copy(s.V1), V2: Copy(s.V2), V3: Copy(s.V3), V4: Copy(s.V4), V5: Copy(s.V5), V6: Copy(s.V6), V7: Copy(s.V7), V8: Copy(s.V8)}
+	return Tuple8[A, B, C, D, E, F, G, H]{V1: s.V1.Copy(), V2: s.V2.Copy(), V3: s.V3.Copy(), V4: s.V4.Copy(), V5: s.V5.Copy(), V6: s.V6.Copy(), V7: s.V7.Copy(), V8: s.V8.Copy()}
 }
 func (s Tuple8[A, B, C, D, E, F, G, H]) Equal(other Tuple8[A, B, C, D, E, F, G, H]) bool {
-	return Equal(s.V1, other.V1) && Equal(s.V2, other.V2) && Equal(s.V3, other.V3) && Equal(s.V4, other.V4) && Equal(s.V5, other.V5) && Equal(s.V6, other.V6) && Equal(s.V7, other.V7) && Equal(s.V8, other.V8)
+	return s.V1.Equal(other.V1) && s.V2.Equal(other.V2) && s.V3.Equal(other.V3) && s.V4.Equal(other.V4) && s.V5.Equal(other.V5) && s.V6.Equal(other.V6) && s.V7.Equal(other.V7) && s.V8.Equal(other.V8)
 }
 
 type Tuple8Instance interface {
@@ -315,7 +315,7 @@ func (s Tuple8[A, B, C, D, E, F, G, H]) Unapply(v any) (Immutable[A], Immutable[
 
 //line std/tuple.gala:103
 func (t Tuple8[A, B, C, D, E, F, G, H]) String() string {
-	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get(), t.V7.Get(), t.V8.Get())
+	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v, %v)", Printed(t.V1.Get()), Printed(t.V2.Get()), Printed(t.V3.Get()), Printed(t.V4.Get()), Printed(t.V5.Get()), Printed(t.V6.Get()), Printed(t.V7.Get()), Printed(t.V8.Get()))
 }
 
 //line std/tuple.gala:106
@@ -339,10 +339,10 @@ type Tuple9[A any, B any, C any, D any, E any, F any, G any, H any, I any] struc
 }
 
 func (s Tuple9[A, B, C, D, E, F, G, H, I]) Copy() Tuple9[A, B, C, D, E, F, G, H, I] {
-	return Tuple9[A, B, C, D, E, F, G, H, I]{V1: Copy(s.V1), V2: Copy(s.V2), V3: Copy(s.V3), V4: Copy(s.V4), V5: Copy(s.V5), V6: Copy(s.V6), V7: Copy(s.V7), V8: Copy(s.V8), V9: Copy(s.V9)}
+	return Tuple9[A, B, C, D, E, F, G, H, I]{V1: s.V1.Copy(), V2: s.V2.Copy(), V3: s.V3.Copy(), V4: s.V4.Copy(), V5: s.V5.Copy(), V6: s.V6.Copy(), V7: s.V7.Copy(), V8: s.V8.Copy(), V9: s.V9.Copy()}
 }
 func (s Tuple9[A, B, C, D, E, F, G, H, I]) Equal(other Tuple9[A, B, C, D, E, F, G, H, I]) bool {
-	return Equal(s.V1, other.V1) && Equal(s.V2, other.V2) && Equal(s.V3, other.V3) && Equal(s.V4, other.V4) && Equal(s.V5, other.V5) && Equal(s.V6, other.V6) && Equal(s.V7, other.V7) && Equal(s.V8, other.V8) && Equal(s.V9, other.V9)
+	return s.V1.Equal(other.V1) && s.V2.Equal(other.V2) && s.V3.Equal(other.V3) && s.V4.Equal(other.V4) && s.V5.Equal(other.V5) && s.V6.Equal(other.V6) && s.V7.Equal(other.V7) && s.V8.Equal(other.V8) && s.V9.Equal(other.V9)
 }
 
 type Tuple9Instance interface {
@@ -364,7 +364,7 @@ func (s Tuple9[A, B, C, D, E, F, G, H, I]) Unapply(v any) (Immutable[A], Immutab
 
 //line std/tuple.gala:122
 func (t Tuple9[A, B, C, D, E, F, G, H, I]) String() string {
-	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get(), t.V7.Get(), t.V8.Get(), t.V9.Get())
+	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v, %v, %v)", Printed(t.V1.Get()), Printed(t.V2.Get()), Printed(t.V3.Get()), Printed(t.V4.Get()), Printed(t.V5.Get()), Printed(t.V6.Get()), Printed(t.V7.Get()), Printed(t.V8.Get()), Printed(t.V9.Get()))
 }
 
 //line std/tuple.gala:125
@@ -389,10 +389,10 @@ type Tuple10[A any, B any, C any, D any, E any, F any, G any, H any, I any, J an
 }
 
 func (s Tuple10[A, B, C, D, E, F, G, H, I, J]) Copy() Tuple10[A, B, C, D, E, F, G, H, I, J] {
-	return Tuple10[A, B, C, D, E, F, G, H, I, J]{V1: Copy(s.V1), V2: Copy(s.V2), V3: Copy(s.V3), V4: Copy(s.V4), V5: Copy(s.V5), V6: Copy(s.V6), V7: Copy(s.V7), V8: Copy(s.V8), V9: Copy(s.V9), V10: Copy(s.V10)}
+	return Tuple10[A, B, C, D, E, F, G, H, I, J]{V1: s.V1.Copy(), V2: s.V2.Copy(), V3: s.V3.Copy(), V4: s.V4.Copy(), V5: s.V5.Copy(), V6: s.V6.Copy(), V7: s.V7.Copy(), V8: s.V8.Copy(), V9: s.V9.Copy(), V10: s.V10.Copy()}
 }
 func (s Tuple10[A, B, C, D, E, F, G, H, I, J]) Equal(other Tuple10[A, B, C, D, E, F, G, H, I, J]) bool {
-	return Equal(s.V1, other.V1) && Equal(s.V2, other.V2) && Equal(s.V3, other.V3) && Equal(s.V4, other.V4) && Equal(s.V5, other.V5) && Equal(s.V6, other.V6) && Equal(s.V7, other.V7) && Equal(s.V8, other.V8) && Equal(s.V9, other.V9) && Equal(s.V10, other.V10)
+	return s.V1.Equal(other.V1) && s.V2.Equal(other.V2) && s.V3.Equal(other.V3) && s.V4.Equal(other.V4) && s.V5.Equal(other.V5) && s.V6.Equal(other.V6) && s.V7.Equal(other.V7) && s.V8.Equal(other.V8) && s.V9.Equal(other.V9) && s.V10.Equal(other.V10)
 }
 
 type Tuple10Instance interface {
@@ -414,7 +414,7 @@ func (s Tuple10[A, B, C, D, E, F, G, H, I, J]) Unapply(v any) (Immutable[A], Imm
 
 //line std/tuple.gala:142
 func (t Tuple10[A, B, C, D, E, F, G, H, I, J]) String() string {
-	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v, %v, %v, %v)", t.V1.Get(), t.V2.Get(), t.V3.Get(), t.V4.Get(), t.V5.Get(), t.V6.Get(), t.V7.Get(), t.V8.Get(), t.V9.Get(), t.V10.Get())
+	return fmt.Sprintf("(%v, %v, %v, %v, %v, %v, %v, %v, %v, %v)", Printed(t.V1.Get()), Printed(t.V2.Get()), Printed(t.V3.Get()), Printed(t.V4.Get()), Printed(t.V5.Get()), Printed(t.V6.Get()), Printed(t.V7.Get()), Printed(t.V8.Get()), Printed(t.V9.Get()), Printed(t.V10.Get()))
 }
 
 //line std/tuple.gala:145

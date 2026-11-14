@@ -2,8 +2,6 @@
 
 package std
 
-import "fmt"
-
 //line std/either.gala:3
 
 // Either represents a value of one of two possible types (a disjoint union).
@@ -52,17 +50,26 @@ func (s Either[A, B]) isRight() bool {
 	return s._variant == _Either_Right
 }
 func (s Either[A, B]) Copy() Either[A, B] {
-	return Either[A, B]{LeftValue: Copy(s.LeftValue), RightValue: Copy(s.RightValue), _variant: Copy(s._variant)}
+	return Either[A, B]{LeftValue: s.LeftValue.Copy(), RightValue: s.RightValue.Copy(), _variant: s._variant}
 }
 func (s Either[A, B]) Equal(other Either[A, B]) bool {
-	return Equal(s.LeftValue, other.LeftValue) && Equal(s.RightValue, other.RightValue) && Equal(s._variant, other._variant)
+	if s._variant != other._variant {
+		return false
+	}
+	switch s._variant {
+	case _Either_Left:
+		return s.LeftValue.Equal(other.LeftValue)
+	case _Either_Right:
+		return s.RightValue.Equal(other.RightValue)
+	}
+	return true
 }
 func (s Either[A, B]) String() string {
 	switch s._variant {
 	case _Either_Left:
-		return fmt.Sprintf("Left(%v)", s.LeftValue.Get())
+		return FormatStruct("Left", s.LeftValue.Get())
 	case _Either_Right:
-		return fmt.Sprintf("Right(%v)", s.RightValue.Get())
+		return FormatStruct("Right", s.RightValue.Get())
 	default:
 		return "Either(<unknown>)"
 	}
@@ -119,21 +126,22 @@ func (e Either[A, B]) IsRight() bool {
 
 // isLeft returns true if this is a Left, false otherwise.
 func isLeft(e any) bool {
-	return func(obj any) bool {
+	return func(_subj any) bool {
 		var _tmp_5 Either[any, any]
 		_tmp_2 := 0
-		switch _tmp_3 := any(obj).(type) {
+		switch _tmp_3 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_4 bool
-			if _tmp_5, _tmp_4 = As[Either[any, any]](obj); _tmp_4 {
+			if _tmp_5, _tmp_4 = As[Either[any, any]](_subj); _tmp_4 {
 				_tmp_2 = 1
 			}
 		case Either[any, any]:
 			_tmp_5, _tmp_2 = _tmp_3, 1
 		}
 		{
-			ei, _tmp_1 := _tmp_5, _tmp_2 == 1
+			_tmp_ei, _tmp_1 := _tmp_5, _tmp_2 == 1
 			if _tmp_1 {
+				ei := _tmp_ei
 				return ei.isLeft()
 			} else {
 				return false
@@ -146,21 +154,22 @@ func isLeft(e any) bool {
 
 // isRight returns true if this is a Right, false otherwise.
 func isRight(e any) bool {
-	return func(obj any) bool {
+	return func(_subj any) bool {
 		var _tmp_10 Either[any, any]
 		_tmp_7 := 0
-		switch _tmp_8 := any(obj).(type) {
+		switch _tmp_8 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_9 bool
-			if _tmp_10, _tmp_9 = As[Either[any, any]](obj); _tmp_9 {
+			if _tmp_10, _tmp_9 = As[Either[any, any]](_subj); _tmp_9 {
 				_tmp_7 = 1
 			}
 		case Either[any, any]:
 			_tmp_10, _tmp_7 = _tmp_8, 1
 		}
 		{
-			ei, _tmp_6 := _tmp_10, _tmp_7 == 1
+			_tmp_ei, _tmp_6 := _tmp_10, _tmp_7 == 1
 			if _tmp_6 {
+				ei := _tmp_ei
 				return ei.isRight()
 			} else {
 				return false
@@ -173,10 +182,16 @@ func isRight(e any) bool {
 
 // getLeftValue returns the left value if this is a Left, otherwise it returns nil.
 func getLeftValue(e any) any {
-	return func(obj any) any {
+	return func(_subj any) any {
 		{
-			ei, _tmp_11 := As[Either[any, any]](obj)
-			if _tmp_11 && ei.isLeft() {
+			_tmp_ei, _tmp_11 := As[Either[any, any]](_subj)
+			var _tmp_12 bool
+			if _tmp_11 {
+				ei := _tmp_ei
+				_tmp_12 = ei.isLeft()
+			}
+			if _tmp_12 {
+				ei := _tmp_ei
 				return ei.LeftValue.Get()
 			} else {
 				return nil
@@ -189,10 +204,16 @@ func getLeftValue(e any) any {
 
 // getRightValue returns the right value if this is a Right, otherwise it returns nil.
 func getRightValue(e any) any {
-	return func(obj any) any {
+	return func(_subj any) any {
 		{
-			ei, _tmp_12 := As[Either[any, any]](obj)
-			if _tmp_12 && ei.isRight() {
+			_tmp_ei, _tmp_13 := As[Either[any, any]](_subj)
+			var _tmp_14 bool
+			if _tmp_13 {
+				ei := _tmp_ei
+				_tmp_14 = ei.isRight()
+			}
+			if _tmp_14 {
+				ei := _tmp_ei
 				return ei.RightValue.Get()
 			} else {
 				return nil

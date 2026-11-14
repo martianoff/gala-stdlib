@@ -29,10 +29,10 @@ type hashMapEntry[K comparable, V any] struct {
 }
 
 func (s hashMapEntry[K, V]) Copy() hashMapEntry[K, V] {
-	return hashMapEntry[K, V]{key: Copy(s.key), value: Copy(s.value), hashCode: Copy(s.hashCode), next: Copy(s.next)}
+	return hashMapEntry[K, V]{key: s.key.Copy(), value: Copy(s.value), hashCode: s.hashCode, next: Copy(s.next)}
 }
 func (s hashMapEntry[K, V]) Equal(other hashMapEntry[K, V]) bool {
-	return Equal(s.key, other.key) && Equal(s.value, other.value) && Equal(s.hashCode, other.hashCode) && Equal(s.next, other.next)
+	return s.key.Equal(other.key) && Equal(s.value, other.value) && s.hashCode.Get() == other.hashCode.Get() && Equal(s.next, other.next)
 }
 
 type hashMapEntryInstance interface {
@@ -53,10 +53,10 @@ type HashMap[K comparable, V any] struct {
 }
 
 func (s HashMap[K, V]) Copy() HashMap[K, V] {
-	return HashMap[K, V]{buckets: Copy(s.buckets), size: Copy(s.size), bucketMask: Copy(s.bucketMask)}
+	return HashMap[K, V]{buckets: Copy(s.buckets), size: s.size, bucketMask: s.bucketMask}
 }
 func (s HashMap[K, V]) Equal(other HashMap[K, V]) bool {
-	return Equal(s.buckets, other.buckets) && Equal(s.size, other.size) && Equal(s.bucketMask, other.bucketMask)
+	return Equal(s.buckets, other.buckets) && s.size == other.size && s.bucketMask == other.bucketMask
 }
 
 type HashMapInstance interface {
@@ -136,7 +136,7 @@ func (m *HashMap[K, V]) Put(key K, value V) bool {
 //line collection_mutable/hashmap.gala:75
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:76
-		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
+		if node.hashCode.Get() == hashCode && EqualComparable(node.key.Get(), key) {
 //line collection_mutable/hashmap.gala:77
 			node.value = value
 //line collection_mutable/hashmap.gala:78
@@ -254,7 +254,7 @@ func (m *HashMap[K, V]) Update(key K, f func(V) V) bool {
 //line collection_mutable/hashmap.gala:147
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:148
-		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
+		if node.hashCode.Get() == hashCode && EqualComparable(node.key.Get(), key) {
 //line collection_mutable/hashmap.gala:149
 			node.value = f(node.value)
 //line collection_mutable/hashmap.gala:150
@@ -288,7 +288,7 @@ func (m *HashMap[K, V]) Remove(key K) bool {
 //line collection_mutable/hashmap.gala:166
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:167
-		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
+		if node.hashCode.Get() == hashCode && EqualComparable(node.key.Get(), key) {
 //line collection_mutable/hashmap.gala:168
 			if prev.IsEmpty() {
 //line collection_mutable/hashmap.gala:169
@@ -314,7 +314,7 @@ func (m *HashMap[K, V]) Remove(key K) bool {
 //line collection_mutable/hashmap.gala:181
 
 // RemoveAllKeys removes all keys from an Array.
-func (m *HashMap[K, V]) RemoveAllKeys(keys *Array[K]) {
+func HashMap_RemoveAllKeys[K comparable, V any](m *HashMap[K, V], keys *Array[K]) {
 	if m == nil {
 		panic("HashMap.RemoveAllKeys: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
@@ -361,7 +361,7 @@ func (m *HashMap[K, V]) Contains(key K) bool {
 //line collection_mutable/hashmap.gala:205
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:206
-		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
+		if node.hashCode.Get() == hashCode && EqualComparable(node.key.Get(), key) {
 //line collection_mutable/hashmap.gala:207
 			return true
 		}
@@ -390,7 +390,7 @@ func (m *HashMap[K, V]) Get(key K) Option[V] {
 //line collection_mutable/hashmap.gala:221
 		var node = entry.Get()
 //line collection_mutable/hashmap.gala:222
-		if node.hashCode.Get() == hashCode && (node.key.Get() == key || KeysEqualByValue(node.key.Get(), key)) {
+		if node.hashCode.Get() == hashCode && EqualComparable(node.key.Get(), key) {
 //line collection_mutable/hashmap.gala:223
 			return Some[V]{}.Apply(node.value)
 		}
@@ -421,19 +421,20 @@ func (m *HashMap[K, V]) Apply(key K) V {
 	}
 //line collection_mutable/hashmap.gala:237
 	{
-		obj := m.Get(key)
+		_subj := m.Get(key)
 		{
-			_tmp_1 := _unapply_Some_7e6d5682(obj)
+			_tmp_1 := _unapply_Some_7e6d5682(_subj)
 			_tmp_2 := _tmp_1.IsDefined()
 			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
-			v := _tmp_3
+			_tmp_v := _tmp_3
 			if _tmp_2 {
+				v := _tmp_v
 				return v
 			} else {
-				_tmp_4 := _unapply_None_7e6d5682(obj)
+				_tmp_4 := _unapply_None_7e6d5682(_subj)
 				if _tmp_4 {
-					panic(fmt.Sprintf("HashMap: key not found: %v", key))
+					panic(fmt.Sprintf("HashMap: key not found: %v", Printed(key)))
 				} else {
 					panic("unreachable")
 				}
@@ -445,7 +446,7 @@ func (m *HashMap[K, V]) Apply(key K) V {
 //line collection_mutable/hashmap.gala:242
 
 // ContainsAllKeys returns true if the map contains all keys from an Array.
-func (m *HashMap[K, V]) ContainsAllKeys(keys *Array[K]) bool {
+func HashMap_ContainsAllKeys[K comparable, V any](m *HashMap[K, V], keys *Array[K]) bool {
 	if m == nil {
 		panic("HashMap.ContainsAllKeys: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
@@ -652,7 +653,7 @@ func (m *HashMap[K, V]) FilterInPlace(p func(K, V) bool) {
 		return acc
 	})
 //line collection_mutable/hashmap.gala:356
-	m.RemoveAllKeys(toRemove)
+	HashMap_RemoveAllKeys[K, V](m, toRemove)
 }
 
 //line collection_mutable/hashmap.gala:358
@@ -776,7 +777,7 @@ func (m *HashMap[K, V]) Count(p func(K, V) bool) int {
 //line collection_mutable/hashmap.gala:427
 
 // Keys returns a mutable HashSet of all keys.
-func (m *HashMap[K, V]) Keys() *HashSet[K] {
+func HashMap_Keys[K comparable, V any](m *HashMap[K, V]) *HashSet[K] {
 	if m == nil {
 		panic("HashMap.Keys: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
@@ -792,7 +793,7 @@ func (m *HashMap[K, V]) Keys() *HashSet[K] {
 //line collection_mutable/hashmap.gala:435
 
 // Values returns a mutable List of all values.
-func (m *HashMap[K, V]) Values() *List[V] {
+func HashMap_Values[K comparable, V any](m *HashMap[K, V]) *List[V] {
 	if m == nil {
 		panic("HashMap.Values: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
@@ -808,7 +809,7 @@ func (m *HashMap[K, V]) Values() *List[V] {
 //line collection_mutable/hashmap.gala:443
 
 // KeyArray returns an Array of all keys.
-func (m *HashMap[K, V]) KeyArray() *Array[K] {
+func HashMap_KeyArray[K comparable, V any](m *HashMap[K, V]) *Array[K] {
 	if m == nil {
 		panic("HashMap.KeyArray: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
@@ -824,7 +825,7 @@ func (m *HashMap[K, V]) KeyArray() *Array[K] {
 //line collection_mutable/hashmap.gala:451
 
 // ValueArray returns an Array of all values.
-func (m *HashMap[K, V]) ValueArray() *Array[V] {
+func HashMap_ValueArray[K comparable, V any](m *HashMap[K, V]) *Array[V] {
 	if m == nil {
 		panic("HashMap.ValueArray: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
@@ -858,7 +859,7 @@ func (m *HashMap[K, V]) ToGoMap() map[K]V {
 //line collection_mutable/hashmap.gala:470
 
 // ToArray converts the map to a mutable Array of tuples.
-func (m *HashMap[K, V]) ToArray() *Array[Tuple[K, V]] {
+func HashMap_ToArray[K comparable, V any](m *HashMap[K, V]) *Array[Tuple[K, V]] {
 	if m == nil {
 		panic("HashMap.ToArray: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
@@ -874,7 +875,7 @@ func (m *HashMap[K, V]) ToArray() *Array[Tuple[K, V]] {
 //line collection_mutable/hashmap.gala:478
 
 // ToList converts the map to a mutable List of tuples.
-func (m *HashMap[K, V]) ToList() *List[Tuple[K, V]] {
+func HashMap_ToList[K comparable, V any](m *HashMap[K, V]) *List[Tuple[K, V]] {
 	if m == nil {
 		panic("HashMap.ToList: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
@@ -927,7 +928,7 @@ func (m *HashMap[K, V]) String() string {
 			result = result + ", "
 		}
 //line collection_mutable/hashmap.gala:506
-		result = result + fmt.Sprintf("%v -> %v", k, v)
+		result = EvalOperand(result) + fmt.Sprintf("%v -> %v", Printed(k), Printed(v))
 //line collection_mutable/hashmap.gala:507
 		first = false
 	})
@@ -959,7 +960,7 @@ func (m *HashMap[K, V]) MkString(sep string) string {
 			result = result + sep
 		}
 //line collection_mutable/hashmap.gala:523
-		result = result + fmt.Sprintf("%v -> %v", k, v)
+		result = EvalOperand(result) + fmt.Sprintf("%v -> %v", Printed(k), Printed(v))
 //line collection_mutable/hashmap.gala:524
 		first = false
 	})
@@ -970,21 +971,21 @@ func (m *HashMap[K, V]) MkString(sep string) string {
 //line collection_mutable/hashmap.gala:528
 
 // KeySet returns a mutable HashSet of all keys.
-func (m *HashMap[K, V]) KeySet() *HashSet[K] {
+func HashMap_KeySet[K comparable, V any](m *HashMap[K, V]) *HashSet[K] {
 	if m == nil {
 		panic("HashMap.KeySet: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
-	return m.Keys()
+	return HashMap_Keys[K, V](m)
 }
 
 //line collection_mutable/hashmap.gala:533
 
 // Sorted returns a mutable Array of key-value tuples sorted by key in natural order.
-func (m *HashMap[K, V]) Sorted() *Array[Tuple[K, V]] {
+func HashMap_Sorted[K comparable, V any](m *HashMap[K, V]) *Array[Tuple[K, V]] {
 	if m == nil {
 		panic("HashMap.Sorted: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
-	return Array_SortBy(m.ToArray(), func(entry Tuple[K, V]) K {
+	return Array_SortBy(HashMap_ToArray[K, V](m), func(entry Tuple[K, V]) K {
 		return entry.V1.Get()
 	})
 }
@@ -992,11 +993,11 @@ func (m *HashMap[K, V]) Sorted() *Array[Tuple[K, V]] {
 //line collection_mutable/hashmap.gala:536
 
 // SortWith returns a mutable Array of key-value tuples sorted using the given comparison function.
-func (m *HashMap[K, V]) SortWith(less func(Tuple[K, V], Tuple[K, V]) bool) *Array[Tuple[K, V]] {
+func HashMap_SortWith[K comparable, V any](m *HashMap[K, V], less func(Tuple[K, V], Tuple[K, V]) bool) *Array[Tuple[K, V]] {
 	if m == nil {
 		panic("HashMap.SortWith: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
-	return m.ToArray().SortWith(less)
+	return HashMap_ToArray[K, V](m).SortWith(less)
 }
 
 //line collection_mutable/hashmap.gala:539
@@ -1006,7 +1007,7 @@ func HashMap_SortBy[S comparable, K comparable, V any](m *HashMap[K, V], f func(
 	if m == nil {
 		panic("HashMap.SortBy: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
-	return Array_SortBy(m.ToArray(), f)
+	return Array_SortBy(HashMap_ToArray[K, V](m), f)
 }
 
 //line collection_mutable/hashmap.gala:544
@@ -1040,17 +1041,18 @@ func (m *HashMap[K, V]) Merge(other *HashMap[K, V], f func(V, V) V) {
 	other.ForEachKV(func(k K, v V) {
 //line collection_mutable/hashmap.gala:555
 		func() {
-			obj := m.Get(k)
+			_subj := m.Get(k)
 			{
-				_tmp_5 := _unapply_Some_7e6d5682(obj)
+				_tmp_5 := _unapply_Some_7e6d5682(_subj)
 				_tmp_6 := _tmp_5.IsDefined()
 				_tmp_7 := _tmp_5.Value.Get()
 				_ = _tmp_7
-				e := _tmp_7
+				_tmp_e := _tmp_7
 				if _tmp_6 {
+					e := _tmp_e
 					m.Put(k, f(e, v))
 				} else {
-					_tmp_8 := _unapply_None_7e6d5682(obj)
+					_tmp_8 := _unapply_None_7e6d5682(_subj)
 					if _tmp_8 {
 						m.Put(k, v)
 					} else {
@@ -1065,7 +1067,7 @@ func (m *HashMap[K, V]) Merge(other *HashMap[K, V], f func(V, V) V) {
 //line collection_mutable/hashmap.gala:561
 
 // PutAllEntries adds all entries from an Array of tuples.
-func (m *HashMap[K, V]) PutAllEntries(entries *Array[Tuple[K, V]]) {
+func HashMap_PutAllEntries[K comparable, V any](m *HashMap[K, V], entries *Array[Tuple[K, V]]) {
 	if m == nil {
 		panic("HashMap.PutAllEntries: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
@@ -1107,17 +1109,18 @@ func (m *HashMap[K, V]) Head() Tuple[K, V] {
 	}
 //line collection_mutable/hashmap.gala:583
 	{
-		obj := m.HeadOption()
+		_subj := m.HeadOption()
 		{
-			_tmp_9 := _unapply_Some_7e6d5682(obj)
+			_tmp_9 := _unapply_Some_7e6d5682(_subj)
 			_tmp_10 := _tmp_9.IsDefined()
 			_tmp_11 := _tmp_9.Value.Get()
 			_ = _tmp_11
-			v := _tmp_11
+			_tmp_v := _tmp_11
 			if _tmp_10 {
+				v := _tmp_v
 				return v
 			} else {
-				_tmp_12 := _unapply_None_7e6d5682(obj)
+				_tmp_12 := _unapply_None_7e6d5682(_subj)
 				if _tmp_12 {
 					panic("HashMap: head of empty map")
 				} else {

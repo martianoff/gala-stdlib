@@ -24,10 +24,13 @@ type WalkEntry struct {
 }
 
 func (s WalkEntry) Copy() WalkEntry {
-	return WalkEntry{Path: Copy(s.Path), Info: Copy(s.Info)}
+	return WalkEntry{Path: s.Path, Info: s.Info.Copy()}
 }
 func (s WalkEntry) Equal(other WalkEntry) bool {
-	return Equal(s.Path, other.Path) && Equal(s.Info, other.Info)
+	return s.Path.Get() == other.Path.Get() && s.Info.Equal(other.Info)
+}
+func (s WalkEntry) String() string {
+	return FormatStruct("WalkEntry", s.Path, s.Info)
 }
 func (s WalkEntry) Unapply(v any) (Immutable[string], Immutable[FileInfo], bool) {
 	if p, ok := v.(WalkEntry); ok {
@@ -123,7 +126,7 @@ func Walk(root string) Try[Array[WalkEntry]] {
 			return infoErr
 		}
 //line fs/dir_ops.gala:60
-		entries = entries.Append(WalkEntry{Path: NewImmutable(path), Info: NewImmutable[FileInfo](fromGoFileInfo(info))})
+		entries = EvalOperand(entries).Append(WalkEntry{Path: NewImmutable(path), Info: NewImmutable[FileInfo](fromGoFileInfo(info))})
 //line fs/dir_ops.gala:61
 		return nil
 	})), func(_ Void) Array[WalkEntry] {

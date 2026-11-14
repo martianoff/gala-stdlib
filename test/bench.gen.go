@@ -16,10 +16,10 @@ type B struct {
 }
 
 func (s B) Copy() B {
-	return B{N: std.Copy(s.N), name: std.Copy(s.name)}
+	return B{N: s.N, name: s.name}
 }
 func (s B) Equal(other B) bool {
-	return std.Equal(s.N, other.N) && std.Equal(s.name, other.name)
+	return s.N.Get() == other.N.Get() && s.name.Get() == other.name.Get()
 }
 
 //line test/bench.gala:17
@@ -31,10 +31,10 @@ type BenchFunc struct {
 }
 
 func (s BenchFunc) Copy() BenchFunc {
-	return BenchFunc{Name: std.Copy(s.Name), Func: std.Copy(s.Func)}
+	return BenchFunc{Name: s.Name, Func: s.Func.Copy()}
 }
 func (s BenchFunc) Equal(other BenchFunc) bool {
-	return std.Equal(s.Name, other.Name) && std.Equal(s.Func, other.Func)
+	return s.Name.Get() == other.Name.Get() && s.Func.Equal(other.Func)
 }
 func (s BenchFunc) Unapply(v any) (std.Immutable[string], std.Immutable[func(B)], bool) {
 	if p, ok := v.(BenchFunc); ok {

@@ -20,10 +20,10 @@ type T struct {
 }
 
 func (s T) Copy() T {
-	return T{name: std.Copy(s.name), failed: std.Copy(s.failed), skipped: std.Copy(s.skipped)}
+	return T{name: s.name, failed: s.failed, skipped: s.skipped}
 }
 func (s T) Equal(other T) bool {
-	return std.Equal(s.name, other.name) && std.Equal(s.failed, other.failed) && std.Equal(s.skipped, other.skipped)
+	return s.name.Get() == other.name.Get() && s.failed.Get() == other.failed.Get() && s.skipped.Get() == other.skipped.Get()
 }
 
 //line test/framework.gala:15
@@ -145,22 +145,24 @@ func runTest(t T, f func(T) T) T {
 	})
 //line test/framework.gala:84
 	{
-		obj := result
+		_subj := result
 		{
-			_tmp_1 := _unapply_std_Success_3cfc90cc(obj)
+			_tmp_1 := _unapply_std_Success_3cfc90cc(_subj)
 			_tmp_2 := _tmp_1.IsDefined()
 			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
-			v := _tmp_3
+			_tmp_v := _tmp_3
 			if _tmp_2 {
+				v := _tmp_v
 				return v
 			} else {
-				_tmp_4 := _unapply_std_Failure_3cfc90cc(obj)
+				_tmp_4 := _unapply_std_Failure_3cfc90cc(_subj)
 				_tmp_5 := _tmp_4.IsDefined()
 				_tmp_6 := _tmp_4.Value.Get()
 				_ = _tmp_6
-				e := _tmp_6
+				_tmp_e := _tmp_6
 				if _tmp_5 {
+					e := _tmp_e
 					return t.Error(fmt.Sprintf("PANIC: %v", e))
 				} else {
 					panic("gala: a std.Try matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
@@ -179,10 +181,10 @@ type TestFunc struct {
 }
 
 func (s TestFunc) Copy() TestFunc {
-	return TestFunc{Name: std.Copy(s.Name), F: std.Copy(s.F)}
+	return TestFunc{Name: s.Name, F: s.F.Copy()}
 }
 func (s TestFunc) Equal(other TestFunc) bool {
-	return std.Equal(s.Name, other.Name) && std.Equal(s.F, other.F)
+	return s.Name.Get() == other.Name.Get() && s.F.Equal(other.F)
 }
 func (s TestFunc) Unapply(v any) (std.Immutable[string], std.Immutable[func(T) T], bool) {
 	if p, ok := v.(TestFunc); ok {

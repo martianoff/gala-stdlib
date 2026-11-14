@@ -126,16 +126,16 @@ func Repeat(s string, count int) string {
 // Replace returns a copy of `s` with the first `n` non-overlapping
 // instances of `old` replaced by `new`. If `n < 0`, all instances are
 // replaced.
-func Replace(s string, old string, new string, n int) string {
-	return gostrings.Replace(s, old, new, n)
+func Replace(s string, old string, _gala_new string, n int) string {
+	return gostrings.Replace(s, old, _gala_new, n)
 }
 
 //line strings/strings.gala:91
 
 // ReplaceAll returns a copy of `s` with all non-overlapping instances of
 // `old` replaced by `new`.
-func ReplaceAll(s string, old string, new string) string {
-	return gostrings.ReplaceAll(s, old, new)
+func ReplaceAll(s string, old string, _gala_new string) string {
+	return gostrings.ReplaceAll(s, old, _gala_new)
 }
 
 //line strings/strings.gala:96
@@ -182,10 +182,10 @@ type Str struct {
 }
 
 func (s Str) Copy() Str {
-	return Str{runes: Copy(s.runes), str: Copy(s.str)}
+	return Str{runes: s.runes.Copy(), str: s.str}
 }
 func (s Str) Equal(other Str) bool {
-	return Equal(s.runes, other.runes) && Equal(s.str, other.str)
+	return s.runes.Equal(other.runes) && s.str.Get() == other.str.Get()
 }
 
 //line strings/strings.gala:130
@@ -315,15 +315,15 @@ func (s Str) TrimSuffix(suffix string) Str {
 //line strings/strings.gala:184
 
 // Replace replaces first occurrence.
-func (s Str) Replace(old string, new string) Str {
-	return strFromString(gostrings.Replace(s.str.Get(), old, new, 1))
+func (s Str) Replace(old string, _gala_new string) Str {
+	return strFromString(gostrings.Replace(s.str.Get(), old, _gala_new, 1))
 }
 
 //line strings/strings.gala:187
 
 // ReplaceAll replaces all occurrences.
-func (s Str) ReplaceAll(old string, new string) Str {
-	return strFromString(gostrings.ReplaceAll(s.str.Get(), old, new))
+func (s Str) ReplaceAll(old string, _gala_new string) Str {
+	return strFromString(gostrings.ReplaceAll(s.str.Get(), old, _gala_new))
 }
 
 //line strings/strings.gala:190
@@ -381,9 +381,9 @@ func (s Str) Substring(start int, end int) Str {
 //line strings/strings.gala:216
 	var length = s.runes.Get().Get().Length()
 //line strings/strings.gala:217
-	var actualStart = max(0, min(start, length))
+	var actualStart = _gala_max(0, _gala_min(start, length))
 //line strings/strings.gala:218
-	var actualEnd = max(actualStart, min(end, length))
+	var actualEnd = _gala_max(actualStart, _gala_min(end, length))
 //line strings/strings.gala:219
 	return strFromRunes(s.runes.Get().Get().Slice(actualStart, actualEnd))
 }
@@ -577,7 +577,7 @@ func (s Str) Split(sep string) Array[Str] {
 // SplitAt splits at index.
 func (s Str) SplitAt(index int) Tuple[Str, Str] {
 //line strings/strings.gala:332
-	var actualIndex = max(0, min(index, s.Length()))
+	var actualIndex = _gala_max(0, _gala_min(index, s.Length()))
 //line strings/strings.gala:333
 	return Tuple[Str, Str]{V1: NewImmutable(strFromRunes(s.runes.Get().Get().Take(actualIndex))), V2: NewImmutable(strFromRunes(s.runes.Get().Get().Drop(actualIndex)))}
 }
@@ -889,7 +889,7 @@ func (e EmptyStr) Unapply(s Str) Option[bool] {
 }
 
 //line strings/strings.gala:492
-func min(a int, b int) int {
+func _gala_min(a int, b int) int {
 //line strings/strings.gala:493
 	if a < b {
 //line strings/strings.gala:494
@@ -900,7 +900,7 @@ func min(a int, b int) int {
 }
 
 //line strings/strings.gala:499
-func max(a int, b int) int {
+func _gala_max(a int, b int) int {
 //line strings/strings.gala:500
 	if a > b {
 //line strings/strings.gala:501
@@ -939,7 +939,7 @@ func NewStringBuilderFrom(s Str) *StringBuilder {
 //line strings/strings.gala:517
 	var parts = cm.EmptyArray[string]()
 //line strings/strings.gala:518
-	parts.Append(s.str.Get())
+	EvalOperand(parts).Append(s.str.Get())
 //line strings/strings.gala:519
 	return &StringBuilder{parts: parts}
 }

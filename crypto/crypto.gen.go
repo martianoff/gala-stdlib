@@ -32,7 +32,7 @@ type Digest struct {
 }
 
 func (s Digest) Copy() Digest {
-	return Digest{bytes: Copy(s.bytes)}
+	return Digest{bytes: s.bytes.Copy()}
 }
 
 //line crypto/crypto.gala:26
@@ -89,10 +89,10 @@ type Hasher struct {
 }
 
 func (s Hasher) Copy() Hasher {
-	return Hasher{algorithm: Copy(s.algorithm), h: Copy(s.h)}
+	return Hasher{algorithm: s.algorithm, h: Copy(s.h)}
 }
 func (s Hasher) Equal(other Hasher) bool {
-	return Equal(s.algorithm, other.algorithm) && Equal(s.h, other.h)
+	return s.algorithm.Get() == other.algorithm.Get() && Equal(s.h, other.h)
 }
 
 //line crypto/crypto.gala:54
@@ -104,7 +104,7 @@ func (h *Hasher) Update(data Array[byte]) *Hasher {
 		panic("Hasher.Update: receiver h is a Ptr[crypto.Hasher], but the caller passed nil")
 	}
 //line crypto/crypto.gala:58
-	h.h.Write(data.ToGoSlice())
+	EvalOperand(h.h.Write)(data.ToGoSlice())
 //line crypto/crypto.gala:59
 	return h
 }
@@ -337,10 +337,13 @@ type HmacSha256 struct {
 }
 
 func (s HmacSha256) Copy() HmacSha256 {
-	return HmacSha256{Key: Copy(s.Key)}
+	return HmacSha256{Key: s.Key.Copy()}
 }
 func (s HmacSha256) Equal(other HmacSha256) bool {
-	return Equal(s.Key, other.Key)
+	return s.Key.Equal(other.Key)
+}
+func (s HmacSha256) String() string {
+	return FormatStruct("HmacSha256", s.Key)
 }
 func (s HmacSha256) Unapply(v any) (Immutable[Array[byte]], bool) {
 	if p, ok := v.(HmacSha256); ok {
@@ -392,10 +395,13 @@ type HmacSha512 struct {
 }
 
 func (s HmacSha512) Copy() HmacSha512 {
-	return HmacSha512{Key: Copy(s.Key)}
+	return HmacSha512{Key: s.Key.Copy()}
 }
 func (s HmacSha512) Equal(other HmacSha512) bool {
-	return Equal(s.Key, other.Key)
+	return s.Key.Equal(other.Key)
+}
+func (s HmacSha512) String() string {
+	return FormatStruct("HmacSha512", s.Key)
 }
 func (s HmacSha512) Unapply(v any) (Immutable[Array[byte]], bool) {
 	if p, ok := v.(HmacSha512); ok {
@@ -448,10 +454,13 @@ type HmacSha1 struct {
 }
 
 func (s HmacSha1) Copy() HmacSha1 {
-	return HmacSha1{Key: Copy(s.Key)}
+	return HmacSha1{Key: s.Key.Copy()}
 }
 func (s HmacSha1) Equal(other HmacSha1) bool {
-	return Equal(s.Key, other.Key)
+	return s.Key.Equal(other.Key)
+}
+func (s HmacSha1) String() string {
+	return FormatStruct("HmacSha1", s.Key)
 }
 func (s HmacSha1) Unapply(v any) (Immutable[Array[byte]], bool) {
 	if p, ok := v.(HmacSha1); ok {
@@ -541,10 +550,13 @@ type Ed25519PublicKey struct {
 }
 
 func (s Ed25519PublicKey) Copy() Ed25519PublicKey {
-	return Ed25519PublicKey{bytes: Copy(s.bytes)}
+	return Ed25519PublicKey{bytes: s.bytes.Copy()}
 }
 func (s Ed25519PublicKey) Equal(other Ed25519PublicKey) bool {
-	return Equal(s.bytes, other.bytes)
+	return s.bytes.Equal(other.bytes)
+}
+func (s Ed25519PublicKey) String() string {
+	return FormatStruct("Ed25519PublicKey", s.bytes)
 }
 
 //line crypto/crypto.gala:230
@@ -556,10 +568,13 @@ type Ed25519PrivateKey struct {
 }
 
 func (s Ed25519PrivateKey) Copy() Ed25519PrivateKey {
-	return Ed25519PrivateKey{bytes: Copy(s.bytes)}
+	return Ed25519PrivateKey{bytes: s.bytes.Copy()}
 }
 func (s Ed25519PrivateKey) Equal(other Ed25519PrivateKey) bool {
-	return Equal(s.bytes, other.bytes)
+	return s.bytes.Equal(other.bytes)
+}
+func (s Ed25519PrivateKey) String() string {
+	return FormatStruct("Ed25519PrivateKey", s.bytes)
 }
 
 //line crypto/crypto.gala:233
@@ -572,10 +587,13 @@ type Ed25519KeyPair struct {
 }
 
 func (s Ed25519KeyPair) Copy() Ed25519KeyPair {
-	return Ed25519KeyPair{Public: Copy(s.Public), Private: Copy(s.Private)}
+	return Ed25519KeyPair{Public: s.Public.Copy(), Private: s.Private.Copy()}
 }
 func (s Ed25519KeyPair) Equal(other Ed25519KeyPair) bool {
-	return Equal(s.Public, other.Public) && Equal(s.Private, other.Private)
+	return s.Public.Equal(other.Public) && s.Private.Equal(other.Private)
+}
+func (s Ed25519KeyPair) String() string {
+	return FormatStruct("Ed25519KeyPair", s.Public, s.Private)
 }
 func (s Ed25519KeyPair) Unapply(v any) (Immutable[Ed25519PublicKey], Immutable[Ed25519PrivateKey], bool) {
 	if p, ok := v.(Ed25519KeyPair); ok {
@@ -600,7 +618,10 @@ type Signature struct {
 }
 
 func (s Signature) Copy() Signature {
-	return Signature{bytes: Copy(s.bytes)}
+	return Signature{bytes: s.bytes.Copy()}
+}
+func (s Signature) String() string {
+	return FormatStruct("Signature", s.bytes)
 }
 
 //line crypto/crypto.gala:240
@@ -733,10 +754,13 @@ type X25519PublicKey struct {
 }
 
 func (s X25519PublicKey) Copy() X25519PublicKey {
-	return X25519PublicKey{bytes: Copy(s.bytes)}
+	return X25519PublicKey{bytes: s.bytes.Copy()}
 }
 func (s X25519PublicKey) Equal(other X25519PublicKey) bool {
-	return Equal(s.bytes, other.bytes)
+	return s.bytes.Equal(other.bytes)
+}
+func (s X25519PublicKey) String() string {
+	return FormatStruct("X25519PublicKey", s.bytes)
 }
 
 //line crypto/crypto.gala:314
@@ -747,10 +771,13 @@ type X25519PrivateKey struct {
 }
 
 func (s X25519PrivateKey) Copy() X25519PrivateKey {
-	return X25519PrivateKey{bytes: Copy(s.bytes)}
+	return X25519PrivateKey{bytes: s.bytes.Copy()}
 }
 func (s X25519PrivateKey) Equal(other X25519PrivateKey) bool {
-	return Equal(s.bytes, other.bytes)
+	return s.bytes.Equal(other.bytes)
+}
+func (s X25519PrivateKey) String() string {
+	return FormatStruct("X25519PrivateKey", s.bytes)
 }
 
 //line crypto/crypto.gala:316
@@ -763,10 +790,13 @@ type X25519KeyPair struct {
 }
 
 func (s X25519KeyPair) Copy() X25519KeyPair {
-	return X25519KeyPair{Public: Copy(s.Public), Private: Copy(s.Private)}
+	return X25519KeyPair{Public: s.Public.Copy(), Private: s.Private.Copy()}
 }
 func (s X25519KeyPair) Equal(other X25519KeyPair) bool {
-	return Equal(s.Public, other.Public) && Equal(s.Private, other.Private)
+	return s.Public.Equal(other.Public) && s.Private.Equal(other.Private)
+}
+func (s X25519KeyPair) String() string {
+	return FormatStruct("X25519KeyPair", s.Public, s.Private)
 }
 func (s X25519KeyPair) Unapply(v any) (Immutable[X25519PublicKey], Immutable[X25519PrivateKey], bool) {
 	if p, ok := v.(X25519KeyPair); ok {

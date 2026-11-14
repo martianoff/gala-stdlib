@@ -26,10 +26,13 @@ type FileInfo struct {
 }
 
 func (s FileInfo) Copy() FileInfo {
-	return FileInfo{Name: Copy(s.Name), Size: Copy(s.Size), IsDir: Copy(s.IsDir), Mode: Copy(s.Mode), ModTime: Copy(s.ModTime)}
+	return FileInfo{Name: s.Name, Size: s.Size, IsDir: s.IsDir, Mode: s.Mode, ModTime: s.ModTime.Copy()}
 }
 func (s FileInfo) Equal(other FileInfo) bool {
-	return Equal(s.Name, other.Name) && Equal(s.Size, other.Size) && Equal(s.IsDir, other.IsDir) && Equal(s.Mode, other.Mode) && Equal(s.ModTime, other.ModTime)
+	return s.Name.Get() == other.Name.Get() && s.Size.Get() == other.Size.Get() && s.IsDir.Get() == other.IsDir.Get() && s.Mode.Get() == other.Mode.Get() && s.ModTime.Equal(other.ModTime)
+}
+func (s FileInfo) String() string {
+	return FormatStruct("FileInfo", s.Name, s.Size, s.IsDir, s.Mode, s.ModTime)
 }
 func (s FileInfo) Unapply(v any) (Immutable[string], Immutable[int64], Immutable[bool], Immutable[int], Immutable[time_utils.Instant], bool) {
 	if p, ok := v.(FileInfo); ok {
@@ -189,7 +192,7 @@ func ReadDir(path string) Try[Array[FileInfo]] {
 				return Failure[Array[FileInfo]]{}.Apply(err)
 			}
 //line fs/fs.gala:105
-			out = out.Append(fromGoFileInfo(info))
+			out = EvalOperand(out).Append(fromGoFileInfo(info))
 		}
 //line fs/fs.gala:107
 		return Success[Array[FileInfo]]{}.Apply(out)

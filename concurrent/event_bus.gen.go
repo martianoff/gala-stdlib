@@ -19,10 +19,10 @@ type eventBusState[T any] struct {
 }
 
 func (s eventBusState[T]) Copy() eventBusState[T] {
-	return eventBusState[T]{mu: Copy(s.mu), events: Copy(s.events), capacity: Copy(s.capacity)}
+	return eventBusState[T]{mu: Copy(s.mu), events: Copy(s.events), capacity: s.capacity}
 }
 func (s eventBusState[T]) Equal(other eventBusState[T]) bool {
-	return Equal(s.mu, other.mu) && Equal(s.events, other.events) && Equal(s.capacity, other.capacity)
+	return Equal(s.mu, other.mu) && Equal(s.events, other.events) && s.capacity == other.capacity
 }
 
 type eventBusStateInstance interface {
@@ -42,10 +42,10 @@ type EventBus[T any] struct {
 }
 
 func (s EventBus[T]) Copy() EventBus[T] {
-	return EventBus[T]{state: Copy(s.state)}
+	return EventBus[T]{state: s.state.Copy()}
 }
 func (s EventBus[T]) Equal(other EventBus[T]) bool {
-	return Equal(s.state, other.state)
+	return s.state.Equal(other.state)
 }
 
 type EventBusInstance interface {
@@ -90,7 +90,7 @@ func (b EventBus[T]) Push(e T) bool {
 		return false
 	}
 //line concurrent/event_bus.gala:81
-	b.state.Get().events = go_interop.SliceAppendAll(b.state.Get().events, go_interop.SliceOf(e))
+	b.state.Get().events = go_interop.SliceAppendAll(EvalOperand(b.state.Get().events), go_interop.SliceOf(e))
 //line concurrent/event_bus.gala:82
 	b.state.Get().mu.Unlock()
 //line concurrent/event_bus.gala:83
@@ -103,7 +103,7 @@ func (b EventBus[T]) Push(e T) bool {
 // Array. The bus's internal buffer is reset; subsequent pushes don't share
 // state with the returned Array. Safe to call from any goroutine; intended
 // for a single drain consumer (typically a render-loop tick).
-func (b EventBus[T]) DrainAll() Array[T] {
+func EventBus_DrainAll[T any](b EventBus[T]) Array[T] {
 //line concurrent/event_bus.gala:91
 	b.state.Get().mu.Lock()
 //line concurrent/event_bus.gala:92
@@ -129,7 +129,7 @@ func (b EventBus[T]) DrainAll() Array[T] {
 // TryTake removes and returns the oldest event, or None if the bus is
 // empty. Safe from any goroutine. For batch consumers prefer DrainAll —
 // it does one lock acquisition for the whole batch.
-func (b EventBus[T]) TryTake() Option[T] {
+func EventBus_TryTake[T any](b EventBus[T]) Option[T] {
 //line concurrent/event_bus.gala:103
 	b.state.Get().mu.Lock()
 //line concurrent/event_bus.gala:104

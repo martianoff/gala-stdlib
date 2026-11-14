@@ -32,7 +32,7 @@ func (_ IO[T]) IsIO() bool {
 //line io/io.gala:12
 
 // Run executes the IO computation and returns a Try[T].
-func (io IO[T]) Run() Try[T] {
+func IO_Run[T any](io IO[T]) Try[T] {
 	return io.exec()
 }
 
@@ -88,12 +88,12 @@ func Map[T any, U any](io IO[T], f func(T) U) IO[U] {
 //line io/io.gala:34
 		var result = io.exec()
 //line io/io.gala:35
-		if NewImmutable(result).Get().IsFailure() {
+		if result.IsFailure() {
 //line io/io.gala:36
-			return Failure[U]{}.Apply(NewImmutable(result).Get().GetError())
+			return Failure[U]{}.Apply(result.GetError())
 		}
 //line io/io.gala:38
-		return Success[U]{}.Apply(f(NewImmutable(result).Get().Get()))
+		return Success[U]{}.Apply(f(result.Get()))
 	}}
 }
 
@@ -106,12 +106,12 @@ func FlatMap[T any, U any](io IO[T], f func(T) IO[U]) IO[U] {
 //line io/io.gala:45
 		var result = io.exec()
 //line io/io.gala:46
-		if NewImmutable(result).Get().IsFailure() {
+		if result.IsFailure() {
 //line io/io.gala:47
-			return Failure[U]{}.Apply(NewImmutable(result).Get().GetError())
+			return Failure[U]{}.Apply(result.GetError())
 		}
 //line io/io.gala:49
-		return f(NewImmutable(result).Get().Get()).Run()
+		return IO_Run[U](f(result.Get()))
 	}}
 }
 
@@ -124,9 +124,9 @@ func AndThen[T any, U any](first IO[T], second IO[U]) IO[U] {
 //line io/io.gala:56
 		var result = first.exec()
 //line io/io.gala:57
-		if NewImmutable(result).Get().IsFailure() {
+		if result.IsFailure() {
 //line io/io.gala:58
-			return Failure[U]{}.Apply(NewImmutable(result).Get().GetError())
+			return Failure[U]{}.Apply(result.GetError())
 		}
 //line io/io.gala:60
 		return second.exec()
@@ -142,12 +142,12 @@ func Recover[T any](io IO[T], f func(error) T) IO[T] {
 //line io/io.gala:67
 		var result = io.exec()
 //line io/io.gala:68
-		if NewImmutable(result).Get().IsSuccess() {
+		if result.IsSuccess() {
 //line io/io.gala:69
 			return result
 		}
 //line io/io.gala:71
-		return Success[T]{}.Apply(f(NewImmutable(result).Get().GetError()))
+		return Success[T]{}.Apply(f(result.GetError()))
 	}}
 }
 
@@ -160,12 +160,12 @@ func RecoverWith[T any](io IO[T], f func(error) IO[T]) IO[T] {
 //line io/io.gala:78
 		var result = io.exec()
 //line io/io.gala:79
-		if NewImmutable(result).Get().IsSuccess() {
+		if result.IsSuccess() {
 //line io/io.gala:80
 			return result
 		}
 //line io/io.gala:82
-		return f(NewImmutable(result).Get().GetError()).Run()
+		return IO_Run[T](f(result.GetError()))
 	}}
 }
 
@@ -178,9 +178,9 @@ func ForEach[T any](io IO[T], f func(T)) IO[T] {
 //line io/io.gala:89
 		var result = io.exec()
 //line io/io.gala:90
-		if NewImmutable(result).Get().IsSuccess() {
+		if result.IsSuccess() {
 //line io/io.gala:91
-			f(NewImmutable(result).Get().Get())
+			f(result.Get())
 		}
 //line io/io.gala:93
 		return result

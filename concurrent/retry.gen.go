@@ -50,7 +50,7 @@ func ConstantBackoff(d Duration) func(int) Duration {
 //line concurrent/retry.gala:31
 
 // ExponentialBackoff returns a backoff function with exponential growth capped at max.
-func ExponentialBackoff(initial Duration, max Duration) func(int) Duration {
+func ExponentialBackoff(initial Duration, _gala_max Duration) func(int) Duration {
 	return func(attempt int) Duration {
 //line concurrent/retry.gala:35
 		var d = initial
@@ -59,9 +59,9 @@ func ExponentialBackoff(initial Duration, max Duration) func(int) Duration {
 //line concurrent/retry.gala:37
 			d = d.Multiply(2)
 //line concurrent/retry.gala:38
-			if d.Compare(max) > 0 {
+			if d.Compare(_gala_max) > 0 {
 //line concurrent/retry.gala:38
-				return max
+				return _gala_max
 			}
 		}
 //line concurrent/retry.gala:40

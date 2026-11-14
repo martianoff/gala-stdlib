@@ -2,8 +2,6 @@
 
 package std
 
-import "fmt"
-
 //line std/try.gala:3
 
 // Try represents a computation that may either result in a value of type T (Success)
@@ -57,17 +55,26 @@ func (s Try[T]) isFailure() bool {
 	return s._variant == _Try_Failure
 }
 func (s Try[T]) Copy() Try[T] {
-	return Try[T]{Value: Copy(s.Value), Err: Copy(s.Err), _variant: Copy(s._variant)}
+	return Try[T]{Value: s.Value.Copy(), Err: s.Err.Copy(), _variant: s._variant}
 }
 func (s Try[T]) Equal(other Try[T]) bool {
-	return Equal(s.Value, other.Value) && Equal(s.Err, other.Err) && Equal(s._variant, other._variant)
+	if s._variant != other._variant {
+		return false
+	}
+	switch s._variant {
+	case _Try_Success:
+		return s.Value.Equal(other.Value)
+	case _Try_Failure:
+		return s.Err.Equal(other.Err)
+	}
+	return true
 }
 func (s Try[T]) String() string {
 	switch s._variant {
 	case _Try_Success:
-		return fmt.Sprintf("Success(%v)", s.Value.Get())
+		return FormatStruct("Success", s.Value.Get())
 	case _Try_Failure:
-		return fmt.Sprintf("Failure(%v)", s.Err.Get())
+		return FormatStruct("Failure", s.Err.Get())
 	default:
 		return "Try(<unknown>)"
 	}
@@ -211,148 +218,162 @@ func (t Try[T]) ForEach(f func(T)) {
 //line std/try.gala:87
 
 // Map applies the function f to the value if this is a Success.
-// Returns a new Try containing the result. If f panics, the result is a Failure.
+// Returns a new Try containing the result. If f panics, the result is a
+// Failure holding the panic, as from Try(...).
 func Try_Map[U any, T any](t Try[T], f func(T) U) Try[U] {
-//line std/try.gala:91
-	if t.isFailure() {
 //line std/try.gala:92
+	if t.isFailure() {
+//line std/try.gala:93
 		return Failure[U]{}.Apply(t.Err.Get())
 	}
-//line std/try.gala:94
-	return Success[U]{}.Apply(f(t.Value.Get()))
+//line std/try.gala:95
+	return tryApply[T, U](t.Value.Get(), f)
 }
 
-//line std/try.gala:96
+//line std/try.gala:97
 
 // FlatMap applies the function f to the value if this is a Success.
 // Returns the Try returned by f. If this is a Failure, returns the Failure.
+// If f panics, the result is a Failure holding the panic.
 func Try_FlatMap[U any, T any](t Try[T], f func(T) Try[U]) Try[U] {
-//line std/try.gala:100
+//line std/try.gala:102
 	if t.isFailure() {
-//line std/try.gala:101
+//line std/try.gala:103
 		return Failure[U]{}.Apply(t.Err.Get())
 	}
-//line std/try.gala:103
-	return f(t.Value.Get())
+//line std/try.gala:105
+	return tryApplyTry[T, U](t.Value.Get(), f)
 }
 
-//line std/try.gala:105
+//line std/try.gala:107
 
 // Filter returns this Try if this is a Success and the predicate p returns true.
 // Returns a Failure with NoSuchElementError if predicate returns false.
+// If p panics, the result is a Failure holding the panic.
 func (t Try[T]) Filter(p func(T) bool) Try[T] {
-//line std/try.gala:109
-	if t.isFailure() {
-//line std/try.gala:110
-		return t
-	}
 //line std/try.gala:112
-	if p(t.Value.Get()) {
+	if t.isFailure() {
 //line std/try.gala:113
 		return t
 	}
 //line std/try.gala:115
+	var holds = tryApply[T, bool](t.Value.Get(), p)
+//line std/try.gala:116
+	if holds.isFailure() {
+//line std/try.gala:117
+		return Failure[T]{}.Apply(holds.Err.Get())
+	}
+//line std/try.gala:119
+	if holds.Value.Get() {
+//line std/try.gala:120
+		return t
+	}
+//line std/try.gala:122
 	return Failure[T]{}.Apply(NoSuchElementError{Message: NewImmutable("Predicate does not hold")})
 }
 
-//line std/try.gala:117
+//line std/try.gala:124
 
 // Recover applies the recovery function pf to the error if this is a Failure.
-// Returns a Success with the recovered value. If pf panics, the result is still a Failure.
+// Returns a Success with the recovered value. If pf panics, the result is
+// still a Failure, holding the panic.
 func (t Try[T]) Recover(pf func(error) T) Try[T] {
-//line std/try.gala:121
+//line std/try.gala:129
 	if t.isSuccess() {
-//line std/try.gala:122
+//line std/try.gala:130
 		return t
 	}
-//line std/try.gala:124
-	return Success[T]{}.Apply(pf(t.Err.Get()))
+//line std/try.gala:132
+	return tryApply[error, T](t.Err.Get(), pf)
 }
 
-//line std/try.gala:126
+//line std/try.gala:134
 
 // RecoverWith applies the recovery function pf to the error if this is a Failure.
 // Returns the Try returned by pf. If this is a Success, returns this Try.
+// If pf panics, the result is a Failure holding the panic.
 func (t Try[T]) RecoverWith(pf func(error) Try[T]) Try[T] {
-//line std/try.gala:130
-	if t.isSuccess() {
-//line std/try.gala:131
-		return t
-	}
-//line std/try.gala:133
-	return pf(t.Err.Get())
-}
-
-//line std/try.gala:135
-
-// Transform applies s if this is a Success, f if this is a Failure.
-// Both functions return a new Try.
-func Try_Transform[U any, T any](t Try[T], s func(T) Try[U], f func(error) Try[U]) Try[U] {
 //line std/try.gala:139
 	if t.isSuccess() {
 //line std/try.gala:140
-		return s(t.Value.Get())
+		return t
 	}
 //line std/try.gala:142
-	return f(t.Err.Get())
+	return tryApplyTry[error, T](t.Err.Get(), pf)
 }
 
 //line std/try.gala:144
 
+// Transform applies s if this is a Success, f if this is a Failure.
+// Both functions return a new Try. If the one applied panics, the result is
+// a Failure holding the panic.
+func Try_Transform[U any, T any](t Try[T], s func(T) Try[U], f func(error) Try[U]) Try[U] {
+//line std/try.gala:149
+	if t.isSuccess() {
+//line std/try.gala:150
+		return tryApplyTry[T, U](t.Value.Get(), s)
+	}
+//line std/try.gala:152
+	return tryApplyTry[error, U](t.Err.Get(), f)
+}
+
+//line std/try.gala:154
+
 // Fold applies fa if this is a Failure, fs if this is a Success.
 func Try_Fold[U any, T any](t Try[T], fa func(error) U, fs func(T) U) U {
-//line std/try.gala:147
+//line std/try.gala:157
 	if t.isSuccess() {
-//line std/try.gala:148
+//line std/try.gala:158
 		return fs(t.Value.Get())
 	}
-//line std/try.gala:150
+//line std/try.gala:160
 	return fa(t.Err.Get())
 }
 
-//line std/try.gala:152
+//line std/try.gala:162
 
 // ToOption returns Some(value) if this is a Success, None if this is a Failure.
-func (t Try[T]) ToOption() Option[T] {
-//line std/try.gala:155
+func Try_ToOption[T any](t Try[T]) Option[T] {
+//line std/try.gala:165
 	if t.isSuccess() {
-//line std/try.gala:156
+//line std/try.gala:166
 		return Some[T]{}.Apply(t.Value.Get())
 	}
-//line std/try.gala:158
+//line std/try.gala:168
 	return None[T]{}.Apply()
 }
 
-//line std/try.gala:160
+//line std/try.gala:170
 
 // ToEither returns Right(value) if this is a Success, Left(error) if this is a Failure.
-func (t Try[T]) ToEither() Either[error, T] {
-//line std/try.gala:163
+func Try_ToEither[T any](t Try[T]) Either[error, T] {
+//line std/try.gala:173
 	if t.isSuccess() {
-//line std/try.gala:164
+//line std/try.gala:174
 		return Right[error, T]{}.Apply(t.Value.Get())
 	}
-//line std/try.gala:166
+//line std/try.gala:176
 	return Left[error, T]{}.Apply(t.Err.Get())
 }
 
-//line std/try.gala:168
+//line std/try.gala:178
 
 // FromOption creates a Try from an Option.
 // Returns Success if the Option is Some, Failure with NoSuchElementError if None.
 func FromOption[T any](o Option[T]) Try[T] {
 	{
-		obj := o
+		_subj := o
 		{
-			_tmp_1 := _unapply_Some_cb8598b3(obj)
+			_tmp_1 := _unapply_Some_cb8598b3(_subj)
 			_tmp_2 := _tmp_1.IsDefined()
 			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
-			v := _tmp_3
+			_tmp_v := _tmp_3
 			if _tmp_2 {
+				v := _tmp_v
 				return Success[T]{}.Apply(v)
 			} else {
-				_tmp_4 := _unapply_None_cb8598b3(obj)
+				_tmp_4 := _unapply_None_cb8598b3(_subj)
 				if _tmp_4 {
 					return Failure[T]{}.Apply(NoSuchElementError{Message: NewImmutable("Option is None")})
 				} else {
@@ -363,28 +384,30 @@ func FromOption[T any](o Option[T]) Try[T] {
 	}
 }
 
-//line std/try.gala:175
+//line std/try.gala:185
 
 // FromEitherError creates a Try from an Either[error, T].
 // Returns Success if Right, Failure if Left.
 func FromEitherError[T any](e Either[error, T]) Try[T] {
 	{
-		obj := e
+		_subj := e
 		{
-			_tmp_5 := _unapply_Right_cb8598b3(obj)
+			_tmp_5 := _unapply_Right_cb8598b3(_subj)
 			_tmp_6 := _tmp_5.IsDefined()
 			_tmp_7 := _tmp_5.Value.Get()
 			_ = _tmp_7
-			v := _tmp_7
+			_tmp_v := _tmp_7
 			if _tmp_6 {
+				v := _tmp_v
 				return Success[T]{}.Apply(v)
 			} else {
-				_tmp_8 := _unapply_Left_cb8598b3(obj)
+				_tmp_8 := _unapply_Left_cb8598b3(_subj)
 				_tmp_9 := _tmp_8.IsDefined()
 				_tmp_10 := _tmp_8.Value.Get()
 				_ = _tmp_10
-				err := _tmp_10
+				_tmp_err := _tmp_10
 				if _tmp_9 {
+					err := _tmp_err
 					return Failure[T]{}.Apply(err)
 				} else {
 					panic("gala: a Either matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
@@ -394,7 +417,7 @@ func FromEitherError[T any](e Either[error, T]) Try[T] {
 	}
 }
 
-//line std/try.gala:182
+//line std/try.gala:192
 
 // TryApply executes f and catches any panic, converting it to a Failure.
 // Returns Success[T] with the result if f completes normally.
@@ -403,7 +426,7 @@ func TryApply[T any](f func() T) Try[T] {
 	return tryRecover[T](f)
 }
 
-//line std/try.gala:186
+//line std/try.gala:196
 
 // PanicStack returns the stack trace of the panic that err came from, taken
 // when Try (or TryApply) recovered it: Some(stack) for the error of a Failure
@@ -423,7 +446,7 @@ func PanicStack(err error) Option[string] {
 	return panicStackOf(err)
 }
 
-//line std/try.gala:202
+//line std/try.gala:212
 
 // Void represents the absence of a meaningful value, similar to Scala's Void.
 // Used as the type parameter for Try[Void] when converting Go error returns.
@@ -446,11 +469,11 @@ func (s Void) Unapply(v any) bool {
 	return false
 }
 
-//line std/try.gala:205
+//line std/try.gala:215
 
 // FromError converts a Go error return into a Try[Void].
 // Returns Success[Void] if err is nil, Failure[Void] otherwise.
-// `Try(goCall())` over a Go call returning only an error means the same.
+// `Try(call())` over a call returning only an error, Go or GALA, means the same.
 //
 // A Go call returning (T, error) needs no conversion: used as a value it
 // already is a Try[T].
@@ -461,16 +484,16 @@ func (s Void) Unapply(v any) bool {
 //	FromError(sb.ListenAndServe(addr))              // Try[Void]
 //	FromError(sb.ListenAndServe(addr)).OnFailure((err) => Println(s"error: $err"))
 func FromError(err error) Try[Void] {
-//line std/try.gala:219
+//line std/try.gala:229
 	if err != nil {
-//line std/try.gala:220
+//line std/try.gala:230
 		return Failure[Void]{}.Apply(err)
 	}
-//line std/try.gala:222
+//line std/try.gala:232
 	return Success[Void]{}.Apply(Void{})
 }
 
-//line std/try.gala:225
+//line std/try.gala:235
 
 // GoTry turns the two results of a Go call returning `(T, error)` into a
 // Try: Failure(err) when err is non-nil, Success(value) otherwise.
@@ -479,147 +502,147 @@ func FromError(err error) Try[Void] {
 // `os.ReadFile(path)` already is a `Try[[]byte]`; GoTry names that
 // conversion for code that holds the two results separately.
 func GoTry[T any](value T, err error) Try[T] {
-//line std/try.gala:233
+//line std/try.gala:243
 	if err != nil {
-//line std/try.gala:234
+//line std/try.gala:244
 		return Failure[T]{}.Apply(err)
 	}
-//line std/try.gala:236
+//line std/try.gala:246
 	return Success[T]{}.Apply(value)
 }
 
-//line std/try.gala:238
+//line std/try.gala:248
 
 // GoTry2 turns the results of a Go call returning 2 values and a
 // trailing error into a Try of a Tuple: Failure(err) when err is non-nil,
 // Success((a, b)) otherwise.
 func GoTry2[A any, B any](a A, b B, err error) Try[Tuple[A, B]] {
-//line std/try.gala:243
+//line std/try.gala:253
 	if err != nil {
-//line std/try.gala:244
+//line std/try.gala:254
 		return Failure[Tuple[A, B]]{}.Apply(err)
 	}
-//line std/try.gala:246
+//line std/try.gala:256
 	return Success[Tuple[A, B]]{}.Apply(Tuple[A, B]{V1: NewImmutable(a), V2: NewImmutable(b)})
 }
 
-//line std/try.gala:248
+//line std/try.gala:258
 
 // GoTry3 turns the results of a Go call returning 3 values and a
 // trailing error into a Try of a Tuple3: Failure(err) when err is non-nil,
 // Success((a, b, c)) otherwise.
 func GoTry3[A any, B any, C any](a A, b B, c C, err error) Try[Tuple3[A, B, C]] {
-//line std/try.gala:253
+//line std/try.gala:263
 	if err != nil {
-//line std/try.gala:254
+//line std/try.gala:264
 		return Failure[Tuple3[A, B, C]]{}.Apply(err)
 	}
-//line std/try.gala:256
+//line std/try.gala:266
 	return Success[Tuple3[A, B, C]]{}.Apply(Tuple3[A, B, C]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c)})
 }
 
-//line std/try.gala:258
+//line std/try.gala:268
 
 // GoTry4 turns the results of a Go call returning 4 values and a
 // trailing error into a Try of a Tuple4: Failure(err) when err is non-nil,
 // Success((a, b, c, d)) otherwise.
 func GoTry4[A any, B any, C any, D any](a A, b B, c C, d D, err error) Try[Tuple4[A, B, C, D]] {
-//line std/try.gala:263
+//line std/try.gala:273
 	if err != nil {
-//line std/try.gala:264
+//line std/try.gala:274
 		return Failure[Tuple4[A, B, C, D]]{}.Apply(err)
 	}
-//line std/try.gala:266
+//line std/try.gala:276
 	return Success[Tuple4[A, B, C, D]]{}.Apply(Tuple4[A, B, C, D]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d)})
 }
 
-//line std/try.gala:268
+//line std/try.gala:278
 
 // GoTry5 turns the results of a Go call returning 5 values and a
 // trailing error into a Try of a Tuple5: Failure(err) when err is non-nil,
 // Success((a, b, c, d, e)) otherwise.
 func GoTry5[A any, B any, C any, D any, E any](a A, b B, c C, d D, e E, err error) Try[Tuple5[A, B, C, D, E]] {
-//line std/try.gala:273
+//line std/try.gala:283
 	if err != nil {
-//line std/try.gala:274
+//line std/try.gala:284
 		return Failure[Tuple5[A, B, C, D, E]]{}.Apply(err)
 	}
-//line std/try.gala:276
+//line std/try.gala:286
 	return Success[Tuple5[A, B, C, D, E]]{}.Apply(Tuple5[A, B, C, D, E]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e)})
 }
 
-//line std/try.gala:278
+//line std/try.gala:288
 
 // GoTry6 turns the results of a Go call returning 6 values and a
 // trailing error into a Try of a Tuple6: Failure(err) when err is non-nil,
 // Success((a, b, c, d, e, f)) otherwise.
 func GoTry6[A any, B any, C any, D any, E any, F any](a A, b B, c C, d D, e E, f F, err error) Try[Tuple6[A, B, C, D, E, F]] {
-//line std/try.gala:283
+//line std/try.gala:293
 	if err != nil {
-//line std/try.gala:284
+//line std/try.gala:294
 		return Failure[Tuple6[A, B, C, D, E, F]]{}.Apply(err)
 	}
-//line std/try.gala:286
+//line std/try.gala:296
 	return Success[Tuple6[A, B, C, D, E, F]]{}.Apply(Tuple6[A, B, C, D, E, F]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f)})
 }
 
-//line std/try.gala:288
+//line std/try.gala:298
 
 // GoTry7 turns the results of a Go call returning 7 values and a
 // trailing error into a Try of a Tuple7: Failure(err) when err is non-nil,
 // Success((a, b, c, d, e, f, g)) otherwise.
 func GoTry7[A any, B any, C any, D any, E any, F any, G any](a A, b B, c C, d D, e E, f F, g G, err error) Try[Tuple7[A, B, C, D, E, F, G]] {
-//line std/try.gala:293
+//line std/try.gala:303
 	if err != nil {
-//line std/try.gala:294
+//line std/try.gala:304
 		return Failure[Tuple7[A, B, C, D, E, F, G]]{}.Apply(err)
 	}
-//line std/try.gala:296
+//line std/try.gala:306
 	return Success[Tuple7[A, B, C, D, E, F, G]]{}.Apply(Tuple7[A, B, C, D, E, F, G]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f), V7: NewImmutable(g)})
 }
 
-//line std/try.gala:298
+//line std/try.gala:308
 
 // GoTry8 turns the results of a Go call returning 8 values and a
 // trailing error into a Try of a Tuple8: Failure(err) when err is non-nil,
 // Success((a, b, c, d, e, f, g, h)) otherwise.
 func GoTry8[A any, B any, C any, D any, E any, F any, G any, H any](a A, b B, c C, d D, e E, f F, g G, h H, err error) Try[Tuple8[A, B, C, D, E, F, G, H]] {
-//line std/try.gala:303
+//line std/try.gala:313
 	if err != nil {
-//line std/try.gala:304
+//line std/try.gala:314
 		return Failure[Tuple8[A, B, C, D, E, F, G, H]]{}.Apply(err)
 	}
-//line std/try.gala:306
+//line std/try.gala:316
 	return Success[Tuple8[A, B, C, D, E, F, G, H]]{}.Apply(Tuple8[A, B, C, D, E, F, G, H]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f), V7: NewImmutable(g), V8: NewImmutable(h)})
 }
 
-//line std/try.gala:308
+//line std/try.gala:318
 
 // GoTry9 turns the results of a Go call returning 9 values and a
 // trailing error into a Try of a Tuple9: Failure(err) when err is non-nil,
 // Success((a, b, c, d, e, f, g, h, i)) otherwise.
 func GoTry9[A any, B any, C any, D any, E any, F any, G any, H any, I any](a A, b B, c C, d D, e E, f F, g G, h H, i I, err error) Try[Tuple9[A, B, C, D, E, F, G, H, I]] {
-//line std/try.gala:313
+//line std/try.gala:323
 	if err != nil {
-//line std/try.gala:314
+//line std/try.gala:324
 		return Failure[Tuple9[A, B, C, D, E, F, G, H, I]]{}.Apply(err)
 	}
-//line std/try.gala:316
+//line std/try.gala:326
 	return Success[Tuple9[A, B, C, D, E, F, G, H, I]]{}.Apply(Tuple9[A, B, C, D, E, F, G, H, I]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f), V7: NewImmutable(g), V8: NewImmutable(h), V9: NewImmutable(i)})
 }
 
-//line std/try.gala:318
+//line std/try.gala:328
 
 // GoTry10 turns the results of a Go call returning 10 values and a
 // trailing error into a Try of a Tuple10: Failure(err) when err is non-nil,
 // Success((a, b, c, d, e, f, g, h, i, j)) otherwise.
 func GoTry10[A any, B any, C any, D any, E any, F any, G any, H any, I any, J any](a A, b B, c C, d D, e E, f F, g G, h H, i I, j J, err error) Try[Tuple10[A, B, C, D, E, F, G, H, I, J]] {
-//line std/try.gala:323
+//line std/try.gala:333
 	if err != nil {
-//line std/try.gala:324
+//line std/try.gala:334
 		return Failure[Tuple10[A, B, C, D, E, F, G, H, I, J]]{}.Apply(err)
 	}
-//line std/try.gala:326
+//line std/try.gala:336
 	return Success[Tuple10[A, B, C, D, E, F, G, H, I, J]]{}.Apply(Tuple10[A, B, C, D, E, F, G, H, I, J]{V1: NewImmutable(a), V2: NewImmutable(b), V3: NewImmutable(c), V4: NewImmutable(d), V5: NewImmutable(e), V6: NewImmutable(f), V7: NewImmutable(g), V8: NewImmutable(h), V9: NewImmutable(i), V10: NewImmutable(j)})
 }
 func _unapply_Some_cb8598b3[_T0 any](v Option[_T0]) Option[_T0] {

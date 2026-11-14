@@ -2,8 +2,6 @@
 
 package std
 
-import "fmt"
-
 //line std/option_ptr.gala:4
 
 // OptionPtr[T] is a pointer that may be absent. It is the size of one
@@ -164,7 +162,7 @@ func OptionPtr_FlatMap[U any, T any](o OptionPtr[T], f func(*T) OptionPtr[U]) Op
 //line std/option_ptr.gala:66
 
 // ToOption returns the pointer as an Option: Some(pointer) or None.
-func (o OptionPtr[T]) ToOption() Option[*T] {
+func OptionPtr_ToOption[T any](o OptionPtr[T]) Option[*T] {
 	{
 		if o.p == nil {
 			return None[*T]{}.Apply()
@@ -180,18 +178,19 @@ func (o OptionPtr[T]) ToOption() Option[*T] {
 // OptionPtr uses Option's variants: `case Some(p)` and `case None()`,
 // checked for exhaustiveness.
 func (o OptionPtr[T]) MatchView() Option[*T] {
-	return o.ToOption()
+	return OptionPtr_ToOption[T](o)
 }
 
 //line std/option_ptr.gala:74
 
-// String returns "SomePtr(<value>)" or "EmptyOptionPtr".
+// String returns "SomePtr(<value>)" or "EmptyOptionPtr". A pointer reached
+// again through a cycle of pointers prints as <cycle> (see FormatStruct).
 func (o OptionPtr[T]) String() string {
 	{
 		if o.p == nil {
 			return "EmptyOptionPtr"
 		} else {
-			return fmt.Sprintf("SomePtr(%v)", *o.p)
+			return FormatStruct("SomePtr", o.p)
 		}
 	}
 }

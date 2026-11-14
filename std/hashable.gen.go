@@ -226,32 +226,34 @@ func HashKeyOf[T any](v T) uint32 {
 // hashOf is HashOf, and HashKeyOf when key is set.
 func hashOf[T any](v T, key bool) uint32 {
 	{
-		obj := hashPrimitive(v)
+		_subj := hashPrimitive(v)
 		{
-			_tmp_1 := _unapply_Some_788eb096(obj)
+			_tmp_1 := _unapply_Some_788eb096(_subj)
 			_tmp_2 := _tmp_1.IsDefined()
 			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
-			h := _tmp_3
+			_tmp_h := _tmp_3
 			if _tmp_2 {
+				h := _tmp_h
 				return h
 			} else {
 				{
-					obj := v
+					_subj := v
 					var _tmp_8 Hashable
 					_tmp_5 := 0
-					switch any(obj).(type) {
+					switch any(_subj).(type) {
 					case ImmutableUnwrapper, Transparent:
 						var _tmp_7 bool
-						if _tmp_8, _tmp_7 = As[Hashable](obj); _tmp_7 {
+						if _tmp_8, _tmp_7 = As[Hashable](_subj); _tmp_7 {
 							_tmp_5 = 1
 						}
 					case Hashable:
-						_tmp_8, _tmp_5 = any(obj).(Hashable), 1
+						_tmp_8, _tmp_5 = any(_subj).(Hashable), 1
 					}
 					{
-						h, _tmp_4 := _tmp_8, _tmp_5 == 1
+						_tmp_h, _tmp_4 := _tmp_8, _tmp_5 == 1
 						if _tmp_4 {
+							h := _tmp_h
 							return h.Hash()
 						} else if true && key {
 							return hashKeyByIdentity(v)
@@ -273,7 +275,7 @@ func hashOf[T any](v T, key bool) uint32 {
 // an allocation.
 func hashPrimitive[T any](v T) Option[uint32] {
 	{
-		obj := v
+		_subj := v
 		var _tmp_26 int
 		var _tmp_27 string
 		var _tmp_28 int64
@@ -289,36 +291,36 @@ func hashPrimitive[T any](v T) Option[uint32] {
 		var _tmp_38 float64
 		var _tmp_39 float32
 		_tmp_23 := 0
-		switch _tmp_24 := any(obj).(type) {
+		switch _tmp_24 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_25 bool
-			if _tmp_26, _tmp_25 = As[int](obj); _tmp_25 {
+			if _tmp_26, _tmp_25 = As[int](_subj); _tmp_25 {
 				_tmp_23 = 1
-			} else if _tmp_27, _tmp_25 = As[string](obj); _tmp_25 {
+			} else if _tmp_27, _tmp_25 = As[string](_subj); _tmp_25 {
 				_tmp_23 = 2
-			} else if _tmp_28, _tmp_25 = As[int64](obj); _tmp_25 {
+			} else if _tmp_28, _tmp_25 = As[int64](_subj); _tmp_25 {
 				_tmp_23 = 3
-			} else if _tmp_29, _tmp_25 = As[int32](obj); _tmp_25 {
+			} else if _tmp_29, _tmp_25 = As[int32](_subj); _tmp_25 {
 				_tmp_23 = 4
-			} else if _tmp_30, _tmp_25 = As[uint](obj); _tmp_25 {
+			} else if _tmp_30, _tmp_25 = As[uint](_subj); _tmp_25 {
 				_tmp_23 = 5
-			} else if _tmp_31, _tmp_25 = As[uint64](obj); _tmp_25 {
+			} else if _tmp_31, _tmp_25 = As[uint64](_subj); _tmp_25 {
 				_tmp_23 = 6
-			} else if _tmp_32, _tmp_25 = As[uint32](obj); _tmp_25 {
+			} else if _tmp_32, _tmp_25 = As[uint32](_subj); _tmp_25 {
 				_tmp_23 = 7
-			} else if _tmp_33, _tmp_25 = As[bool](obj); _tmp_25 {
+			} else if _tmp_33, _tmp_25 = As[bool](_subj); _tmp_25 {
 				_tmp_23 = 8
-			} else if _tmp_34, _tmp_25 = As[int8](obj); _tmp_25 {
+			} else if _tmp_34, _tmp_25 = As[int8](_subj); _tmp_25 {
 				_tmp_23 = 9
-			} else if _tmp_35, _tmp_25 = As[int16](obj); _tmp_25 {
+			} else if _tmp_35, _tmp_25 = As[int16](_subj); _tmp_25 {
 				_tmp_23 = 10
-			} else if _tmp_36, _tmp_25 = As[uint8](obj); _tmp_25 {
+			} else if _tmp_36, _tmp_25 = As[uint8](_subj); _tmp_25 {
 				_tmp_23 = 11
-			} else if _tmp_37, _tmp_25 = As[uint16](obj); _tmp_25 {
+			} else if _tmp_37, _tmp_25 = As[uint16](_subj); _tmp_25 {
 				_tmp_23 = 12
-			} else if _tmp_38, _tmp_25 = As[float64](obj); _tmp_25 {
+			} else if _tmp_38, _tmp_25 = As[float64](_subj); _tmp_25 {
 				_tmp_23 = 13
-			} else if _tmp_39, _tmp_25 = As[float32](obj); _tmp_25 {
+			} else if _tmp_39, _tmp_25 = As[float32](_subj); _tmp_25 {
 				_tmp_23 = 14
 			}
 		case int:
@@ -351,60 +353,74 @@ func hashPrimitive[T any](v T) Option[uint32] {
 			_tmp_39, _tmp_23 = _tmp_24, 14
 		}
 		{
-			i, _tmp_9 := _tmp_26, _tmp_23 == 1
+			_tmp_i, _tmp_9 := _tmp_26, _tmp_23 == 1
 			if _tmp_9 {
+				i := _tmp_i
 				return Some[uint32]{}.Apply(HashInt(int64(i)))
 			} else {
-				s, _tmp_10 := _tmp_27, _tmp_23 == 2
+				_tmp_s, _tmp_10 := _tmp_27, _tmp_23 == 2
 				if _tmp_10 {
+					s := _tmp_s
 					return Some[uint32]{}.Apply(HashString(s))
 				} else {
-					i, _tmp_11 := _tmp_28, _tmp_23 == 3
+					_tmp_i, _tmp_11 := _tmp_28, _tmp_23 == 3
 					if _tmp_11 {
+						i := _tmp_i
 						return Some[uint32]{}.Apply(HashInt(i))
 					} else {
-						i, _tmp_12 := _tmp_29, _tmp_23 == 4
+						_tmp_i, _tmp_12 := _tmp_29, _tmp_23 == 4
 						if _tmp_12 {
+							i := _tmp_i
 							return Some[uint32]{}.Apply(HashInt(int64(i)))
 						} else {
-							u, _tmp_13 := _tmp_30, _tmp_23 == 5
+							_tmp_u, _tmp_13 := _tmp_30, _tmp_23 == 5
 							if _tmp_13 {
+								u := _tmp_u
 								return Some[uint32]{}.Apply(HashUint(uint64(u)))
 							} else {
-								u, _tmp_14 := _tmp_31, _tmp_23 == 6
+								_tmp_u, _tmp_14 := _tmp_31, _tmp_23 == 6
 								if _tmp_14 {
+									u := _tmp_u
 									return Some[uint32]{}.Apply(HashUint(u))
 								} else {
-									u, _tmp_15 := _tmp_32, _tmp_23 == 7
+									_tmp_u, _tmp_15 := _tmp_32, _tmp_23 == 7
 									if _tmp_15 {
+										u := _tmp_u
 										return Some[uint32]{}.Apply(HashUint(uint64(u)))
 									} else {
-										b, _tmp_16 := _tmp_33, _tmp_23 == 8
+										_tmp_b, _tmp_16 := _tmp_33, _tmp_23 == 8
 										if _tmp_16 {
+											b := _tmp_b
 											return Some[uint32]{}.Apply(HashBool(b))
 										} else {
-											i, _tmp_17 := _tmp_34, _tmp_23 == 9
+											_tmp_i, _tmp_17 := _tmp_34, _tmp_23 == 9
 											if _tmp_17 {
+												i := _tmp_i
 												return Some[uint32]{}.Apply(HashInt(int64(i)))
 											} else {
-												i, _tmp_18 := _tmp_35, _tmp_23 == 10
+												_tmp_i, _tmp_18 := _tmp_35, _tmp_23 == 10
 												if _tmp_18 {
+													i := _tmp_i
 													return Some[uint32]{}.Apply(HashInt(int64(i)))
 												} else {
-													u, _tmp_19 := _tmp_36, _tmp_23 == 11
+													_tmp_u, _tmp_19 := _tmp_36, _tmp_23 == 11
 													if _tmp_19 {
+														u := _tmp_u
 														return Some[uint32]{}.Apply(HashUint(uint64(u)))
 													} else {
-														u, _tmp_20 := _tmp_37, _tmp_23 == 12
+														_tmp_u, _tmp_20 := _tmp_37, _tmp_23 == 12
 														if _tmp_20 {
+															u := _tmp_u
 															return Some[uint32]{}.Apply(HashUint(uint64(u)))
 														} else {
-															f, _tmp_21 := _tmp_38, _tmp_23 == 13
+															_tmp_f, _tmp_21 := _tmp_38, _tmp_23 == 13
 															if _tmp_21 {
+																f := _tmp_f
 																return Some[uint32]{}.Apply(HashFloat(f))
 															} else {
-																f, _tmp_22 := _tmp_39, _tmp_23 == 14
+																_tmp_f, _tmp_22 := _tmp_39, _tmp_23 == 14
 																if _tmp_22 {
+																	f := _tmp_f
 																	return Some[uint32]{}.Apply(HashFloat(float64(f)))
 																} else {
 																	return None[uint32]{}.Apply()

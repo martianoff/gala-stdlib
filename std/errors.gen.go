@@ -11,10 +11,10 @@ type NoSuchElementError struct {
 }
 
 func (s NoSuchElementError) Copy() NoSuchElementError {
-	return NoSuchElementError{Message: Copy(s.Message)}
+	return NoSuchElementError{Message: s.Message}
 }
 func (s NoSuchElementError) Equal(other NoSuchElementError) bool {
-	return Equal(s.Message, other.Message)
+	return s.Message.Get() == other.Message.Get()
 }
 func (s NoSuchElementError) Unapply(v any) (Immutable[string], bool) {
 	if p, ok := v.(NoSuchElementError); ok {

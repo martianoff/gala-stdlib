@@ -19,10 +19,10 @@ type Regex struct {
 }
 
 func (s Regex) Copy() Regex {
-	return Regex{Pattern: Copy(s.Pattern), Re: Copy(s.Re)}
+	return Regex{Pattern: s.Pattern, Re: s.Re.Copy()}
 }
 func (s Regex) Equal(other Regex) bool {
-	return Equal(s.Pattern, other.Pattern) && Equal(s.Re, other.Re)
+	return s.Pattern.Get() == other.Pattern.Get() && s.Re.Equal(other.Re)
 }
 
 //line regex/regex.gala:15

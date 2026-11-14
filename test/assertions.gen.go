@@ -13,7 +13,7 @@ func Eq[V any](t T, actual V, expected V) T {
 //line test/assertions.gala:13
 	if !std.Equal(actual, expected) {
 //line test/assertions.gala:14
-		return t.Error(fmt.Sprintf("expected %v, got %v", expected, actual))
+		return t.Error(fmt.Sprintf("expected %v, got %v", std.Printed(expected), std.Printed(actual)))
 	}
 //line test/assertions.gala:16
 	return t
@@ -26,7 +26,7 @@ func NotEq[V any](t T, actual V, expected V) T {
 //line test/assertions.gala:21
 	if std.Equal(actual, expected) {
 //line test/assertions.gala:22
-		return t.Error(fmt.Sprintf("expected value different from %v", expected))
+		return t.Error(fmt.Sprintf("expected value different from %v", std.Printed(expected)))
 	}
 //line test/assertions.gala:24
 	return t
@@ -39,7 +39,7 @@ func EqMsg[V any](t T, actual V, expected V, msg string) T {
 //line test/assertions.gala:29
 	if !std.Equal(actual, expected) {
 //line test/assertions.gala:30
-		return t.Error(fmt.Sprintf("%s: expected %v, got %v", msg, expected, actual))
+		return t.Error(fmt.Sprintf("%s: expected %v, got %v", msg, std.Printed(expected), std.Printed(actual)))
 	}
 //line test/assertions.gala:32
 	return t
@@ -52,7 +52,7 @@ func IsNil(t T, value any) T {
 //line test/assertions.gala:37
 	if value != nil {
 //line test/assertions.gala:38
-		return t.Error(fmt.Sprintf("expected nil, got %v", value))
+		return t.Error(fmt.Sprintf("expected nil, got %v", std.Printed(value)))
 	}
 //line test/assertions.gala:40
 	return t
@@ -104,7 +104,7 @@ func Greater[V any](t T, a V, b V) T {
 //line test/assertions.gala:77
 	if std.CompareValues(a, b) <= 0 {
 //line test/assertions.gala:78
-		return t.Error(fmt.Sprintf("expected %v > %v", a, b))
+		return t.Error(fmt.Sprintf("expected %v > %v", std.Printed(a), std.Printed(b)))
 	}
 //line test/assertions.gala:80
 	return t
@@ -117,7 +117,7 @@ func GreaterOrEq[V any](t T, a V, b V) T {
 //line test/assertions.gala:85
 	if std.CompareValues(a, b) < 0 {
 //line test/assertions.gala:86
-		return t.Error(fmt.Sprintf("expected %v >= %v", a, b))
+		return t.Error(fmt.Sprintf("expected %v >= %v", std.Printed(a), std.Printed(b)))
 	}
 //line test/assertions.gala:88
 	return t
@@ -130,7 +130,7 @@ func Less[V any](t T, a V, b V) T {
 //line test/assertions.gala:93
 	if std.CompareValues(a, b) >= 0 {
 //line test/assertions.gala:94
-		return t.Error(fmt.Sprintf("expected %v < %v", a, b))
+		return t.Error(fmt.Sprintf("expected %v < %v", std.Printed(a), std.Printed(b)))
 	}
 //line test/assertions.gala:96
 	return t
@@ -143,7 +143,7 @@ func LessOrEq[V any](t T, a V, b V) T {
 //line test/assertions.gala:101
 	if std.CompareValues(a, b) > 0 {
 //line test/assertions.gala:102
-		return t.Error(fmt.Sprintf("expected %v <= %v", a, b))
+		return t.Error(fmt.Sprintf("expected %v <= %v", std.Printed(a), std.Printed(b)))
 	}
 //line test/assertions.gala:104
 	return t
@@ -221,7 +221,7 @@ func IsNone[V any](t T, opt std.Option[V]) T {
 //line test/assertions.gala:157
 	if opt.IsDefined() {
 //line test/assertions.gala:158
-		return t.Error(fmt.Sprintf("expected None, got Some(%v)", opt.Get()))
+		return t.Error(fmt.Sprintf("expected None, got Some(%v)", std.Printed(opt.Get())))
 	}
 //line test/assertions.gala:160
 	return t
@@ -247,7 +247,7 @@ func IsFailure[V any](t T, tr std.Try[V]) T {
 //line test/assertions.gala:177
 	if tr.IsSuccess() {
 //line test/assertions.gala:178
-		return t.Error(fmt.Sprintf("expected Failure, got Success(%v)", tr.Get()))
+		return t.Error(fmt.Sprintf("expected Failure, got Success(%v)", std.Printed(tr.Get())))
 	}
 //line test/assertions.gala:180
 	return t

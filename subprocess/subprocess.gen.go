@@ -28,10 +28,13 @@ type SpawnOpts struct {
 }
 
 func (s SpawnOpts) Copy() SpawnOpts {
-	return SpawnOpts{Cmd: Copy(s.Cmd), Args: Copy(s.Args), Env: Copy(s.Env), Dir: Copy(s.Dir)}
+	return SpawnOpts{Cmd: s.Cmd, Args: s.Args.Copy(), Env: s.Env.Copy(), Dir: s.Dir}
 }
 func (s SpawnOpts) Equal(other SpawnOpts) bool {
-	return Equal(s.Cmd, other.Cmd) && Equal(s.Args, other.Args) && Equal(s.Env, other.Env) && Equal(s.Dir, other.Dir)
+	return s.Cmd.Get() == other.Cmd.Get() && s.Args.Equal(other.Args) && s.Env.Equal(other.Env) && s.Dir.Get() == other.Dir.Get()
+}
+func (s SpawnOpts) String() string {
+	return FormatStruct("SpawnOpts", s.Cmd, s.Args, s.Env, s.Dir)
 }
 func (s SpawnOpts) Unapply(v any) (Immutable[string], Immutable[[]string], Immutable[[]string], Immutable[string], bool) {
 	if p, ok := v.(SpawnOpts); ok {
@@ -60,10 +63,10 @@ type processState struct {
 }
 
 func (s processState) Copy() processState {
-	return processState{cmd: Copy(s.cmd), stdin: Copy(s.stdin), stdoutScan: Copy(s.stdoutScan), stderrScan: Copy(s.stderrScan), stdinMu: Copy(s.stdinMu), waitOnce: Copy(s.waitOnce), waitDone: Copy(s.waitDone), waitErr: Copy(s.waitErr), exitCode: Copy(s.exitCode)}
+	return processState{cmd: Copy(s.cmd), stdin: Copy(s.stdin), stdoutScan: Copy(s.stdoutScan), stderrScan: Copy(s.stderrScan), stdinMu: Copy(s.stdinMu), waitOnce: Copy(s.waitOnce), waitDone: Copy(s.waitDone), waitErr: Copy(s.waitErr), exitCode: s.exitCode}
 }
 func (s processState) Equal(other processState) bool {
-	return Equal(s.cmd, other.cmd) && Equal(s.stdin, other.stdin) && Equal(s.stdoutScan, other.stdoutScan) && Equal(s.stderrScan, other.stderrScan) && Equal(s.stdinMu, other.stdinMu) && Equal(s.waitOnce, other.waitOnce) && Equal(s.waitDone, other.waitDone) && Equal(s.waitErr, other.waitErr) && Equal(s.exitCode, other.exitCode)
+	return Equal(s.cmd, other.cmd) && Equal(s.stdin, other.stdin) && Equal(s.stdoutScan, other.stdoutScan) && Equal(s.stderrScan, other.stderrScan) && Equal(s.stdinMu, other.stdinMu) && Equal(s.waitOnce, other.waitOnce) && Equal(s.waitDone, other.waitDone) && Equal(s.waitErr, other.waitErr) && s.exitCode == other.exitCode
 }
 
 //line subprocess/subprocess.gala:39
@@ -78,10 +81,10 @@ type Process struct {
 }
 
 func (s Process) Copy() Process {
-	return Process{state: Copy(s.state)}
+	return Process{state: s.state.Copy()}
 }
 func (s Process) Equal(other Process) bool {
-	return Equal(s.state, other.state)
+	return s.state.Equal(other.state)
 }
 
 //line subprocess/subprocess.gala:48

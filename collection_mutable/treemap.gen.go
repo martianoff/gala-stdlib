@@ -29,10 +29,10 @@ type treeMapNode[K comparable, V any] struct {
 }
 
 func (s treeMapNode[K, V]) Copy() treeMapNode[K, V] {
-	return treeMapNode[K, V]{key: Copy(s.key), value: Copy(s.value), left: Copy(s.left), right: Copy(s.right), parent: Copy(s.parent), color: Copy(s.color)}
+	return treeMapNode[K, V]{key: Copy(s.key), value: Copy(s.value), left: Copy(s.left), right: Copy(s.right), parent: Copy(s.parent), color: s.color}
 }
 func (s treeMapNode[K, V]) Equal(other treeMapNode[K, V]) bool {
-	return Equal(s.key, other.key) && Equal(s.value, other.value) && Equal(s.left, other.left) && Equal(s.right, other.right) && Equal(s.parent, other.parent) && Equal(s.color, other.color)
+	return Equal(s.key, other.key) && Equal(s.value, other.value) && Equal(s.left, other.left) && Equal(s.right, other.right) && Equal(s.parent, other.parent) && s.color == other.color
 }
 
 type treeMapNodeInstance interface {
@@ -52,10 +52,10 @@ type TreeMap[K comparable, V any] struct {
 }
 
 func (s TreeMap[K, V]) Copy() TreeMap[K, V] {
-	return TreeMap[K, V]{root: Copy(s.root), size: Copy(s.size)}
+	return TreeMap[K, V]{root: Copy(s.root), size: s.size}
 }
 func (s TreeMap[K, V]) Equal(other TreeMap[K, V]) bool {
-	return Equal(s.root, other.root) && Equal(s.size, other.size)
+	return Equal(s.root, other.root) && s.size == other.size
 }
 
 type TreeMapInstance interface {
@@ -168,62 +168,76 @@ func mutableTreeMapCompare[K comparable](a K, b K) int {
 //line collection_mutable/treemap.gala:95
 	var vb any = b
 //line collection_mutable/treemap.gala:97
-	var result = func(obj any) int {
+	var result = func(_subj any) int {
 		{
-			ai, _tmp_1 := As[int](obj)
+			_tmp_ai, _tmp_1 := As[int](_subj)
 			if _tmp_1 {
+				ai := _tmp_ai
 				return mutableTreeMapCompareIntsAny(ai, vb)
 			} else {
-				as, _tmp_2 := As[string](obj)
+				_tmp_as, _tmp_2 := As[string](_subj)
 				if _tmp_2 {
+					as := _tmp_as
 					return mutableTreeMapCompareStringsAny(as, vb)
 				} else {
-					ai64, _tmp_3 := As[int64](obj)
+					_tmp_ai64, _tmp_3 := As[int64](_subj)
 					if _tmp_3 {
+						ai64 := _tmp_ai64
 						return mutableTreeMapCompareInt64sAny(ai64, vb)
 					} else {
-						ai32, _tmp_4 := As[int32](obj)
+						_tmp_ai32, _tmp_4 := As[int32](_subj)
 						if _tmp_4 {
+							ai32 := _tmp_ai32
 							return mutableTreeMapCompareInt32sAny(ai32, vb)
 						} else {
-							af64, _tmp_5 := As[float64](obj)
+							_tmp_af64, _tmp_5 := As[float64](_subj)
 							if _tmp_5 {
+								af64 := _tmp_af64
 								return mutableTreeMapCompareFloat64sAny(af64, vb)
 							} else {
-								af32, _tmp_6 := As[float32](obj)
+								_tmp_af32, _tmp_6 := As[float32](_subj)
 								if _tmp_6 {
+									af32 := _tmp_af32
 									return mutableTreeMapCompareFloat32sAny(af32, vb)
 								} else {
-									au, _tmp_7 := As[uint](obj)
+									_tmp_au, _tmp_7 := As[uint](_subj)
 									if _tmp_7 {
+										au := _tmp_au
 										return mutableTreeMapCompareUintsAny(au, vb)
 									} else {
-										au64, _tmp_8 := As[uint64](obj)
+										_tmp_au64, _tmp_8 := As[uint64](_subj)
 										if _tmp_8 {
+											au64 := _tmp_au64
 											return mutableTreeMapCompareUint64sAny(au64, vb)
 										} else {
-											au32, _tmp_9 := As[uint32](obj)
+											_tmp_au32, _tmp_9 := As[uint32](_subj)
 											if _tmp_9 {
+												au32 := _tmp_au32
 												return mutableTreeMapCompareUint32sAny(au32, vb)
 											} else {
-												ai16, _tmp_10 := As[int16](obj)
+												_tmp_ai16, _tmp_10 := As[int16](_subj)
 												if _tmp_10 {
+													ai16 := _tmp_ai16
 													return mutableTreeMapCompareInt16sAny(ai16, vb)
 												} else {
-													ai8, _tmp_11 := As[int8](obj)
+													_tmp_ai8, _tmp_11 := As[int8](_subj)
 													if _tmp_11 {
+														ai8 := _tmp_ai8
 														return mutableTreeMapCompareInt8sAny(ai8, vb)
 													} else {
-														au16, _tmp_12 := As[uint16](obj)
+														_tmp_au16, _tmp_12 := As[uint16](_subj)
 														if _tmp_12 {
+															au16 := _tmp_au16
 															return mutableTreeMapCompareUint16sAny(au16, vb)
 														} else {
-															au8, _tmp_13 := As[uint8](obj)
+															_tmp_au8, _tmp_13 := As[uint8](_subj)
 															if _tmp_13 {
+																au8 := _tmp_au8
 																return mutableTreeMapCompareUint8sAny(au8, vb)
 															} else {
-																ao, _tmp_14 := As[Ordered[K]](obj)
+																_tmp_ao, _tmp_14 := As[Ordered[K]](_subj)
 																if _tmp_14 {
+																	ao := _tmp_ao
 																	return ao.Compare(b)
 																} else {
 																	return mutableTreeMapPanicNotOrdered(va)
@@ -252,21 +266,22 @@ func mutableTreeMapCompare[K comparable](a K, b K) int {
 // Type-specific comparison helpers
 func mutableTreeMapCompareIntsAny(a int, vb any) int {
 //line collection_mutable/treemap.gala:119
-	var b = func(obj any) int {
+	var b = func(_subj any) int {
 		var _tmp_19 int
 		_tmp_16 := 0
-		switch _tmp_17 := any(obj).(type) {
+		switch _tmp_17 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_18 bool
-			if _tmp_19, _tmp_18 = As[int](obj); _tmp_18 {
+			if _tmp_19, _tmp_18 = As[int](_subj); _tmp_18 {
 				_tmp_16 = 1
 			}
 		case int:
 			_tmp_19, _tmp_16 = _tmp_17, 1
 		}
 		{
-			bi, _tmp_15 := _tmp_19, _tmp_16 == 1
+			_tmp_bi, _tmp_15 := _tmp_19, _tmp_16 == 1
 			if _tmp_15 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return 0
@@ -290,21 +305,22 @@ func mutableTreeMapCompareIntsAny(a int, vb any) int {
 //line collection_mutable/treemap.gala:125
 func mutableTreeMapCompareStringsAny(a string, vb any) int {
 //line collection_mutable/treemap.gala:126
-	var b = func(obj any) string {
+	var b = func(_subj any) string {
 		var _tmp_24 string
 		_tmp_21 := 0
-		switch _tmp_22 := any(obj).(type) {
+		switch _tmp_22 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_23 bool
-			if _tmp_24, _tmp_23 = As[string](obj); _tmp_23 {
+			if _tmp_24, _tmp_23 = As[string](_subj); _tmp_23 {
 				_tmp_21 = 1
 			}
 		case string:
 			_tmp_24, _tmp_21 = _tmp_22, 1
 		}
 		{
-			bs, _tmp_20 := _tmp_24, _tmp_21 == 1
+			_tmp_bs, _tmp_20 := _tmp_24, _tmp_21 == 1
 			if _tmp_20 {
+				bs := _tmp_bs
 				return bs
 			} else {
 				return ""
@@ -328,21 +344,22 @@ func mutableTreeMapCompareStringsAny(a string, vb any) int {
 //line collection_mutable/treemap.gala:132
 func mutableTreeMapCompareInt64sAny(a int64, vb any) int {
 //line collection_mutable/treemap.gala:133
-	var b = func(obj any) int64 {
+	var b = func(_subj any) int64 {
 		var _tmp_29 int64
 		_tmp_26 := 0
-		switch _tmp_27 := any(obj).(type) {
+		switch _tmp_27 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_28 bool
-			if _tmp_29, _tmp_28 = As[int64](obj); _tmp_28 {
+			if _tmp_29, _tmp_28 = As[int64](_subj); _tmp_28 {
 				_tmp_26 = 1
 			}
 		case int64:
 			_tmp_29, _tmp_26 = _tmp_27, 1
 		}
 		{
-			bi, _tmp_25 := _tmp_29, _tmp_26 == 1
+			_tmp_bi, _tmp_25 := _tmp_29, _tmp_26 == 1
 			if _tmp_25 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return int64(0)
@@ -366,21 +383,22 @@ func mutableTreeMapCompareInt64sAny(a int64, vb any) int {
 //line collection_mutable/treemap.gala:139
 func mutableTreeMapCompareInt32sAny(a int32, vb any) int {
 //line collection_mutable/treemap.gala:140
-	var b = func(obj any) int32 {
+	var b = func(_subj any) int32 {
 		var _tmp_34 int32
 		_tmp_31 := 0
-		switch _tmp_32 := any(obj).(type) {
+		switch _tmp_32 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_33 bool
-			if _tmp_34, _tmp_33 = As[int32](obj); _tmp_33 {
+			if _tmp_34, _tmp_33 = As[int32](_subj); _tmp_33 {
 				_tmp_31 = 1
 			}
 		case int32:
 			_tmp_34, _tmp_31 = _tmp_32, 1
 		}
 		{
-			bi, _tmp_30 := _tmp_34, _tmp_31 == 1
+			_tmp_bi, _tmp_30 := _tmp_34, _tmp_31 == 1
 			if _tmp_30 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return int32(0)
@@ -404,21 +422,22 @@ func mutableTreeMapCompareInt32sAny(a int32, vb any) int {
 //line collection_mutable/treemap.gala:146
 func mutableTreeMapCompareInt16sAny(a int16, vb any) int {
 //line collection_mutable/treemap.gala:147
-	var b = func(obj any) int16 {
+	var b = func(_subj any) int16 {
 		var _tmp_39 int16
 		_tmp_36 := 0
-		switch _tmp_37 := any(obj).(type) {
+		switch _tmp_37 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_38 bool
-			if _tmp_39, _tmp_38 = As[int16](obj); _tmp_38 {
+			if _tmp_39, _tmp_38 = As[int16](_subj); _tmp_38 {
 				_tmp_36 = 1
 			}
 		case int16:
 			_tmp_39, _tmp_36 = _tmp_37, 1
 		}
 		{
-			bi, _tmp_35 := _tmp_39, _tmp_36 == 1
+			_tmp_bi, _tmp_35 := _tmp_39, _tmp_36 == 1
 			if _tmp_35 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return int16(0)
@@ -442,21 +461,22 @@ func mutableTreeMapCompareInt16sAny(a int16, vb any) int {
 //line collection_mutable/treemap.gala:153
 func mutableTreeMapCompareInt8sAny(a int8, vb any) int {
 //line collection_mutable/treemap.gala:154
-	var b = func(obj any) int8 {
+	var b = func(_subj any) int8 {
 		var _tmp_44 int8
 		_tmp_41 := 0
-		switch _tmp_42 := any(obj).(type) {
+		switch _tmp_42 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_43 bool
-			if _tmp_44, _tmp_43 = As[int8](obj); _tmp_43 {
+			if _tmp_44, _tmp_43 = As[int8](_subj); _tmp_43 {
 				_tmp_41 = 1
 			}
 		case int8:
 			_tmp_44, _tmp_41 = _tmp_42, 1
 		}
 		{
-			bi, _tmp_40 := _tmp_44, _tmp_41 == 1
+			_tmp_bi, _tmp_40 := _tmp_44, _tmp_41 == 1
 			if _tmp_40 {
+				bi := _tmp_bi
 				return bi
 			} else {
 				return int8(0)
@@ -480,21 +500,22 @@ func mutableTreeMapCompareInt8sAny(a int8, vb any) int {
 //line collection_mutable/treemap.gala:160
 func mutableTreeMapCompareFloat64sAny(a float64, vb any) int {
 //line collection_mutable/treemap.gala:161
-	var b = func(obj any) float64 {
+	var b = func(_subj any) float64 {
 		var _tmp_49 float64
 		_tmp_46 := 0
-		switch _tmp_47 := any(obj).(type) {
+		switch _tmp_47 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_48 bool
-			if _tmp_49, _tmp_48 = As[float64](obj); _tmp_48 {
+			if _tmp_49, _tmp_48 = As[float64](_subj); _tmp_48 {
 				_tmp_46 = 1
 			}
 		case float64:
 			_tmp_49, _tmp_46 = _tmp_47, 1
 		}
 		{
-			bf, _tmp_45 := _tmp_49, _tmp_46 == 1
+			_tmp_bf, _tmp_45 := _tmp_49, _tmp_46 == 1
 			if _tmp_45 {
+				bf := _tmp_bf
 				return bf
 			} else {
 				return float64(0)
@@ -518,21 +539,22 @@ func mutableTreeMapCompareFloat64sAny(a float64, vb any) int {
 //line collection_mutable/treemap.gala:167
 func mutableTreeMapCompareFloat32sAny(a float32, vb any) int {
 //line collection_mutable/treemap.gala:168
-	var b = func(obj any) float32 {
+	var b = func(_subj any) float32 {
 		var _tmp_54 float32
 		_tmp_51 := 0
-		switch _tmp_52 := any(obj).(type) {
+		switch _tmp_52 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_53 bool
-			if _tmp_54, _tmp_53 = As[float32](obj); _tmp_53 {
+			if _tmp_54, _tmp_53 = As[float32](_subj); _tmp_53 {
 				_tmp_51 = 1
 			}
 		case float32:
 			_tmp_54, _tmp_51 = _tmp_52, 1
 		}
 		{
-			bf, _tmp_50 := _tmp_54, _tmp_51 == 1
+			_tmp_bf, _tmp_50 := _tmp_54, _tmp_51 == 1
 			if _tmp_50 {
+				bf := _tmp_bf
 				return bf
 			} else {
 				return float32(0)
@@ -556,21 +578,22 @@ func mutableTreeMapCompareFloat32sAny(a float32, vb any) int {
 //line collection_mutable/treemap.gala:174
 func mutableTreeMapCompareUintsAny(a uint, vb any) int {
 //line collection_mutable/treemap.gala:175
-	var b = func(obj any) uint {
+	var b = func(_subj any) uint {
 		var _tmp_59 uint
 		_tmp_56 := 0
-		switch _tmp_57 := any(obj).(type) {
+		switch _tmp_57 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_58 bool
-			if _tmp_59, _tmp_58 = As[uint](obj); _tmp_58 {
+			if _tmp_59, _tmp_58 = As[uint](_subj); _tmp_58 {
 				_tmp_56 = 1
 			}
 		case uint:
 			_tmp_59, _tmp_56 = _tmp_57, 1
 		}
 		{
-			bu, _tmp_55 := _tmp_59, _tmp_56 == 1
+			_tmp_bu, _tmp_55 := _tmp_59, _tmp_56 == 1
 			if _tmp_55 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint(0)
@@ -594,21 +617,22 @@ func mutableTreeMapCompareUintsAny(a uint, vb any) int {
 //line collection_mutable/treemap.gala:181
 func mutableTreeMapCompareUint64sAny(a uint64, vb any) int {
 //line collection_mutable/treemap.gala:182
-	var b = func(obj any) uint64 {
+	var b = func(_subj any) uint64 {
 		var _tmp_64 uint64
 		_tmp_61 := 0
-		switch _tmp_62 := any(obj).(type) {
+		switch _tmp_62 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_63 bool
-			if _tmp_64, _tmp_63 = As[uint64](obj); _tmp_63 {
+			if _tmp_64, _tmp_63 = As[uint64](_subj); _tmp_63 {
 				_tmp_61 = 1
 			}
 		case uint64:
 			_tmp_64, _tmp_61 = _tmp_62, 1
 		}
 		{
-			bu, _tmp_60 := _tmp_64, _tmp_61 == 1
+			_tmp_bu, _tmp_60 := _tmp_64, _tmp_61 == 1
 			if _tmp_60 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint64(0)
@@ -632,21 +656,22 @@ func mutableTreeMapCompareUint64sAny(a uint64, vb any) int {
 //line collection_mutable/treemap.gala:188
 func mutableTreeMapCompareUint32sAny(a uint32, vb any) int {
 //line collection_mutable/treemap.gala:189
-	var b = func(obj any) uint32 {
+	var b = func(_subj any) uint32 {
 		var _tmp_69 uint32
 		_tmp_66 := 0
-		switch _tmp_67 := any(obj).(type) {
+		switch _tmp_67 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_68 bool
-			if _tmp_69, _tmp_68 = As[uint32](obj); _tmp_68 {
+			if _tmp_69, _tmp_68 = As[uint32](_subj); _tmp_68 {
 				_tmp_66 = 1
 			}
 		case uint32:
 			_tmp_69, _tmp_66 = _tmp_67, 1
 		}
 		{
-			bu, _tmp_65 := _tmp_69, _tmp_66 == 1
+			_tmp_bu, _tmp_65 := _tmp_69, _tmp_66 == 1
 			if _tmp_65 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint32(0)
@@ -670,21 +695,22 @@ func mutableTreeMapCompareUint32sAny(a uint32, vb any) int {
 //line collection_mutable/treemap.gala:195
 func mutableTreeMapCompareUint16sAny(a uint16, vb any) int {
 //line collection_mutable/treemap.gala:196
-	var b = func(obj any) uint16 {
+	var b = func(_subj any) uint16 {
 		var _tmp_74 uint16
 		_tmp_71 := 0
-		switch _tmp_72 := any(obj).(type) {
+		switch _tmp_72 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_73 bool
-			if _tmp_74, _tmp_73 = As[uint16](obj); _tmp_73 {
+			if _tmp_74, _tmp_73 = As[uint16](_subj); _tmp_73 {
 				_tmp_71 = 1
 			}
 		case uint16:
 			_tmp_74, _tmp_71 = _tmp_72, 1
 		}
 		{
-			bu, _tmp_70 := _tmp_74, _tmp_71 == 1
+			_tmp_bu, _tmp_70 := _tmp_74, _tmp_71 == 1
 			if _tmp_70 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint16(0)
@@ -708,21 +734,22 @@ func mutableTreeMapCompareUint16sAny(a uint16, vb any) int {
 //line collection_mutable/treemap.gala:202
 func mutableTreeMapCompareUint8sAny(a uint8, vb any) int {
 //line collection_mutable/treemap.gala:203
-	var b = func(obj any) uint8 {
+	var b = func(_subj any) uint8 {
 		var _tmp_79 uint8
 		_tmp_76 := 0
-		switch _tmp_77 := any(obj).(type) {
+		switch _tmp_77 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_78 bool
-			if _tmp_79, _tmp_78 = As[uint8](obj); _tmp_78 {
+			if _tmp_79, _tmp_78 = As[uint8](_subj); _tmp_78 {
 				_tmp_76 = 1
 			}
 		case uint8:
 			_tmp_79, _tmp_76 = _tmp_77, 1
 		}
 		{
-			bu, _tmp_75 := _tmp_79, _tmp_76 == 1
+			_tmp_bu, _tmp_75 := _tmp_79, _tmp_76 == 1
 			if _tmp_75 {
+				bu := _tmp_bu
 				return bu
 			} else {
 				return uint8(0)
@@ -841,19 +868,20 @@ func (m *TreeMap[K, V]) Apply(key K) V {
 	}
 //line collection_mutable/treemap.gala:263
 	{
-		obj := m.Get(key)
+		_subj := m.Get(key)
 		{
-			_tmp_80 := _unapply_Some_ee831ca6(obj)
+			_tmp_80 := _unapply_Some_ee831ca6(_subj)
 			_tmp_81 := _tmp_80.IsDefined()
 			_tmp_82 := _tmp_80.Value.Get()
 			_ = _tmp_82
-			v := _tmp_82
+			_tmp_v := _tmp_82
 			if _tmp_81 {
+				v := _tmp_v
 				return v
 			} else {
-				_tmp_83 := _unapply_None_ee831ca6(obj)
+				_tmp_83 := _unapply_None_ee831ca6(_subj)
 				if _tmp_83 {
-					panic(fmt.Sprintf("TreeMap: key not found: %v", key))
+					panic(fmt.Sprintf("TreeMap: key not found: %v", Printed(key)))
 				} else {
 					panic("unreachable")
 				}
@@ -1014,7 +1042,13 @@ func (m *TreeMap[K, V]) fixAfterInsert(node *treeMapNode[K, V]) {
 
 // replaceChild points whatever pointed at old (its parent, or the root) at
 // replacement instead.
-func (m *TreeMap[K, V]) replaceChild(old *treeMapNode[K, V], replacement OptionPtr[treeMapNode[K, V]]) {
+func TreeMap_replaceChild[K comparable, V any](m *TreeMap[K, V], old *treeMapNode[K, V], replacement OptionPtr[treeMapNode[K, V]]) {
+	if m == nil {
+		panic("TreeMap.replaceChild: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
+	}
+	if old == nil {
+		panic("TreeMap.replaceChild: parameter old is a Ptr[collection_mutable.treeMapNode[K, V]], but the caller passed nil")
+	}
 //line collection_mutable/treemap.gala:367
 	if old.parent.IsEmpty() {
 //line collection_mutable/treemap.gala:368
@@ -1050,7 +1084,7 @@ func (m *TreeMap[K, V]) rotateLeft(x *treeMapNode[K, V]) {
 //line collection_mutable/treemap.gala:386
 	y.parent = x.parent
 //line collection_mutable/treemap.gala:387
-	m.replaceChild(x, SomePtr(y))
+	TreeMap_replaceChild[K, V](m, x, SomePtr(y))
 //line collection_mutable/treemap.gala:388
 	y.left = SomePtr(x)
 //line collection_mutable/treemap.gala:389
@@ -1073,7 +1107,7 @@ func (m *TreeMap[K, V]) rotateRight(x *treeMapNode[K, V]) {
 //line collection_mutable/treemap.gala:399
 	y.parent = x.parent
 //line collection_mutable/treemap.gala:400
-	m.replaceChild(x, SomePtr(y))
+	TreeMap_replaceChild[K, V](m, x, SomePtr(y))
 //line collection_mutable/treemap.gala:401
 	y.right = SomePtr(x)
 //line collection_mutable/treemap.gala:402
@@ -1130,7 +1164,7 @@ func (m *TreeMap[K, V]) Update(key K, f func(V) V) bool {
 		panic("TreeMap.Update: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/treemap.gala:429
-	var found = m.findNode(key)
+	var found = TreeMap_findNode[K, V](m, key)
 //line collection_mutable/treemap.gala:430
 	if found.IsEmpty() {
 //line collection_mutable/treemap.gala:431
@@ -1147,7 +1181,10 @@ func (m *TreeMap[K, V]) Update(key K, f func(V) V) bool {
 //line collection_mutable/treemap.gala:437
 
 // findNode finds the node containing the key.
-func (m *TreeMap[K, V]) findNode(key K) OptionPtr[treeMapNode[K, V]] {
+func TreeMap_findNode[K comparable, V any](m *TreeMap[K, V], key K) OptionPtr[treeMapNode[K, V]] {
+	if m == nil {
+		panic("TreeMap.findNode: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
+	}
 //line collection_mutable/treemap.gala:440
 	var current = m.root
 //line collection_mutable/treemap.gala:441
@@ -1181,7 +1218,7 @@ func (m *TreeMap[K, V]) Remove(key K) bool {
 		panic("TreeMap.Remove: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/treemap.gala:458
-	var found = m.findNode(key)
+	var found = TreeMap_findNode[K, V](m, key)
 //line collection_mutable/treemap.gala:459
 	if found.IsEmpty() {
 //line collection_mutable/treemap.gala:460
@@ -1223,7 +1260,7 @@ func (m *TreeMap[K, V]) deleteNode(node *treeMapNode[K, V]) {
 //line collection_mutable/treemap.gala:481
 		child.Get().parent = node.parent
 //line collection_mutable/treemap.gala:482
-		m.replaceChild(node, child)
+		TreeMap_replaceChild[K, V](m, node, child)
 //line collection_mutable/treemap.gala:483
 		if node.color == mutableTreeMapBlack.Get() {
 //line collection_mutable/treemap.gala:484
@@ -1239,7 +1276,7 @@ func (m *TreeMap[K, V]) deleteNode(node *treeMapNode[K, V]) {
 			m.fixAfterDelete(node)
 		}
 //line collection_mutable/treemap.gala:493
-		m.replaceChild(node, EmptyOptionPtr[treeMapNode[K, V]]())
+		TreeMap_replaceChild[K, V](m, EvalOperand(node), EmptyOptionPtr[treeMapNode[K, V]]())
 	}
 }
 
@@ -1419,7 +1456,7 @@ func (m *TreeMap[K, V]) minNode(node *treeMapNode[K, V]) *treeMapNode[K, V] {
 //line collection_mutable/treemap.gala:599
 
 // MinKeyOption returns the minimum key wrapped in Option. O(log n).
-func (m *TreeMap[K, V]) MinKeyOption() Option[K] {
+func TreeMap_MinKeyOption[K comparable, V any](m *TreeMap[K, V]) Option[K] {
 	if m == nil {
 		panic("TreeMap.MinKeyOption: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -1465,7 +1502,7 @@ func (m *TreeMap[K, V]) maxNode(node *treeMapNode[K, V]) *treeMapNode[K, V] {
 //line collection_mutable/treemap.gala:624
 
 // MaxKeyOption returns the maximum key wrapped in Option. O(log n).
-func (m *TreeMap[K, V]) MaxKeyOption() Option[K] {
+func TreeMap_MaxKeyOption[K comparable, V any](m *TreeMap[K, V]) Option[K] {
 	if m == nil {
 		panic("TreeMap.MaxKeyOption: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -1482,7 +1519,7 @@ func (m *TreeMap[K, V]) MaxKeyOption() Option[K] {
 
 // MinEntry returns the entry with the minimum key. O(log n).
 // Panics if the map is empty.
-func (m *TreeMap[K, V]) MinEntry() Tuple[K, V] {
+func TreeMap_MinEntry[K comparable, V any](m *TreeMap[K, V]) Tuple[K, V] {
 	if m == nil {
 		panic("TreeMap.MinEntry: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -1500,7 +1537,7 @@ func (m *TreeMap[K, V]) MinEntry() Tuple[K, V] {
 //line collection_mutable/treemap.gala:642
 
 // MinEntryOption returns the entry with the minimum key wrapped in Option. O(log n).
-func (m *TreeMap[K, V]) MinEntryOption() Option[Tuple[K, V]] {
+func TreeMap_MinEntryOption[K comparable, V any](m *TreeMap[K, V]) Option[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.MinEntryOption: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -1510,14 +1547,14 @@ func (m *TreeMap[K, V]) MinEntryOption() Option[Tuple[K, V]] {
 		return None[Tuple[K, V]]{}.Apply()
 	}
 //line collection_mutable/treemap.gala:648
-	return Some[Tuple[K, V]]{}.Apply(m.MinEntry())
+	return Some[Tuple[K, V]]{}.Apply(TreeMap_MinEntry[K, V](m))
 }
 
 //line collection_mutable/treemap.gala:650
 
 // MaxEntry returns the entry with the maximum key. O(log n).
 // Panics if the map is empty.
-func (m *TreeMap[K, V]) MaxEntry() Tuple[K, V] {
+func TreeMap_MaxEntry[K comparable, V any](m *TreeMap[K, V]) Tuple[K, V] {
 	if m == nil {
 		panic("TreeMap.MaxEntry: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -1535,7 +1572,7 @@ func (m *TreeMap[K, V]) MaxEntry() Tuple[K, V] {
 //line collection_mutable/treemap.gala:660
 
 // MaxEntryOption returns the entry with the maximum key wrapped in Option. O(log n).
-func (m *TreeMap[K, V]) MaxEntryOption() Option[Tuple[K, V]] {
+func TreeMap_MaxEntryOption[K comparable, V any](m *TreeMap[K, V]) Option[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.MaxEntryOption: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -1545,14 +1582,14 @@ func (m *TreeMap[K, V]) MaxEntryOption() Option[Tuple[K, V]] {
 		return None[Tuple[K, V]]{}.Apply()
 	}
 //line collection_mutable/treemap.gala:666
-	return Some[Tuple[K, V]]{}.Apply(m.MaxEntry())
+	return Some[Tuple[K, V]]{}.Apply(TreeMap_MaxEntry[K, V](m))
 }
 
 //line collection_mutable/treemap.gala:668
 
 // PopMinEntry removes and returns the entry with the minimum key. O(log n).
 // Panics if the map is empty.
-func (m *TreeMap[K, V]) PopMinEntry() Tuple[K, V] {
+func TreeMap_PopMinEntry[K comparable, V any](m *TreeMap[K, V]) Tuple[K, V] {
 	if m == nil {
 		panic("TreeMap.PopMinEntry: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -1562,7 +1599,7 @@ func (m *TreeMap[K, V]) PopMinEntry() Tuple[K, V] {
 		panic("TreeMap.PopMinEntry on empty map")
 	}
 //line collection_mutable/treemap.gala:675
-	var entry = m.MinEntry()
+	var entry = TreeMap_MinEntry[K, V](m)
 //line collection_mutable/treemap.gala:676
 	m.Remove(entry.V1.Get())
 //line collection_mutable/treemap.gala:677
@@ -1573,7 +1610,7 @@ func (m *TreeMap[K, V]) PopMinEntry() Tuple[K, V] {
 
 // PopMaxEntry removes and returns the entry with the maximum key. O(log n).
 // Panics if the map is empty.
-func (m *TreeMap[K, V]) PopMaxEntry() Tuple[K, V] {
+func TreeMap_PopMaxEntry[K comparable, V any](m *TreeMap[K, V]) Tuple[K, V] {
 	if m == nil {
 		panic("TreeMap.PopMaxEntry: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -1583,7 +1620,7 @@ func (m *TreeMap[K, V]) PopMaxEntry() Tuple[K, V] {
 		panic("TreeMap.PopMaxEntry on empty map")
 	}
 //line collection_mutable/treemap.gala:686
-	var entry = m.MaxEntry()
+	var entry = TreeMap_MaxEntry[K, V](m)
 //line collection_mutable/treemap.gala:687
 	m.Remove(entry.V1.Get())
 //line collection_mutable/treemap.gala:688
@@ -1600,7 +1637,7 @@ func (m *TreeMap[K, V]) Range(from K, to K) *TreeMap[K, V] {
 //line collection_mutable/treemap.gala:695
 	var result = EmptyTreeMap[K, V]()
 //line collection_mutable/treemap.gala:696
-	m.rangeInOrder(m.root, from, to, func(k K, v V) {
+	TreeMap_rangeInOrder[K, V](m, m.root, from, to, func(k K, v V) {
 //line collection_mutable/treemap.gala:697
 		result.Put(k, v)
 	})
@@ -1611,7 +1648,10 @@ func (m *TreeMap[K, V]) Range(from K, to K) *TreeMap[K, V] {
 //line collection_mutable/treemap.gala:701
 
 // rangeInOrder traverses nodes with keys in [from, to] in order.
-func (m *TreeMap[K, V]) rangeInOrder(tree OptionPtr[treeMapNode[K, V]], from K, to K, f func(K, V)) {
+func TreeMap_rangeInOrder[K comparable, V any](m *TreeMap[K, V], tree OptionPtr[treeMapNode[K, V]], from K, to K, f func(K, V)) {
+	if m == nil {
+		panic("TreeMap.rangeInOrder: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
+	}
 //line collection_mutable/treemap.gala:704
 	if tree.IsEmpty() {
 //line collection_mutable/treemap.gala:705
@@ -1626,7 +1666,7 @@ func (m *TreeMap[K, V]) rangeInOrder(tree OptionPtr[treeMapNode[K, V]], from K, 
 //line collection_mutable/treemap.gala:711
 	if cmpFrom > 0 {
 //line collection_mutable/treemap.gala:712
-		m.rangeInOrder(node.left, from, to, f)
+		TreeMap_rangeInOrder[K, V](m, node.left, from, to, f)
 	}
 //line collection_mutable/treemap.gala:714
 	if cmpFrom >= 0 && cmpTo <= 0 {
@@ -1636,7 +1676,7 @@ func (m *TreeMap[K, V]) rangeInOrder(tree OptionPtr[treeMapNode[K, V]], from K, 
 //line collection_mutable/treemap.gala:717
 	if cmpTo < 0 {
 //line collection_mutable/treemap.gala:718
-		m.rangeInOrder(node.right, from, to, f)
+		TreeMap_rangeInOrder[K, V](m, node.right, from, to, f)
 	}
 }
 
@@ -1650,7 +1690,7 @@ func (m *TreeMap[K, V]) RangeFrom(from K) *TreeMap[K, V] {
 //line collection_mutable/treemap.gala:724
 	var result = EmptyTreeMap[K, V]()
 //line collection_mutable/treemap.gala:725
-	m.rangeFromInOrder(m.root, from, func(k K, v V) {
+	TreeMap_rangeFromInOrder[K, V](m, m.root, from, func(k K, v V) {
 //line collection_mutable/treemap.gala:726
 		result.Put(k, v)
 	})
@@ -1661,7 +1701,10 @@ func (m *TreeMap[K, V]) RangeFrom(from K) *TreeMap[K, V] {
 //line collection_mutable/treemap.gala:730
 
 // rangeFromInOrder traverses nodes with keys >= from in order.
-func (m *TreeMap[K, V]) rangeFromInOrder(tree OptionPtr[treeMapNode[K, V]], from K, f func(K, V)) {
+func TreeMap_rangeFromInOrder[K comparable, V any](m *TreeMap[K, V], tree OptionPtr[treeMapNode[K, V]], from K, f func(K, V)) {
+	if m == nil {
+		panic("TreeMap.rangeFromInOrder: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
+	}
 //line collection_mutable/treemap.gala:733
 	if tree.IsEmpty() {
 //line collection_mutable/treemap.gala:734
@@ -1674,7 +1717,7 @@ func (m *TreeMap[K, V]) rangeFromInOrder(tree OptionPtr[treeMapNode[K, V]], from
 //line collection_mutable/treemap.gala:738
 	if cmp > 0 {
 //line collection_mutable/treemap.gala:739
-		m.rangeFromInOrder(node.left, from, f)
+		TreeMap_rangeFromInOrder[K, V](m, node.left, from, f)
 	}
 //line collection_mutable/treemap.gala:741
 	if cmp >= 0 {
@@ -1682,7 +1725,7 @@ func (m *TreeMap[K, V]) rangeFromInOrder(tree OptionPtr[treeMapNode[K, V]], from
 		f(node.key, node.value)
 	}
 //line collection_mutable/treemap.gala:744
-	m.rangeFromInOrder(node.right, from, f)
+	TreeMap_rangeFromInOrder[K, V](m, node.right, from, f)
 }
 
 //line collection_mutable/treemap.gala:746
@@ -1695,7 +1738,7 @@ func (m *TreeMap[K, V]) RangeTo(to K) *TreeMap[K, V] {
 //line collection_mutable/treemap.gala:749
 	var result = EmptyTreeMap[K, V]()
 //line collection_mutable/treemap.gala:750
-	m.rangeToInOrder(m.root, to, func(k K, v V) {
+	TreeMap_rangeToInOrder[K, V](m, m.root, to, func(k K, v V) {
 //line collection_mutable/treemap.gala:751
 		result.Put(k, v)
 	})
@@ -1706,7 +1749,10 @@ func (m *TreeMap[K, V]) RangeTo(to K) *TreeMap[K, V] {
 //line collection_mutable/treemap.gala:755
 
 // rangeToInOrder traverses nodes with keys <= to in order.
-func (m *TreeMap[K, V]) rangeToInOrder(tree OptionPtr[treeMapNode[K, V]], to K, f func(K, V)) {
+func TreeMap_rangeToInOrder[K comparable, V any](m *TreeMap[K, V], tree OptionPtr[treeMapNode[K, V]], to K, f func(K, V)) {
+	if m == nil {
+		panic("TreeMap.rangeToInOrder: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
+	}
 //line collection_mutable/treemap.gala:758
 	if tree.IsEmpty() {
 //line collection_mutable/treemap.gala:759
@@ -1717,7 +1763,7 @@ func (m *TreeMap[K, V]) rangeToInOrder(tree OptionPtr[treeMapNode[K, V]], to K, 
 //line collection_mutable/treemap.gala:762
 	var cmp = mutableTreeMapCompare[K](node.key, to)
 //line collection_mutable/treemap.gala:763
-	m.rangeToInOrder(node.left, to, f)
+	TreeMap_rangeToInOrder[K, V](m, node.left, to, f)
 //line collection_mutable/treemap.gala:764
 	if cmp <= 0 {
 //line collection_mutable/treemap.gala:765
@@ -1726,7 +1772,7 @@ func (m *TreeMap[K, V]) rangeToInOrder(tree OptionPtr[treeMapNode[K, V]], to K, 
 //line collection_mutable/treemap.gala:767
 	if cmp < 0 {
 //line collection_mutable/treemap.gala:768
-		m.rangeToInOrder(node.right, to, f)
+		TreeMap_rangeToInOrder[K, V](m, node.right, to, f)
 	}
 }
 
@@ -1738,13 +1784,16 @@ func (m *TreeMap[K, V]) ForEachKV(f func(K, V)) {
 		panic("TreeMap.ForEachKV: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/treemap.gala:776
-	m.inOrder(m.root, f)
+	TreeMap_inOrder[K, V](m, m.root, f)
 }
 
 //line collection_mutable/treemap.gala:778
 
 // inOrder traverses the tree in sorted order.
-func (m *TreeMap[K, V]) inOrder(tree OptionPtr[treeMapNode[K, V]], f func(K, V)) {
+func TreeMap_inOrder[K comparable, V any](m *TreeMap[K, V], tree OptionPtr[treeMapNode[K, V]], f func(K, V)) {
+	if m == nil {
+		panic("TreeMap.inOrder: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
+	}
 //line collection_mutable/treemap.gala:781
 	if tree.IsEmpty() {
 //line collection_mutable/treemap.gala:782
@@ -1753,11 +1802,11 @@ func (m *TreeMap[K, V]) inOrder(tree OptionPtr[treeMapNode[K, V]], f func(K, V))
 //line collection_mutable/treemap.gala:784
 	var node = tree.Get()
 //line collection_mutable/treemap.gala:785
-	m.inOrder(node.left, f)
+	TreeMap_inOrder[K, V](m, node.left, f)
 //line collection_mutable/treemap.gala:786
 	f(node.key, node.value)
 //line collection_mutable/treemap.gala:787
-	m.inOrder(node.right, f)
+	TreeMap_inOrder[K, V](m, node.right, f)
 }
 
 //line collection_mutable/treemap.gala:789
@@ -1937,13 +1986,16 @@ func (m *TreeMap[K, V]) UpdateAll(f func(K, V) V) {
 		panic("TreeMap.UpdateAll: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
 //line collection_mutable/treemap.gala:885
-	m.updateAllNodes(m.root, f)
+	TreeMap_updateAllNodes[K, V](m, m.root, f)
 }
 
 //line collection_mutable/treemap.gala:887
 
 // updateAllNodes updates values in-place via in-order traversal.
-func (m *TreeMap[K, V]) updateAllNodes(tree OptionPtr[treeMapNode[K, V]], f func(K, V) V) {
+func TreeMap_updateAllNodes[K comparable, V any](m *TreeMap[K, V], tree OptionPtr[treeMapNode[K, V]], f func(K, V) V) {
+	if m == nil {
+		panic("TreeMap.updateAllNodes: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
+	}
 //line collection_mutable/treemap.gala:890
 	if tree.IsEmpty() {
 //line collection_mutable/treemap.gala:891
@@ -1952,11 +2004,11 @@ func (m *TreeMap[K, V]) updateAllNodes(tree OptionPtr[treeMapNode[K, V]], f func
 //line collection_mutable/treemap.gala:893
 	var node = tree.Get()
 //line collection_mutable/treemap.gala:894
-	m.updateAllNodes(node.left, f)
+	TreeMap_updateAllNodes[K, V](m, node.left, f)
 //line collection_mutable/treemap.gala:895
 	node.value = f(node.key, node.value)
 //line collection_mutable/treemap.gala:896
-	m.updateAllNodes(node.right, f)
+	TreeMap_updateAllNodes[K, V](m, node.right, f)
 }
 
 //line collection_mutable/treemap.gala:900
@@ -2044,7 +2096,7 @@ func (m *TreeMap[K, V]) Find(p func(K, V) bool) Option[Tuple[K, V]] {
 //line collection_mutable/treemap.gala:943
 
 // Keys returns a mutable TreeSet of all keys (maintains sorted order).
-func (m *TreeMap[K, V]) Keys() *TreeSet[K] {
+func TreeMap_Keys[K comparable, V any](m *TreeMap[K, V]) *TreeSet[K] {
 	if m == nil {
 		panic("TreeMap.Keys: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -2060,17 +2112,17 @@ func (m *TreeMap[K, V]) Keys() *TreeSet[K] {
 //line collection_mutable/treemap.gala:951
 
 // KeySet returns a mutable TreeSet of all keys.
-func (m *TreeMap[K, V]) KeySet() *TreeSet[K] {
+func TreeMap_KeySet[K comparable, V any](m *TreeMap[K, V]) *TreeSet[K] {
 	if m == nil {
 		panic("TreeMap.KeySet: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
-	return m.Keys()
+	return TreeMap_Keys[K, V](m)
 }
 
 //line collection_mutable/treemap.gala:954
 
 // Values returns a mutable List of all values in key-sorted order.
-func (m *TreeMap[K, V]) Values() *List[V] {
+func TreeMap_Values[K comparable, V any](m *TreeMap[K, V]) *List[V] {
 	if m == nil {
 		panic("TreeMap.Values: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -2088,7 +2140,7 @@ func (m *TreeMap[K, V]) Values() *List[V] {
 //line collection_mutable/treemap.gala:963
 
 // KeyArray returns a mutable Array of all keys in sorted order.
-func (m *TreeMap[K, V]) KeyArray() *Array[K] {
+func TreeMap_KeyArray[K comparable, V any](m *TreeMap[K, V]) *Array[K] {
 	if m == nil {
 		panic("TreeMap.KeyArray: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -2104,7 +2156,7 @@ func (m *TreeMap[K, V]) KeyArray() *Array[K] {
 //line collection_mutable/treemap.gala:971
 
 // ValueArray returns a mutable Array of all values in key-sorted order.
-func (m *TreeMap[K, V]) ValueArray() *Array[V] {
+func TreeMap_ValueArray[K comparable, V any](m *TreeMap[K, V]) *Array[V] {
 	if m == nil {
 		panic("TreeMap.ValueArray: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -2148,17 +2200,18 @@ func (m *TreeMap[K, V]) Merge(other *TreeMap[K, V], f func(V, V) V) {
 	other.ForEachKV(func(k K, v V) {
 //line collection_mutable/treemap.gala:992
 		func() {
-			obj := m.Get(k)
+			_subj := m.Get(k)
 			{
-				_tmp_84 := _unapply_Some_ee831ca6(obj)
+				_tmp_84 := _unapply_Some_ee831ca6(_subj)
 				_tmp_85 := _tmp_84.IsDefined()
 				_tmp_86 := _tmp_84.Value.Get()
 				_ = _tmp_86
-				e := _tmp_86
+				_tmp_e := _tmp_86
 				if _tmp_85 {
+					e := _tmp_e
 					m.Put(k, f(e, v))
 				} else {
-					_tmp_87 := _unapply_None_ee831ca6(obj)
+					_tmp_87 := _unapply_None_ee831ca6(_subj)
 					if _tmp_87 {
 						m.Put(k, v)
 					} else {
@@ -2173,7 +2226,7 @@ func (m *TreeMap[K, V]) Merge(other *TreeMap[K, V], f func(V, V) V) {
 //line collection_mutable/treemap.gala:998
 
 // PutAllEntries adds all entries from an Array of tuples.
-func (m *TreeMap[K, V]) PutAllEntries(entries *Array[Tuple[K, V]]) {
+func TreeMap_PutAllEntries[K comparable, V any](m *TreeMap[K, V], entries *Array[Tuple[K, V]]) {
 	if m == nil {
 		panic("TreeMap.PutAllEntries: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -2208,7 +2261,7 @@ func (m *TreeMap[K, V]) ToGoMap() map[K]V {
 //line collection_mutable/treemap.gala:1016
 
 // ToArray converts the map to a mutable Array of tuples in sorted key order.
-func (m *TreeMap[K, V]) ToArray() *Array[Tuple[K, V]] {
+func TreeMap_ToArray[K comparable, V any](m *TreeMap[K, V]) *Array[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.ToArray: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -2224,7 +2277,7 @@ func (m *TreeMap[K, V]) ToArray() *Array[Tuple[K, V]] {
 //line collection_mutable/treemap.gala:1024
 
 // ToList converts the map to a mutable List of tuples in sorted key order.
-func (m *TreeMap[K, V]) ToList() *List[Tuple[K, V]] {
+func TreeMap_ToList[K comparable, V any](m *TreeMap[K, V]) *List[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.ToList: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -2240,7 +2293,7 @@ func (m *TreeMap[K, V]) ToList() *List[Tuple[K, V]] {
 //line collection_mutable/treemap.gala:1032
 
 // ToHashMap converts the map to a mutable HashMap (loses ordering but gains O(1) lookup).
-func (m *TreeMap[K, V]) ToHashMap() *HashMap[K, V] {
+func TreeMap_ToHashMap[K comparable, V any](m *TreeMap[K, V]) *HashMap[K, V] {
 	if m == nil {
 		panic("TreeMap.ToHashMap: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
@@ -2295,7 +2348,7 @@ func (m *TreeMap[K, V]) String() string {
 			result = result + ", "
 		}
 //line collection_mutable/treemap.gala:1063
-		result = result + fmt.Sprintf("%v -> %v", k, v)
+		result = EvalOperand(result) + fmt.Sprintf("%v -> %v", Printed(k), Printed(v))
 //line collection_mutable/treemap.gala:1064
 		first = false
 	})
@@ -2327,7 +2380,7 @@ func (m *TreeMap[K, V]) MkString(sep string) string {
 			result = result + sep
 		}
 //line collection_mutable/treemap.gala:1080
-		result = result + fmt.Sprintf("%v -> %v", k, v)
+		result = EvalOperand(result) + fmt.Sprintf("%v -> %v", Printed(k), Printed(v))
 //line collection_mutable/treemap.gala:1081
 		first = false
 	})
@@ -2342,7 +2395,7 @@ func (m *TreeMap[K, V]) Head() Tuple[K, V] {
 	if m == nil {
 		panic("TreeMap.Head: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
-	return m.MinEntry()
+	return TreeMap_MinEntry[K, V](m)
 }
 
 //line collection_mutable/treemap.gala:1090
@@ -2352,7 +2405,7 @@ func (m *TreeMap[K, V]) HeadOption() Option[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.HeadOption: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
-	return m.MinEntryOption()
+	return TreeMap_MinEntryOption[K, V](m)
 }
 
 //line collection_mutable/treemap.gala:1093
@@ -2362,7 +2415,7 @@ func (m *TreeMap[K, V]) Last() Tuple[K, V] {
 	if m == nil {
 		panic("TreeMap.Last: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
-	return m.MaxEntry()
+	return TreeMap_MaxEntry[K, V](m)
 }
 
 //line collection_mutable/treemap.gala:1096
@@ -2372,7 +2425,7 @@ func (m *TreeMap[K, V]) LastOption() Option[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.LastOption: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
-	return m.MaxEntryOption()
+	return TreeMap_MaxEntryOption[K, V](m)
 }
 
 //line collection_mutable/treemap.gala:1099
@@ -2402,21 +2455,21 @@ func (m *TreeMap[K, V]) Partition(p func(K, V) bool) Tuple[*TreeMap[K, V], *Tree
 //line collection_mutable/treemap.gala:1114
 
 // Sorted returns a mutable Array of key-value tuples in natural sorted key order (already sorted).
-func (m *TreeMap[K, V]) Sorted() *Array[Tuple[K, V]] {
+func TreeMap_Sorted[K comparable, V any](m *TreeMap[K, V]) *Array[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.Sorted: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
-	return m.ToArray()
+	return TreeMap_ToArray[K, V](m)
 }
 
 //line collection_mutable/treemap.gala:1117
 
 // SortWith returns a mutable Array of key-value tuples sorted using the given comparison function.
-func (m *TreeMap[K, V]) SortWith(less func(Tuple[K, V], Tuple[K, V]) bool) *Array[Tuple[K, V]] {
+func TreeMap_SortWith[K comparable, V any](m *TreeMap[K, V], less func(Tuple[K, V], Tuple[K, V]) bool) *Array[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.SortWith: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
-	return m.ToArray().SortWith(less)
+	return TreeMap_ToArray[K, V](m).SortWith(less)
 }
 
 //line collection_mutable/treemap.gala:1120
@@ -2426,7 +2479,7 @@ func TreeMap_SortBy[S comparable, K comparable, V any](m *TreeMap[K, V], f func(
 	if m == nil {
 		panic("TreeMap.SortBy: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
-	return Array_SortBy(m.ToArray(), f)
+	return Array_SortBy(TreeMap_ToArray[K, V](m), f)
 }
 func _unapply_Some_ee831ca6[_T0 any](v Option[_T0]) Option[_T0] {
 	return Some[_T0]{}.Unapply(v)

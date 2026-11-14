@@ -17,10 +17,10 @@ type KeyConfig struct {
 }
 
 func (s KeyConfig) Copy() KeyConfig {
-	return KeyConfig{NamingStrategy: std.Copy(s.NamingStrategy), Renames: std.Copy(s.Renames), Omits: std.Copy(s.Omits), OmitEmpties: std.Copy(s.OmitEmpties)}
+	return KeyConfig{NamingStrategy: s.NamingStrategy.Copy(), Renames: s.Renames.Copy(), Omits: s.Omits.Copy(), OmitEmpties: s.OmitEmpties.Copy()}
 }
 func (s KeyConfig) Equal(other KeyConfig) bool {
-	return std.Equal(s.NamingStrategy, other.NamingStrategy) && std.Equal(s.Renames, other.Renames) && std.Equal(s.Omits, other.Omits) && std.Equal(s.OmitEmpties, other.OmitEmpties)
+	return s.NamingStrategy.Equal(other.NamingStrategy) && s.Renames.Equal(other.Renames) && s.Omits.Equal(other.Omits) && s.OmitEmpties.Equal(other.OmitEmpties)
 }
 func (s KeyConfig) Unapply(v any) (std.Immutable[Naming], std.Immutable[HashMap[string, string]], std.Immutable[HashMap[string, bool]], std.Immutable[HashMap[string, bool]], bool) {
 	if p, ok := v.(KeyConfig); ok {
@@ -70,10 +70,10 @@ type KeysConfig struct {
 }
 
 func (s KeysConfig) Copy() KeysConfig {
-	return KeysConfig{Keys: std.Copy(s.Keys), ReverseKeys: std.Copy(s.ReverseKeys), OmitIfEmpty: std.Copy(s.OmitIfEmpty)}
+	return KeysConfig{Keys: s.Keys.Copy(), ReverseKeys: s.ReverseKeys.Copy(), OmitIfEmpty: s.OmitIfEmpty.Copy()}
 }
 func (s KeysConfig) Equal(other KeysConfig) bool {
-	return std.Equal(s.Keys, other.Keys) && std.Equal(s.ReverseKeys, other.ReverseKeys) && std.Equal(s.OmitIfEmpty, other.OmitIfEmpty)
+	return s.Keys.Equal(other.Keys) && s.ReverseKeys.Equal(other.ReverseKeys) && s.OmitIfEmpty.Equal(other.OmitIfEmpty)
 }
 func (s KeysConfig) Unapply(v any) (std.Immutable[Array[string]], std.Immutable[HashMap[string, string]], std.Immutable[Array[bool]], bool) {
 	if p, ok := v.(KeysConfig); ok {
@@ -117,7 +117,7 @@ func BuildKeys(numFields int, fieldName func(int) string, naming Naming, config 
 //line yaml/helpers.gala:59
 			reverseKeys = reverseKeys.Put(key, name)
 //line yaml/helpers.gala:60
-			omitIfEmpty = omitIfEmpty.Append(config.OmitEmpties.Get().Contains(name))
+			omitIfEmpty = std.EvalOperand(omitIfEmpty).Append(config.OmitEmpties.Get().Contains(name))
 		}
 //line yaml/helpers.gala:62
 		i = i + 1

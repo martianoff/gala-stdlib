@@ -37,7 +37,7 @@ func (p Process) ReadLineAsync() concurrent.Future[Try[string]] {
 //line subprocess/async.gala:41
 	go_interop.SpawnWithRecover(onRead, onPanic)
 //line subprocess/async.gala:42
-	return promise.Future()
+	return concurrent.Promise_Future[Try[string]](promise)
 }
 
 //line subprocess/async.gala:44
@@ -63,7 +63,7 @@ func (p Process) ReadStderrLineAsync() concurrent.Future[Try[string]] {
 //line subprocess/async.gala:54
 	go_interop.SpawnWithRecover(onRead, onPanic)
 //line subprocess/async.gala:55
-	return promise.Future()
+	return concurrent.Promise_Future[Try[string]](promise)
 }
 
 //line subprocess/async.gala:57
@@ -90,7 +90,7 @@ func (p Process) WriteLineAsync(s string) concurrent.Future[Try[Void]] {
 //line subprocess/async.gala:68
 	go_interop.SpawnWithRecover(onWrite, onPanic)
 //line subprocess/async.gala:69
-	return promise.Future()
+	return concurrent.Promise_Future[Try[Void]](promise)
 }
 
 //line subprocess/async.gala:71
@@ -115,7 +115,7 @@ func (p Process) CloseStdinAsync() concurrent.Future[Try[Void]] {
 //line subprocess/async.gala:80
 	go_interop.SpawnWithRecover(onClose, onPanic)
 //line subprocess/async.gala:81
-	return promise.Future()
+	return concurrent.Promise_Future[Try[Void]](promise)
 }
 
 //line subprocess/async.gala:83
@@ -128,10 +128,13 @@ type KillTimer struct {
 }
 
 func (s KillTimer) Copy() KillTimer {
-	return KillTimer{signal: Copy(s.signal)}
+	return KillTimer{signal: s.signal.Copy()}
 }
 func (s KillTimer) Equal(other KillTimer) bool {
-	return Equal(s.signal, other.signal)
+	return s.signal.Equal(other.signal)
+}
+func (s KillTimer) String() string {
+	return FormatStruct("KillTimer", s.signal)
 }
 
 //line subprocess/async.gala:88

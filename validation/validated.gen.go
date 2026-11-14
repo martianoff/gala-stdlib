@@ -2,7 +2,6 @@
 
 package validation
 
-import "fmt"
 import (
 	. "go.gala.fyi/stdlib/collection_immutable"
 	. "go.gala.fyi/stdlib/std"
@@ -61,17 +60,26 @@ func (s Validated[E, A]) isInvalid() bool {
 	return s._variant == _Validated_Invalid
 }
 func (s Validated[E, A]) Copy() Validated[E, A] {
-	return Validated[E, A]{Value: Copy(s.Value), Errors: Copy(s.Errors), _variant: Copy(s._variant)}
+	return Validated[E, A]{Value: s.Value.Copy(), Errors: s.Errors.Copy(), _variant: s._variant}
 }
 func (s Validated[E, A]) Equal(other Validated[E, A]) bool {
-	return Equal(s.Value, other.Value) && Equal(s.Errors, other.Errors) && Equal(s._variant, other._variant)
+	if s._variant != other._variant {
+		return false
+	}
+	switch s._variant {
+	case _Validated_Valid:
+		return s.Value.Equal(other.Value)
+	case _Validated_Invalid:
+		return s.Errors.Equal(other.Errors)
+	}
+	return true
 }
 func (s Validated[E, A]) String() string {
 	switch s._variant {
 	case _Validated_Valid:
-		return fmt.Sprintf("Valid(%v)", s.Value.Get())
+		return FormatStruct("Valid", s.Value.Get())
 	case _Validated_Invalid:
-		return fmt.Sprintf("Invalid(%v)", s.Errors.Get())
+		return FormatStruct("Invalid", s.Errors.Get())
 	default:
 		return "Validated(<unknown>)"
 	}
@@ -107,16 +115,16 @@ func InvalidOf[E any, A any](err E) Validated[E, A] {
 // IsValid returns true if this is a Valid.
 func (v Validated[E, A]) IsValid() bool {
 	{
-		obj := v
+		_subj := v
 		{
-			_tmp_1 := _unapply_Valid_e1455672(obj)
+			_tmp_1 := _unapply_Valid_e1455672(_subj)
 			_tmp_2 := _tmp_1.IsDefined()
 			_tmp_3 := _tmp_1.Value.Get()
 			_ = _tmp_3
 			if _tmp_2 {
 				return true
 			} else {
-				_tmp_4 := _unapply_Invalid_e1455672(obj)
+				_tmp_4 := _unapply_Invalid_e1455672(_subj)
 				_tmp_5 := _tmp_4.IsDefined()
 				_tmp_6 := _tmp_4.Value.Get()
 				_ = _tmp_6
@@ -142,17 +150,18 @@ func (v Validated[E, A]) IsInvalid() bool {
 // GetOrElse returns the valid value, or defaultValue if invalid.
 func (v Validated[E, A]) GetOrElse(defaultValue A) A {
 	{
-		obj := v
+		_subj := v
 		{
-			_tmp_7 := _unapply_Valid_e1455672(obj)
+			_tmp_7 := _unapply_Valid_e1455672(_subj)
 			_tmp_8 := _tmp_7.IsDefined()
 			_tmp_9 := _tmp_7.Value.Get()
 			_ = _tmp_9
-			a := _tmp_9
+			_tmp_a := _tmp_9
 			if _tmp_8 {
+				a := _tmp_a
 				return a
 			} else {
-				_tmp_10 := _unapply_Invalid_e1455672(obj)
+				_tmp_10 := _unapply_Invalid_e1455672(_subj)
 				_tmp_11 := _tmp_10.IsDefined()
 				_tmp_12 := _tmp_10.Value.Get()
 				_ = _tmp_12
@@ -169,23 +178,24 @@ func (v Validated[E, A]) GetOrElse(defaultValue A) A {
 //line validation/validated.gala:37
 
 // Errors returns the accumulated errors, or an empty Array if valid.
-func (v Validated[E, A]) GetErrors() Array[E] {
+func Validated_GetErrors[E any, A any](v Validated[E, A]) Array[E] {
 	{
-		obj := v
+		_subj := v
 		{
-			_tmp_13 := _unapply_Valid_e1455672(obj)
+			_tmp_13 := _unapply_Valid_e1455672(_subj)
 			_tmp_14 := _tmp_13.IsDefined()
 			_tmp_15 := _tmp_13.Value.Get()
 			_ = _tmp_15
 			if _tmp_14 {
 				return ArrayOf[E]()
 			} else {
-				_tmp_16 := _unapply_Invalid_e1455672(obj)
+				_tmp_16 := _unapply_Invalid_e1455672(_subj)
 				_tmp_17 := _tmp_16.IsDefined()
 				_tmp_18 := _tmp_16.Value.Get()
 				_ = _tmp_18
-				errs := _tmp_18
+				_tmp_errs := _tmp_18
 				if _tmp_17 {
+					errs := _tmp_errs
 					return errs
 				} else {
 					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
@@ -200,22 +210,24 @@ func (v Validated[E, A]) GetErrors() Array[E] {
 // Map transforms the valid value; an Invalid passes through unchanged.
 func Validated_Map[B any, E any, A any](v Validated[E, A], f func(A) B) Validated[E, B] {
 	{
-		obj := v
+		_subj := v
 		{
-			_tmp_19 := _unapply_Valid_e1455672(obj)
+			_tmp_19 := _unapply_Valid_e1455672(_subj)
 			_tmp_20 := _tmp_19.IsDefined()
 			_tmp_21 := _tmp_19.Value.Get()
 			_ = _tmp_21
-			a := _tmp_21
+			_tmp_a := _tmp_21
 			if _tmp_20 {
+				a := _tmp_a
 				return Valid[E, B]{}.Apply(f(a))
 			} else {
-				_tmp_22 := _unapply_Invalid_e1455672(obj)
+				_tmp_22 := _unapply_Invalid_e1455672(_subj)
 				_tmp_23 := _tmp_22.IsDefined()
 				_tmp_24 := _tmp_22.Value.Get()
 				_ = _tmp_24
-				errs := _tmp_24
+				_tmp_errs := _tmp_24
 				if _tmp_23 {
+					errs := _tmp_errs
 					return Invalid[E, B]{}.Apply(errs)
 				} else {
 					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
@@ -231,22 +243,24 @@ func Validated_Map[B any, E any, A any](v Validated[E, A], f func(A) B) Validate
 // accumulation is the job of Zip2/Zip3 (reached through `also`).
 func Validated_FlatMap[B any, E any, A any](v Validated[E, A], f func(A) Validated[E, B]) Validated[E, B] {
 	{
-		obj := v
+		_subj := v
 		{
-			_tmp_25 := _unapply_Valid_e1455672(obj)
+			_tmp_25 := _unapply_Valid_e1455672(_subj)
 			_tmp_26 := _tmp_25.IsDefined()
 			_tmp_27 := _tmp_25.Value.Get()
 			_ = _tmp_27
-			a := _tmp_27
+			_tmp_a := _tmp_27
 			if _tmp_26 {
+				a := _tmp_a
 				return f(a)
 			} else {
-				_tmp_28 := _unapply_Invalid_e1455672(obj)
+				_tmp_28 := _unapply_Invalid_e1455672(_subj)
 				_tmp_29 := _tmp_28.IsDefined()
 				_tmp_30 := _tmp_28.Value.Get()
 				_ = _tmp_30
-				errs := _tmp_30
+				_tmp_errs := _tmp_30
 				if _tmp_29 {
+					errs := _tmp_errs
 					return Invalid[E, B]{}.Apply(errs)
 				} else {
 					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")
@@ -259,7 +273,7 @@ func Validated_FlatMap[B any, E any, A any](v Validated[E, A], f func(A) Validat
 //line validation/validated.gala:63
 func Validated_Zip2[B any, E any, A any](v0 Validated[E, A], v1 Validated[E, B]) Validated[E, Tuple[A, B]] {
 //line validation/validated.gala:64
-	var errs = v0.GetErrors().AppendAll(v1.GetErrors())
+	var errs = Validated_GetErrors[E, A](v0).AppendAll(Validated_GetErrors[E, B](v1))
 //line validation/validated.gala:65
 	if errs.IsEmpty() {
 //line validation/validated.gala:66
@@ -276,7 +290,7 @@ func Validated_Zip2[B any, E any, A any](v0 Validated[E, A], v1 Validated[E, B])
 //line validation/validated.gala:72
 func Validated_Zip3[B any, C any, E any, A any](v0 Validated[E, A], v1 Validated[E, B], v2 Validated[E, C]) Validated[E, Tuple3[A, B, C]] {
 //line validation/validated.gala:73
-	var errs = v0.GetErrors().AppendAll(v1.GetErrors()).AppendAll(v2.GetErrors())
+	var errs = Validated_GetErrors[E, A](v0).AppendAll(Validated_GetErrors[E, B](v1)).AppendAll(Validated_GetErrors[E, C](v2))
 //line validation/validated.gala:74
 	if errs.IsEmpty() {
 //line validation/validated.gala:75
@@ -295,7 +309,7 @@ func Validated_Zip3[B any, C any, E any, A any](v0 Validated[E, A], v1 Validated
 //line validation/validated.gala:82
 func Validated_Zip4[B any, C any, D any, E any, A any](v0 Validated[E, A], v1 Validated[E, B], v2 Validated[E, C], v3 Validated[E, D]) Validated[E, Tuple4[A, B, C, D]] {
 //line validation/validated.gala:83
-	var errs = v0.GetErrors().AppendAll(v1.GetErrors()).AppendAll(v2.GetErrors()).AppendAll(v3.GetErrors())
+	var errs = Validated_GetErrors[E, A](v0).AppendAll(Validated_GetErrors[E, B](v1)).AppendAll(Validated_GetErrors[E, C](v2)).AppendAll(Validated_GetErrors[E, D](v3))
 //line validation/validated.gala:84
 	if errs.IsEmpty() {
 //line validation/validated.gala:85
@@ -316,7 +330,7 @@ func Validated_Zip4[B any, C any, D any, E any, A any](v0 Validated[E, A], v1 Va
 //line validation/validated.gala:93
 func Validated_Zip5[B any, C any, D any, F any, E any, A any](v0 Validated[E, A], v1 Validated[E, B], v2 Validated[E, C], v3 Validated[E, D], v4 Validated[E, F]) Validated[E, Tuple5[A, B, C, D, F]] {
 //line validation/validated.gala:94
-	var errs = v0.GetErrors().AppendAll(v1.GetErrors()).AppendAll(v2.GetErrors()).AppendAll(v3.GetErrors()).AppendAll(v4.GetErrors())
+	var errs = Validated_GetErrors[E, A](v0).AppendAll(Validated_GetErrors[E, B](v1)).AppendAll(Validated_GetErrors[E, C](v2)).AppendAll(Validated_GetErrors[E, D](v3)).AppendAll(Validated_GetErrors[E, F](v4))
 //line validation/validated.gala:95
 	if errs.IsEmpty() {
 //line validation/validated.gala:96
@@ -339,7 +353,7 @@ func Validated_Zip5[B any, C any, D any, F any, E any, A any](v0 Validated[E, A]
 //line validation/validated.gala:105
 func Validated_Zip6[B any, C any, D any, F any, G any, E any, A any](v0 Validated[E, A], v1 Validated[E, B], v2 Validated[E, C], v3 Validated[E, D], v4 Validated[E, F], v5 Validated[E, G]) Validated[E, Tuple6[A, B, C, D, F, G]] {
 //line validation/validated.gala:106
-	var errs = v0.GetErrors().AppendAll(v1.GetErrors()).AppendAll(v2.GetErrors()).AppendAll(v3.GetErrors()).AppendAll(v4.GetErrors()).AppendAll(v5.GetErrors())
+	var errs = Validated_GetErrors[E, A](v0).AppendAll(Validated_GetErrors[E, B](v1)).AppendAll(Validated_GetErrors[E, C](v2)).AppendAll(Validated_GetErrors[E, D](v3)).AppendAll(Validated_GetErrors[E, F](v4)).AppendAll(Validated_GetErrors[E, G](v5))
 //line validation/validated.gala:107
 	if errs.IsEmpty() {
 //line validation/validated.gala:108
@@ -364,7 +378,7 @@ func Validated_Zip6[B any, C any, D any, F any, G any, E any, A any](v0 Validate
 //line validation/validated.gala:118
 func Validated_Zip7[B any, C any, D any, F any, G any, H any, E any, A any](v0 Validated[E, A], v1 Validated[E, B], v2 Validated[E, C], v3 Validated[E, D], v4 Validated[E, F], v5 Validated[E, G], v6 Validated[E, H]) Validated[E, Tuple7[A, B, C, D, F, G, H]] {
 //line validation/validated.gala:119
-	var errs = v0.GetErrors().AppendAll(v1.GetErrors()).AppendAll(v2.GetErrors()).AppendAll(v3.GetErrors()).AppendAll(v4.GetErrors()).AppendAll(v5.GetErrors()).AppendAll(v6.GetErrors())
+	var errs = Validated_GetErrors[E, A](v0).AppendAll(Validated_GetErrors[E, B](v1)).AppendAll(Validated_GetErrors[E, C](v2)).AppendAll(Validated_GetErrors[E, D](v3)).AppendAll(Validated_GetErrors[E, F](v4)).AppendAll(Validated_GetErrors[E, G](v5)).AppendAll(Validated_GetErrors[E, H](v6))
 //line validation/validated.gala:120
 	if errs.IsEmpty() {
 //line validation/validated.gala:121
@@ -391,7 +405,7 @@ func Validated_Zip7[B any, C any, D any, F any, G any, H any, E any, A any](v0 V
 //line validation/validated.gala:132
 func Validated_Zip8[B any, C any, D any, F any, G any, H any, I any, E any, A any](v0 Validated[E, A], v1 Validated[E, B], v2 Validated[E, C], v3 Validated[E, D], v4 Validated[E, F], v5 Validated[E, G], v6 Validated[E, H], v7 Validated[E, I]) Validated[E, Tuple8[A, B, C, D, F, G, H, I]] {
 //line validation/validated.gala:133
-	var errs = v0.GetErrors().AppendAll(v1.GetErrors()).AppendAll(v2.GetErrors()).AppendAll(v3.GetErrors()).AppendAll(v4.GetErrors()).AppendAll(v5.GetErrors()).AppendAll(v6.GetErrors()).AppendAll(v7.GetErrors())
+	var errs = Validated_GetErrors[E, A](v0).AppendAll(Validated_GetErrors[E, B](v1)).AppendAll(Validated_GetErrors[E, C](v2)).AppendAll(Validated_GetErrors[E, D](v3)).AppendAll(Validated_GetErrors[E, F](v4)).AppendAll(Validated_GetErrors[E, G](v5)).AppendAll(Validated_GetErrors[E, H](v6)).AppendAll(Validated_GetErrors[E, I](v7))
 //line validation/validated.gala:134
 	if errs.IsEmpty() {
 //line validation/validated.gala:135
@@ -420,7 +434,7 @@ func Validated_Zip8[B any, C any, D any, F any, G any, H any, I any, E any, A an
 //line validation/validated.gala:147
 func Validated_Zip9[B any, C any, D any, F any, G any, H any, I any, J any, E any, A any](v0 Validated[E, A], v1 Validated[E, B], v2 Validated[E, C], v3 Validated[E, D], v4 Validated[E, F], v5 Validated[E, G], v6 Validated[E, H], v7 Validated[E, I], v8 Validated[E, J]) Validated[E, Tuple9[A, B, C, D, F, G, H, I, J]] {
 //line validation/validated.gala:148
-	var errs = v0.GetErrors().AppendAll(v1.GetErrors()).AppendAll(v2.GetErrors()).AppendAll(v3.GetErrors()).AppendAll(v4.GetErrors()).AppendAll(v5.GetErrors()).AppendAll(v6.GetErrors()).AppendAll(v7.GetErrors()).AppendAll(v8.GetErrors())
+	var errs = Validated_GetErrors[E, A](v0).AppendAll(Validated_GetErrors[E, B](v1)).AppendAll(Validated_GetErrors[E, C](v2)).AppendAll(Validated_GetErrors[E, D](v3)).AppendAll(Validated_GetErrors[E, F](v4)).AppendAll(Validated_GetErrors[E, G](v5)).AppendAll(Validated_GetErrors[E, H](v6)).AppendAll(Validated_GetErrors[E, I](v7)).AppendAll(Validated_GetErrors[E, J](v8))
 //line validation/validated.gala:149
 	if errs.IsEmpty() {
 //line validation/validated.gala:150
@@ -451,7 +465,7 @@ func Validated_Zip9[B any, C any, D any, F any, G any, H any, I any, J any, E an
 //line validation/validated.gala:163
 func Validated_Zip10[B any, C any, D any, F any, G any, H any, I any, J any, K any, E any, A any](v0 Validated[E, A], v1 Validated[E, B], v2 Validated[E, C], v3 Validated[E, D], v4 Validated[E, F], v5 Validated[E, G], v6 Validated[E, H], v7 Validated[E, I], v8 Validated[E, J], v9 Validated[E, K]) Validated[E, Tuple10[A, B, C, D, F, G, H, I, J, K]] {
 //line validation/validated.gala:164
-	var errs = v0.GetErrors().AppendAll(v1.GetErrors()).AppendAll(v2.GetErrors()).AppendAll(v3.GetErrors()).AppendAll(v4.GetErrors()).AppendAll(v5.GetErrors()).AppendAll(v6.GetErrors()).AppendAll(v7.GetErrors()).AppendAll(v8.GetErrors()).AppendAll(v9.GetErrors())
+	var errs = Validated_GetErrors[E, A](v0).AppendAll(Validated_GetErrors[E, B](v1)).AppendAll(Validated_GetErrors[E, C](v2)).AppendAll(Validated_GetErrors[E, D](v3)).AppendAll(Validated_GetErrors[E, F](v4)).AppendAll(Validated_GetErrors[E, G](v5)).AppendAll(Validated_GetErrors[E, H](v6)).AppendAll(Validated_GetErrors[E, I](v7)).AppendAll(Validated_GetErrors[E, J](v8)).AppendAll(Validated_GetErrors[E, K](v9))
 //line validation/validated.gala:165
 	if errs.IsEmpty() {
 //line validation/validated.gala:166
@@ -484,24 +498,26 @@ func Validated_Zip10[B any, C any, D any, F any, G any, H any, I any, J any, K a
 //line validation/validated.gala:179
 
 // ToEither converts to Either: Valid → Right, Invalid → Left(errors).
-func (v Validated[E, A]) ToEither() Either[Array[E], A] {
+func Validated_ToEither[E any, A any](v Validated[E, A]) Either[Array[E], A] {
 	{
-		obj := v
+		_subj := v
 		{
-			_tmp_31 := _unapply_Valid_e1455672(obj)
+			_tmp_31 := _unapply_Valid_e1455672(_subj)
 			_tmp_32 := _tmp_31.IsDefined()
 			_tmp_33 := _tmp_31.Value.Get()
 			_ = _tmp_33
-			a := _tmp_33
+			_tmp_a := _tmp_33
 			if _tmp_32 {
+				a := _tmp_a
 				return Right[Array[E], A]{}.Apply(a)
 			} else {
-				_tmp_34 := _unapply_Invalid_e1455672(obj)
+				_tmp_34 := _unapply_Invalid_e1455672(_subj)
 				_tmp_35 := _tmp_34.IsDefined()
 				_tmp_36 := _tmp_34.Value.Get()
 				_ = _tmp_36
-				errs := _tmp_36
+				_tmp_errs := _tmp_36
 				if _tmp_35 {
+					errs := _tmp_errs
 					return Left[Array[E], A]{}.Apply(errs)
 				} else {
 					panic("gala: a Validated matched none of its cases: it is a zero value, which a sealed type without a default case does not have")

@@ -16,10 +16,10 @@ type Duration struct {
 }
 
 func (s Duration) Copy() Duration {
-	return Duration{nanos: Copy(s.nanos)}
+	return Duration{nanos: s.nanos}
 }
 func (s Duration) Equal(other Duration) bool {
-	return Equal(s.nanos, other.nanos)
+	return s.nanos.Get() == other.nanos.Get()
 }
 
 //line time_utils/time_utils.gala:13
@@ -31,10 +31,10 @@ type Instant struct {
 }
 
 func (s Instant) Copy() Instant {
-	return Instant{nanos: Copy(s.nanos)}
+	return Instant{nanos: s.nanos}
 }
 func (s Instant) Equal(other Instant) bool {
-	return Equal(s.nanos, other.nanos)
+	return s.nanos.Get() == other.nanos.Get()
 }
 
 //line time_utils/time_utils.gala:21

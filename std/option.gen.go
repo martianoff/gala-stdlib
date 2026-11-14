@@ -2,8 +2,6 @@
 
 package std
 
-import "fmt"
-
 //line std/option.gala:4
 
 // isDefined returns true if the value is defined.
@@ -14,16 +12,16 @@ func isDefined(opt any) bool {
 		if opt == nil {
 			return false
 		} else {
-			return func(obj any) bool {
+			return func(_subj any) bool {
 				var _tmp_6 bool
 				var _tmp_7 Option[any]
 				_tmp_3 := 0
-				switch _tmp_4 := any(obj).(type) {
+				switch _tmp_4 := any(_subj).(type) {
 				case ImmutableUnwrapper, Transparent:
 					var _tmp_5 bool
-					if _tmp_6, _tmp_5 = As[bool](obj); _tmp_5 {
+					if _tmp_6, _tmp_5 = As[bool](_subj); _tmp_5 {
 						_tmp_3 = 1
-					} else if _tmp_7, _tmp_5 = As[Option[any]](obj); _tmp_5 {
+					} else if _tmp_7, _tmp_5 = As[Option[any]](_subj); _tmp_5 {
 						_tmp_3 = 2
 					}
 				case bool:
@@ -32,12 +30,14 @@ func isDefined(opt any) bool {
 					_tmp_7, _tmp_3 = _tmp_4, 2
 				}
 				{
-					b, _tmp_1 := _tmp_6, _tmp_3 == 1
+					_tmp_b, _tmp_1 := _tmp_6, _tmp_3 == 1
 					if _tmp_1 {
+						b := _tmp_b
 						return b
 					} else {
-						oi, _tmp_2 := _tmp_7, _tmp_3 == 2
+						_tmp_oi, _tmp_2 := _tmp_7, _tmp_3 == 2
 						if _tmp_2 {
+							oi := _tmp_oi
 							return oi.isSome()
 						} else {
 							return true
@@ -53,21 +53,22 @@ func isDefined(opt any) bool {
 
 // getSomeValue returns the option's value if it is an Option, otherwise returns the value itself.
 func getSomeValue(opt any) any {
-	return func(obj any) any {
+	return func(_subj any) any {
 		var _tmp_12 Option[any]
 		_tmp_9 := 0
-		switch _tmp_10 := any(obj).(type) {
+		switch _tmp_10 := any(_subj).(type) {
 		case ImmutableUnwrapper, Transparent:
 			var _tmp_11 bool
-			if _tmp_12, _tmp_11 = As[Option[any]](obj); _tmp_11 {
+			if _tmp_12, _tmp_11 = As[Option[any]](_subj); _tmp_11 {
 				_tmp_9 = 1
 			}
 		case Option[any]:
 			_tmp_12, _tmp_9 = _tmp_10, 1
 		}
 		{
-			oi, _tmp_8 := _tmp_12, _tmp_9 == 1
+			_tmp_oi, _tmp_8 := _tmp_12, _tmp_9 == 1
 			if _tmp_8 {
+				oi := _tmp_oi
 				return oi.Value.Get()
 			} else {
 				return opt
@@ -131,15 +132,22 @@ func (s Option[T]) IsNone() bool {
 	return s._variant == _Option_None
 }
 func (s Option[T]) Copy() Option[T] {
-	return Option[T]{Value: Copy(s.Value), _variant: Copy(s._variant)}
+	return Option[T]{Value: s.Value.Copy(), _variant: s._variant}
 }
 func (s Option[T]) Equal(other Option[T]) bool {
-	return Equal(s.Value, other.Value) && Equal(s._variant, other._variant)
+	if s._variant != other._variant {
+		return false
+	}
+	switch s._variant {
+	case _Option_Some:
+		return s.Value.Equal(other.Value)
+	}
+	return true
 }
 func (s Option[T]) String() string {
 	switch s._variant {
 	case _Option_Some:
-		return fmt.Sprintf("Some(%v)", s.Value.Get())
+		return FormatStruct("Some", s.Value.Get())
 	case _Option_None:
 		return "None()"
 	default:
