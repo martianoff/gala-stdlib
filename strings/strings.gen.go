@@ -17,6 +17,7 @@ import (
 
 // Contains reports whether `substr` is within `s`.
 func Contains(s string, substr string) bool {
+//line strings/strings.gala:35
 	return gostrings.Contains(s, substr)
 }
 
@@ -24,6 +25,7 @@ func Contains(s string, substr string) bool {
 
 // HasPrefix reports whether `s` begins with `prefix`.
 func HasPrefix(s string, prefix string) bool {
+//line strings/strings.gala:38
 	return gostrings.HasPrefix(s, prefix)
 }
 
@@ -31,6 +33,7 @@ func HasPrefix(s string, prefix string) bool {
 
 // HasSuffix reports whether `s` ends with `suffix`.
 func HasSuffix(s string, suffix string) bool {
+//line strings/strings.gala:41
 	return gostrings.HasSuffix(s, suffix)
 }
 
@@ -39,6 +42,7 @@ func HasSuffix(s string, suffix string) bool {
 // EqualFold reports whether `a` and `b` are equal under Unicode
 // case-folding. ASCII or non-ASCII.
 func EqualFold(a string, b string) bool {
+//line strings/strings.gala:45
 	return gostrings.EqualFold(a, b)
 }
 
@@ -47,6 +51,7 @@ func EqualFold(a string, b string) bool {
 // LastIndex returns the byte index of the last instance of `substr` in
 // `s`, or -1 if `substr` is not present.
 func LastIndex(s string, substr string) int {
+//line strings/strings.gala:49
 	return gostrings.LastIndex(s, substr)
 }
 
@@ -55,6 +60,7 @@ func LastIndex(s string, substr string) int {
 // TrimSpace returns `s` with leading and trailing white space removed
 // (per Unicode IsSpace).
 func TrimSpace(s string) string {
+//line strings/strings.gala:53
 	return gostrings.TrimSpace(s)
 }
 
@@ -63,6 +69,7 @@ func TrimSpace(s string) string {
 // Trim returns `s` with all leading and trailing Unicode code points
 // contained in `cutset` removed.
 func Trim(s string, cutset string) string {
+//line strings/strings.gala:57
 	return gostrings.Trim(s, cutset)
 }
 
@@ -71,6 +78,7 @@ func Trim(s string, cutset string) string {
 // TrimLeft returns `s` with all leading Unicode code points contained in
 // `cutset` removed.
 func TrimLeft(s string, cutset string) string {
+//line strings/strings.gala:61
 	return gostrings.TrimLeft(s, cutset)
 }
 
@@ -79,6 +87,7 @@ func TrimLeft(s string, cutset string) string {
 // TrimRight returns `s` with all trailing Unicode code points contained
 // in `cutset` removed.
 func TrimRight(s string, cutset string) string {
+//line strings/strings.gala:65
 	return gostrings.TrimRight(s, cutset)
 }
 
@@ -87,6 +96,7 @@ func TrimRight(s string, cutset string) string {
 // TrimPrefix returns `s` without the provided leading `prefix`. If `s`
 // doesn't start with `prefix`, it is returned unchanged.
 func TrimPrefix(s string, prefix string) string {
+//line strings/strings.gala:69
 	return gostrings.TrimPrefix(s, prefix)
 }
 
@@ -95,6 +105,7 @@ func TrimPrefix(s string, prefix string) string {
 // TrimSuffix returns `s` without the provided trailing `suffix`. If `s`
 // doesn't end with `suffix`, it is returned unchanged.
 func TrimSuffix(s string, suffix string) string {
+//line strings/strings.gala:73
 	return gostrings.TrimSuffix(s, suffix)
 }
 
@@ -102,6 +113,7 @@ func TrimSuffix(s string, suffix string) string {
 
 // ToLower returns `s` with all Unicode letters mapped to lowercase.
 func ToLower(s string) string {
+//line strings/strings.gala:76
 	return gostrings.ToLower(s)
 }
 
@@ -109,6 +121,7 @@ func ToLower(s string) string {
 
 // ToUpper returns `s` with all Unicode letters mapped to uppercase.
 func ToUpper(s string) string {
+//line strings/strings.gala:79
 	return gostrings.ToUpper(s)
 }
 
@@ -118,6 +131,7 @@ func ToUpper(s string) string {
 // for negative `count` or if the result would overflow (same contract as
 // Go's `strings.Repeat`).
 func Repeat(s string, count int) string {
+//line strings/strings.gala:84
 	return gostrings.Repeat(s, count)
 }
 
@@ -127,6 +141,7 @@ func Repeat(s string, count int) string {
 // instances of `old` replaced by `new`. If `n < 0`, all instances are
 // replaced.
 func Replace(s string, old string, _gala_new string, n int) string {
+//line strings/strings.gala:90
 	return gostrings.Replace(s, old, _gala_new, n)
 }
 
@@ -135,6 +150,7 @@ func Replace(s string, old string, _gala_new string, n int) string {
 // ReplaceAll returns a copy of `s` with all non-overlapping instances of
 // `old` replaced by `new`.
 func ReplaceAll(s string, old string, _gala_new string) string {
+//line strings/strings.gala:95
 	return gostrings.ReplaceAll(s, old, _gala_new)
 }
 
@@ -144,6 +160,7 @@ func ReplaceAll(s string, old string, _gala_new string) string {
 // them as a GALA Array. If `sep` is empty, Split returns one entry per
 // rune of `s` (Go's behaviour).
 func Split(s string, sep string) Array[string] {
+//line strings/strings.gala:101
 	return ArrayFromSlice[string](gostrings.Split(s, sep))
 }
 
@@ -153,6 +170,7 @@ func Split(s string, sep string) Array[string] {
 // limits the number of substrings: `n > 0` caps the slice; `n == 0`
 // returns nil; `n < 0` returns all substrings (Go's behaviour).
 func SplitN(s string, sep string, n int) Array[string] {
+//line strings/strings.gala:107
 	return ArrayFromSlice[string](gostrings.SplitN(s, sep, n))
 }
 
@@ -162,6 +180,7 @@ func SplitN(s string, sep string, n int) Array[string] {
 // white-space characters, returning the substrings as a GALA Array.
 // Returns an empty Array if `s` contains only white space.
 func Fields(s string) Array[string] {
+//line strings/strings.gala:113
 	return ArrayFromSlice[string](gostrings.Fields(s))
 }
 
@@ -170,6 +189,7 @@ func Fields(s string) Array[string] {
 // Join concatenates the elements of `parts`, inserting `sep` between
 // adjacent elements.
 func Join(parts Array[string], sep string) string {
+//line strings/strings.gala:118
 	return gostrings.Join(parts.ToGoSlice(), sep)
 }
 
@@ -192,6 +212,7 @@ func (s Str) Equal(other Str) bool {
 
 // S creates a Str from a native Go string.
 func S(s string) Str {
+//line strings/strings.gala:132
 	return strFromString(s)
 }
 
@@ -199,7 +220,9 @@ func S(s string) Str {
 
 // strFromString creates a Str from a Go string, deferring rune conversion.
 func strFromString(s string) Str {
+//line strings/strings.gala:135
 	return Str{runes: NewImmutable(lazy.New[Array[rune]](func() Array[rune] {
+//line strings/strings.gala:135
 		return stringToRunes(s)
 	})), str: NewImmutable(s)}
 }
@@ -208,6 +231,7 @@ func strFromString(s string) Str {
 
 // strFromRunes creates a Str from an Array of runes.
 func strFromRunes(runes Array[rune]) Str {
+//line strings/strings.gala:138
 	return Str{runes: NewImmutable(lazy.Of(runes)), str: NewImmutable(string(runes.ToGoSlice()))}
 }
 
@@ -215,6 +239,7 @@ func strFromRunes(runes Array[rune]) Str {
 
 // emptyStr creates an empty Str.
 func emptyStr() Str {
+//line strings/strings.gala:141
 	return Str{runes: NewImmutable(lazy.Of(EmptyArray[rune]())), str: NewImmutable("")}
 }
 
@@ -225,6 +250,7 @@ func emptyStr() Str {
 // construction. Each invalid UTF-8 byte decodes to one U+FFFD, exactly as
 // ranging over the string does.
 func stringToRunes(s string) Array[rune] {
+//line strings/strings.gala:147
 	return ArrayFromSlice(go_interop.ToRunes(s))
 }
 
@@ -232,6 +258,7 @@ func stringToRunes(s string) Array[rune] {
 
 // runesToString converts an Array of runes to a string.
 func runesToString(runes Array[rune]) string {
+//line strings/strings.gala:150
 	return string(runes.ToGoSlice())
 }
 
@@ -239,6 +266,7 @@ func runesToString(runes Array[rune]) string {
 
 // Length returns the number of runes. O(1).
 func (s Str) Length() int {
+//line strings/strings.gala:153
 	return s.runes.Get().Get().Length()
 }
 
@@ -246,6 +274,7 @@ func (s Str) Length() int {
 
 // IsEmpty returns true if the string has zero length.
 func (s Str) IsEmpty() bool {
+//line strings/strings.gala:156
 	return s.str.Get() == ""
 }
 
@@ -253,6 +282,7 @@ func (s Str) IsEmpty() bool {
 
 // NonEmpty returns true if the string has at least one character.
 func (s Str) NonEmpty() bool {
+//line strings/strings.gala:159
 	return s.str.Get() != ""
 }
 
@@ -260,6 +290,7 @@ func (s Str) NonEmpty() bool {
 
 // ToString returns the underlying Go string. O(1) cached.
 func (s Str) ToString() string {
+//line strings/strings.gala:162
 	return s.str.Get()
 }
 
@@ -267,6 +298,7 @@ func (s Str) ToString() string {
 
 // ToUpper returns uppercase.
 func (s Str) ToUpper() Str {
+//line strings/strings.gala:165
 	return strFromString(gostrings.ToUpper(s.str.Get()))
 }
 
@@ -274,6 +306,7 @@ func (s Str) ToUpper() Str {
 
 // ToLower returns lowercase.
 func (s Str) ToLower() Str {
+//line strings/strings.gala:168
 	return strFromString(gostrings.ToLower(s.str.Get()))
 }
 
@@ -281,6 +314,7 @@ func (s Str) ToLower() Str {
 
 // Trim returns trimmed string.
 func (s Str) Trim() Str {
+//line strings/strings.gala:171
 	return strFromString(gostrings.TrimSpace(s.str.Get()))
 }
 
@@ -288,6 +322,7 @@ func (s Str) Trim() Str {
 
 // TrimLeft returns left-trimmed string.
 func (s Str) TrimLeft() Str {
+//line strings/strings.gala:174
 	return strFromString(gostrings.TrimLeftFunc(s.str.Get(), unicode.IsSpace))
 }
 
@@ -295,6 +330,7 @@ func (s Str) TrimLeft() Str {
 
 // TrimRight returns right-trimmed string.
 func (s Str) TrimRight() Str {
+//line strings/strings.gala:177
 	return strFromString(gostrings.TrimRightFunc(s.str.Get(), unicode.IsSpace))
 }
 
@@ -302,6 +338,7 @@ func (s Str) TrimRight() Str {
 
 // TrimPrefix removes prefix.
 func (s Str) TrimPrefix(prefix string) Str {
+//line strings/strings.gala:180
 	return strFromString(gostrings.TrimPrefix(s.str.Get(), prefix))
 }
 
@@ -309,6 +346,7 @@ func (s Str) TrimPrefix(prefix string) Str {
 
 // TrimSuffix removes suffix.
 func (s Str) TrimSuffix(suffix string) Str {
+//line strings/strings.gala:183
 	return strFromString(gostrings.TrimSuffix(s.str.Get(), suffix))
 }
 
@@ -316,6 +354,7 @@ func (s Str) TrimSuffix(suffix string) Str {
 
 // Replace replaces first occurrence.
 func (s Str) Replace(old string, _gala_new string) Str {
+//line strings/strings.gala:186
 	return strFromString(gostrings.Replace(s.str.Get(), old, _gala_new, 1))
 }
 
@@ -323,6 +362,7 @@ func (s Str) Replace(old string, _gala_new string) Str {
 
 // ReplaceAll replaces all occurrences.
 func (s Str) ReplaceAll(old string, _gala_new string) Str {
+//line strings/strings.gala:189
 	return strFromString(gostrings.ReplaceAll(s.str.Get(), old, _gala_new))
 }
 
@@ -330,6 +370,7 @@ func (s Str) ReplaceAll(old string, _gala_new string) Str {
 
 // Contains returns true if the string contains the substring.
 func (s Str) Contains(substr string) bool {
+//line strings/strings.gala:192
 	return gostrings.Contains(s.str.Get(), substr)
 }
 
@@ -337,6 +378,7 @@ func (s Str) Contains(substr string) bool {
 
 // ContainsAny returns true if contains any chars.
 func (s Str) ContainsAny(chars string) bool {
+//line strings/strings.gala:195
 	return gostrings.ContainsAny(s.str.Get(), chars)
 }
 
@@ -344,6 +386,7 @@ func (s Str) ContainsAny(chars string) bool {
 
 // StartsWith checks prefix.
 func (s Str) StartsWith(prefix string) bool {
+//line strings/strings.gala:198
 	return gostrings.HasPrefix(s.str.Get(), prefix)
 }
 
@@ -351,6 +394,7 @@ func (s Str) StartsWith(prefix string) bool {
 
 // EndsWith checks suffix.
 func (s Str) EndsWith(suffix string) bool {
+//line strings/strings.gala:201
 	return gostrings.HasSuffix(s.str.Get(), suffix)
 }
 
@@ -358,6 +402,7 @@ func (s Str) EndsWith(suffix string) bool {
 
 // Count counts occurrences.
 func (s Str) Count(substr string) int {
+//line strings/strings.gala:204
 	return gostrings.Count(s.str.Get(), substr)
 }
 
@@ -458,6 +503,7 @@ func (s Str) DropRight(n int) Str {
 
 // Reverse returns reversed string.
 func (s Str) Reverse() Str {
+//line strings/strings.gala:263
 	return strFromRunes(s.runes.Get().Get().Reverse())
 }
 
@@ -560,7 +606,9 @@ func (s Str) Uncapitalize() Str {
 // Whitespace runs collapse to a single space (matches strings.Fields).
 // Empty input returns empty.
 func (s Str) TitleCase() Str {
+//line strings/strings.gala:324
 	return JoinStrs(Array_Map(s.Words(), func(w Str) Str {
+//line strings/strings.gala:324
 		return w.Capitalize()
 	}), " ")
 }
@@ -569,6 +617,7 @@ func (s Str) TitleCase() Str {
 
 // Split splits the string by separator.
 func (s Str) Split(sep string) Array[Str] {
+//line strings/strings.gala:328
 	return Array_Map(ArrayFromSlice(gostrings.Split(s.str.Get(), sep)), strFromString)
 }
 
@@ -596,6 +645,7 @@ func (s Str) Lines() Array[Str] {
 
 // Words splits into words.
 func (s Str) Words() Array[Str] {
+//line strings/strings.gala:344
 	return Array_Map(ArrayFromSlice(gostrings.Fields(s.str.Get())), strFromString)
 }
 
@@ -611,6 +661,7 @@ func JoinStrs(strs Array[Str], sep string) Str {
 	}
 //line strings/strings.gala:352
 	return strFromString(gostrings.Join(Array_Map(strs, func(x Str) string {
+//line strings/strings.gala:352
 		return x.str.Get()
 	}).ToGoSlice(), sep))
 }
@@ -621,6 +672,7 @@ func JoinStrs(strs Array[Str], sep string) Str {
 func (s Str) Concat(other Str) Str {
 //line strings/strings.gala:357
 	var newRunes = lazy.New[Array[rune]](func() Array[rune] {
+//line strings/strings.gala:357
 		return s.runes.Get().Get().AppendAll(other.runes.Get().Get())
 	})
 //line strings/strings.gala:358
@@ -631,6 +683,7 @@ func (s Str) Concat(other Str) Str {
 
 // Plus is an alias for Concat.
 func (s Str) Plus(other Str) Str {
+//line strings/strings.gala:362
 	return s.Concat(other)
 }
 
@@ -638,6 +691,7 @@ func (s Str) Plus(other Str) Str {
 
 // Equals compares for equality.
 func (s Str) Equals(other Str) bool {
+//line strings/strings.gala:365
 	return s.str.Get() == other.str.Get()
 }
 
@@ -645,6 +699,7 @@ func (s Str) Equals(other Str) bool {
 
 // EqualsIgnoreCase compares ignoring case.
 func (s Str) EqualsIgnoreCase(other Str) bool {
+//line strings/strings.gala:368
 	return gostrings.EqualFold(s.str.Get(), other.str.Get())
 }
 
@@ -652,6 +707,7 @@ func (s Str) EqualsIgnoreCase(other Str) bool {
 
 // Compare compares lexicographically.
 func (s Str) Compare(other Str) int {
+//line strings/strings.gala:371
 	return gostrings.Compare(s.str.Get(), other.str.Get())
 }
 
@@ -659,6 +715,7 @@ func (s Str) Compare(other Str) int {
 
 // ToChars returns characters as Array.
 func (s Str) ToChars() Array[rune] {
+//line strings/strings.gala:374
 	return s.runes.Get().Get()
 }
 
@@ -666,6 +723,7 @@ func (s Str) ToChars() Array[rune] {
 
 // IsAlpha checks if all alphabetic.
 func (s Str) IsAlpha() bool {
+//line strings/strings.gala:377
 	return s.NonEmpty() && s.runes.Get().Get().ForAll(unicode.IsLetter)
 }
 
@@ -673,6 +731,7 @@ func (s Str) IsAlpha() bool {
 
 // IsNumeric checks if all numeric.
 func (s Str) IsNumeric() bool {
+//line strings/strings.gala:380
 	return s.NonEmpty() && s.runes.Get().Get().ForAll(unicode.IsDigit)
 }
 
@@ -680,7 +739,9 @@ func (s Str) IsNumeric() bool {
 
 // IsAlphanumeric checks if all alphanumeric.
 func (s Str) IsAlphanumeric() bool {
+//line strings/strings.gala:384
 	return s.NonEmpty() && s.runes.Get().Get().ForAll(func(r rune) bool {
+//line strings/strings.gala:384
 		return unicode.IsLetter(r) || unicode.IsDigit(r)
 	})
 }
@@ -689,6 +750,7 @@ func (s Str) IsAlphanumeric() bool {
 
 // IsWhitespace checks if all whitespace.
 func (s Str) IsWhitespace() bool {
+//line strings/strings.gala:387
 	return s.NonEmpty() && s.runes.Get().Get().ForAll(unicode.IsSpace)
 }
 
@@ -780,6 +842,7 @@ func (s Str) IndexOfChar(target rune) Option[int] {
 
 // Map applies function to each character.
 func (s Str) Map(f func(rune) rune) Str {
+//line strings/strings.gala:440
 	return strFromRunes(Array_Map(s.runes.Get().Get(), f))
 }
 
@@ -787,6 +850,7 @@ func (s Str) Map(f func(rune) rune) Str {
 
 // Filter keeps matching characters.
 func (s Str) Filter(p func(rune) bool) Str {
+//line strings/strings.gala:443
 	return strFromRunes(s.runes.Get().Get().Filter(p))
 }
 
@@ -794,6 +858,7 @@ func (s Str) Filter(p func(rune) bool) Str {
 
 // FilterNot keeps non-matching characters.
 func (s Str) FilterNot(p func(rune) bool) Str {
+//line strings/strings.gala:446
 	return strFromRunes(s.runes.Get().Get().FilterNot(p))
 }
 
@@ -809,6 +874,7 @@ func (s Str) ForEach(f func(rune)) {
 
 // Fold reduces the string.
 func Str_Fold[U any](s Str, zero U, f func(U, rune) U) U {
+//line strings/strings.gala:454
 	return Array_FoldLeft(s.runes.Get().Get(), zero, f)
 }
 
@@ -816,6 +882,7 @@ func Str_Fold[U any](s Str, zero U, f func(U, rune) U) U {
 
 // Exists checks if any character matches.
 func (s Str) Exists(p func(rune) bool) bool {
+//line strings/strings.gala:457
 	return s.runes.Get().Get().Exists(p)
 }
 
@@ -823,6 +890,7 @@ func (s Str) Exists(p func(rune) bool) bool {
 
 // ForAll checks if all characters match.
 func (s Str) ForAll(p func(rune) bool) bool {
+//line strings/strings.gala:460
 	return s.runes.Get().Get().ForAll(p)
 }
 
@@ -830,6 +898,7 @@ func (s Str) ForAll(p func(rune) bool) bool {
 
 // Find returns first matching character.
 func (s Str) Find(p func(rune) bool) Option[rune] {
+//line strings/strings.gala:463
 	return s.runes.Get().Get().Find(p)
 }
 
@@ -837,6 +906,7 @@ func (s Str) Find(p func(rune) bool) Option[rune] {
 
 // ZipWithIndex pairs characters with indices.
 func (s Str) ZipWithIndex() Array[Tuple[rune, int]] {
+//line strings/strings.gala:466
 	return Array_ZipWithIndex[rune](s.runes.Get().Get())
 }
 
@@ -929,6 +999,7 @@ func (s StringBuilder) Equal(other StringBuilder) bool {
 
 // NewStringBuilder creates an empty StringBuilder.
 func NewStringBuilder() *StringBuilder {
+//line strings/strings.gala:513
 	return &StringBuilder{parts: cm.EmptyArray[string]()}
 }
 
@@ -1032,6 +1103,7 @@ func (sb *StringBuilder) ToStr() Str {
 	if sb == nil {
 		panic("StringBuilder.ToStr: receiver sb is a Ptr[strings.StringBuilder], but the caller passed nil")
 	}
+//line strings/strings.gala:562
 	return strFromString(sb.ToString())
 }
 
@@ -1058,6 +1130,7 @@ func (sb *StringBuilder) String() string {
 	if sb == nil {
 		panic("StringBuilder.String: receiver sb is a Ptr[strings.StringBuilder], but the caller passed nil")
 	}
+//line strings/strings.gala:573
 	return sb.ToString()
 }
 
@@ -1070,6 +1143,7 @@ func (sb *StringBuilder) Length() int {
 	if sb == nil {
 		panic("StringBuilder.Length: receiver sb is a Ptr[strings.StringBuilder], but the caller passed nil")
 	}
+//line strings/strings.gala:578
 	return utf8.RuneCountInString(sb.ToString())
 }
 
@@ -1082,7 +1156,9 @@ func (sb *StringBuilder) ByteSize() int {
 	if sb == nil {
 		panic("StringBuilder.ByteSize: receiver sb is a Ptr[strings.StringBuilder], but the caller passed nil")
 	}
+//line strings/strings.gala:583
 	return cm.Array_FoldLeft(sb.parts, 0, func(acc int, p string) int {
+//line strings/strings.gala:583
 		return acc + len(p)
 	})
 }
@@ -1094,6 +1170,7 @@ func (sb *StringBuilder) IsEmpty() bool {
 	if sb == nil {
 		panic("StringBuilder.IsEmpty: receiver sb is a Ptr[strings.StringBuilder], but the caller passed nil")
 	}
+//line strings/strings.gala:586
 	return sb.parts.Length() == 0
 }
 
@@ -1104,6 +1181,7 @@ func (sb *StringBuilder) NonEmpty() bool {
 	if sb == nil {
 		panic("StringBuilder.NonEmpty: receiver sb is a Ptr[strings.StringBuilder], but the caller passed nil")
 	}
+//line strings/strings.gala:589
 	return sb.parts.Length() > 0
 }
 

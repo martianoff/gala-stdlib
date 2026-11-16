@@ -61,6 +61,7 @@ func (_ List[T]) IsList() bool {
 
 // EmptyList returns a new empty List.
 func EmptyList[T any]() *List[T] {
+//line collection_mutable/list.gala:36
 	return &List[T]{head: EmptyOptionPtr[listNode[T]](), tail: EmptyOptionPtr[listNode[T]](), length: 0}
 }
 
@@ -101,6 +102,7 @@ func (l *List[T]) IsEmpty() bool {
 	if l == nil {
 		panic("List.IsEmpty: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:59
 	return l.length == 0
 }
 
@@ -111,6 +113,7 @@ func (l *List[T]) NonEmpty() bool {
 	if l == nil {
 		panic("List.NonEmpty: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:62
 	return l.length > 0
 }
 
@@ -121,6 +124,7 @@ func (l *List[T]) Length() int {
 	if l == nil {
 		panic("List.Length: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:65
 	return l.length
 }
 
@@ -131,6 +135,7 @@ func (l *List[T]) Size() int {
 	if l == nil {
 		panic("List.Size: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:68
 	return l.length
 }
 
@@ -949,7 +954,9 @@ func (l *List[T]) FilterNot(p func(T) bool) *List[T] {
 	if l == nil {
 		panic("List.FilterNot: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:506
 	return l.Filter(func(elem T) bool {
+//line collection_mutable/list.gala:506
 		return !p(elem)
 	})
 }
@@ -1354,6 +1361,7 @@ func (l *List[T]) Distinct() *List[T] {
 	if l == nil {
 		panic("List.Distinct: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:719
 	return l.Filter(firstOccurrence[T]())
 }
 
@@ -1574,6 +1582,7 @@ func (l *List[T]) Sorted() *List[T] {
 	if l == nil {
 		panic("List.Sorted: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:835
 	return Array_ToList[T](List_ToArray[T](l).Sorted())
 }
 
@@ -1584,6 +1593,7 @@ func (l *List[T]) SortWith(less func(T, T) bool) *List[T] {
 	if l == nil {
 		panic("List.SortWith: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:838
 	return Array_ToList[T](List_ToArray[T](l).SortWith(less))
 }
 
@@ -1594,6 +1604,7 @@ func List_SortBy[K comparable, T any](l *List[T], f func(T) K) *List[T] {
 	if l == nil {
 		panic("List.SortBy: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:841
 	return Array_ToList[T](Array_SortBy(List_ToArray[T](l), f))
 }
 
@@ -1604,5 +1615,6 @@ func (l *List[T]) SeqDrop(n int) any {
 	if l == nil {
 		panic("List.SeqDrop: receiver l is a Ptr[collection_mutable.List[T]], but the caller passed nil")
 	}
+//line collection_mutable/list.gala:844
 	return l.Drop(n)
 }

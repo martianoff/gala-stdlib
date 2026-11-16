@@ -62,6 +62,7 @@ func (_ EventBus[T]) IsEventBus() bool {
 // The buffer starts with a small capacity (256) to avoid the first Push
 // allocating; it grows on demand.
 func NewEventBus[T any]() EventBus[T] {
+//line concurrent/event_bus.gala:53
 	return EventBus[T]{state: NewImmutable(&eventBusState[T]{mu: go_interop.NewMutex(), events: go_interop.SliceWithCapacity[T](256), capacity: 0})}
 }
 
@@ -72,6 +73,7 @@ func NewEventBus[T any]() EventBus[T] {
 // overflow strategy. Use the explicit Push return value for back-pressure
 // signalling. For drop-oldest semantics, drain more aggressively.
 func NewBoundedEventBus[T any](capacity int) EventBus[T] {
+//line concurrent/event_bus.gala:65
 	return EventBus[T]{state: NewImmutable(&eventBusState[T]{mu: go_interop.NewMutex(), events: go_interop.SliceWithCapacity[T](capacity), capacity: capacity})}
 }
 
@@ -168,6 +170,7 @@ func (b EventBus[T]) Size() int {
 
 // IsEmpty reports whether the bus has no queued events.
 func (b EventBus[T]) IsEmpty() bool {
+//line concurrent/event_bus.gala:124
 	return b.Size() == 0
 }
 
@@ -175,5 +178,6 @@ func (b EventBus[T]) IsEmpty() bool {
 
 // Capacity returns the bus's capacity, or 0 if unbounded.
 func (b EventBus[T]) Capacity() int {
+//line concurrent/event_bus.gala:127
 	return b.state.Get().capacity
 }

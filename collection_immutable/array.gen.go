@@ -4,6 +4,7 @@ package collection_immutable
 
 import "fmt"
 import (
+	_ "go.gala.fyi/stdlib/go_builtins"
 	"go.gala.fyi/stdlib/go_interop"
 	. "go.gala.fyi/stdlib/std"
 	"sync/atomic"
@@ -111,6 +112,7 @@ func (_ Array[T]) IsArray() bool {
 
 // EmptyArray returns an empty Array.
 func EmptyArray[T any]() Array[T] {
+//line collection_immutable/array.gala:70
 	return Array[T]{root: EmptyOptionPtr[arrayNode[T]](), length: NewImmutable(0), depth: NewImmutable(0), prefix: noPrefix[T]()}
 }
 
@@ -134,6 +136,7 @@ func (a Array[T]) prefixElems() []T {
 
 // prefixOf wraps elems, already in forward order, as a prepend buffer.
 func prefixOf[T any](elems []T) OptionPtr[arrayPrefix[T]] {
+//line collection_immutable/array.gala:83
 	return SomePtr(&arrayPrefix[T]{elems: NewImmutable(elems)})
 }
 
@@ -141,6 +144,7 @@ func prefixOf[T any](elems []T) OptionPtr[arrayPrefix[T]] {
 
 // noPrefix is the prepend buffer of an Array nothing has been prepended to.
 func noPrefix[T any]() OptionPtr[arrayPrefix[T]] {
+//line collection_immutable/array.gala:86
 	return EmptyOptionPtr[arrayPrefix[T]]()
 }
 
@@ -149,6 +153,7 @@ func noPrefix[T any]() OptionPtr[arrayPrefix[T]] {
 // ArrayOf creates an Array from variadic arguments.
 // Example: ArrayOf[int](1, 2, 3) creates Array(1, 2, 3)
 func ArrayOf[T any](elements ...T) Array[T] {
+//line collection_immutable/array.gala:90
 	return ArrayFromSlice(elements)
 }
 
@@ -191,6 +196,7 @@ func ArrayFill[T any](n int, value T) Array[T] {
 // ArrayFromSlice creates an Array from a slice. The elements are copied once, so
 // later changes to the slice do not affect the Array.
 func ArrayFromSlice[T any](elements []T) Array[T] {
+//line collection_immutable/array.gala:116
 	return arrayFromOwnedSlice(go_interop.SliceCopy(elements))
 }
 
@@ -246,6 +252,7 @@ func arrayFromLeaves[T any](leaves []*arrayNode[T], length int) Array[T] {
 
 // chunkCount is the number of branchingFactor-sized chunks needed to hold n items.
 func chunkCount(n int) int {
+//line collection_immutable/array.gala:149
 	return (n + branchingMask.Get()) / branchingFactor.Get()
 }
 
@@ -253,6 +260,7 @@ func chunkCount(n int) int {
 
 // chunkEnd is the exclusive end of the chunk that starts at i, given n items.
 func chunkEnd(i int, n int) int {
+//line collection_immutable/array.gala:152
 	{
 		if i+branchingFactor.Get() < n {
 			return i + branchingFactor.Get()
@@ -463,6 +471,7 @@ func arrayBuilder_Result[T any](b *arrayBuilder[T]) Array[T] {
 
 // IsEmpty returns true if the array is empty.
 func (a Array[T]) IsEmpty() bool {
+//line collection_immutable/array.gala:282
 	return a.length.Get() == 0
 }
 
@@ -470,6 +479,7 @@ func (a Array[T]) IsEmpty() bool {
 
 // NonEmpty returns true if the array is not empty.
 func (a Array[T]) NonEmpty() bool {
+//line collection_immutable/array.gala:285
 	return a.length.Get() > 0
 }
 
@@ -477,6 +487,7 @@ func (a Array[T]) NonEmpty() bool {
 
 // Length returns the number of elements. O(1) - cached.
 func (a Array[T]) Length() int {
+//line collection_immutable/array.gala:288
 	return a.length.Get()
 }
 
@@ -484,6 +495,7 @@ func (a Array[T]) Length() int {
 
 // Size is an alias for Length.
 func (a Array[T]) Size() int {
+//line collection_immutable/array.gala:291
 	return a.length.Get()
 }
 
@@ -918,6 +930,7 @@ func appendToNode[T any](node *arrayNode[T], index int, value T, depth int) *arr
 // an element that starts a new subtree. The tree fills left to right, so the
 // element is the subtree's first and each node on the path has one child.
 func newSubtree[T any](value T, depth int) *arrayNode[T] {
+//line collection_immutable/array.gala:570
 	{
 		if depth == 1 {
 			return &arrayNode[T]{values: go_interop.SliceOf(value), isLeaf: NewImmutable(true)}
@@ -1027,6 +1040,7 @@ func (a Array[T]) consolidateWithPrefix(newPrefix []T) Array[T] {
 
 // PrependAll prepends all elements from another array.
 func (a Array[T]) PrependAll(other Array[T]) Array[T] {
+//line collection_immutable/array.gala:646
 	return other.AppendAll(a)
 }
 
@@ -1307,6 +1321,7 @@ func Array_Collect[U any, T any](a Array[T], pf func(T) Option[U]) Array[U] {
 // Concat returns a new array containing all elements of this array followed by
 // all elements of other, as AppendAll does.
 func (a Array[T]) Concat(other Array[T]) Array[T] {
+//line collection_immutable/array.gala:817
 	return a.AppendAll(other)
 }
 
@@ -1335,7 +1350,9 @@ func (a Array[T]) Filter(p func(T) bool) Array[T] {
 
 // FilterNot returns a new array with elements that do not satisfy the predicate.
 func (a Array[T]) FilterNot(p func(T) bool) Array[T] {
+//line collection_immutable/array.gala:833
 	return a.Filter(func(elem T) bool {
+//line collection_immutable/array.gala:833
 		return !p(elem)
 	})
 }
@@ -1565,6 +1582,7 @@ func Array_ZipWithIndex[T any](a Array[T]) Array[Tuple[T, int]] {
 // compared with Equal: through a HashSet when T is a primitive type (a number,
 // string or bool), and against each kept element otherwise.
 func (a Array[T]) Distinct() Array[T] {
+//line collection_immutable/array.gala:972
 	return a.Filter(firstOccurrence[T]())
 }
 
@@ -1572,6 +1590,7 @@ func (a Array[T]) Distinct() Array[T] {
 
 // SplitAt splits the array at the given index.
 func (a Array[T]) SplitAt(n int) Tuple[Array[T], Array[T]] {
+//line collection_immutable/array.gala:975
 	return Tuple[Array[T], Array[T]]{V1: NewImmutable(a.Take(n)), V2: NewImmutable(a.Drop(n))}
 }
 
@@ -1884,6 +1903,7 @@ func (a Array[T]) MkString(sep string) string {
 // true both ways (a non-strict comparator such as <=), x and y count as equal, so
 // the sort keeps them in their original order.
 func lessToCompare[T any](less func(T, T) bool, x T, y T) int {
+//line collection_immutable/array.gala:1142
 	{
 		if less(x, y) {
 			return (func() int {
@@ -1920,6 +1940,7 @@ func (a Array[T]) Sorted() Array[T] {
 	var elements = a.ToGoSlice()
 //line collection_immutable/array.gala:1152
 	go_interop.SliceSortStable(elements, func(i int, j int) int {
+//line collection_immutable/array.gala:1152
 		return CompareValues(elements[i], elements[j])
 	})
 //line collection_immutable/array.gala:1153
@@ -1942,6 +1963,7 @@ func (a Array[T]) SortWith(less func(T, T) bool) Array[T] {
 	var elements = a.ToGoSlice()
 //line collection_immutable/array.gala:1165
 	go_interop.SliceSortStable(elements, func(i int, j int) int {
+//line collection_immutable/array.gala:1165
 		return lessToCompare(less, elements[i], elements[j])
 	})
 //line collection_immutable/array.gala:1166
@@ -1971,6 +1993,7 @@ func Array_SortBy[K comparable, T any](a Array[T], f func(T) K) Array[T] {
 	}
 //line collection_immutable/array.gala:1182
 	go_interop.SliceSortStable(elements, func(i int, j int) int {
+//line collection_immutable/array.gala:1182
 		return CompareValues(keys[i], keys[j])
 	})
 //line collection_immutable/array.gala:1183
@@ -1982,6 +2005,7 @@ func Array_SortBy[K comparable, T any](a Array[T], f func(T) K) Array[T] {
 // SeqDrop implements the Seq interface for sequence pattern matching.
 // Returns the array with the first n elements removed.
 func (a Array[T]) SeqDrop(n int) any {
+//line collection_immutable/array.gala:1188
 	return a.Drop(n)
 }
 
@@ -2000,6 +2024,7 @@ func (s ArrayEmpty) Equal(other ArrayEmpty) bool {
 
 //line collection_immutable/array.gala:1192
 func (ae ArrayEmpty) Unapply(a any) Option[bool] {
+//line collection_immutable/array.gala:1192
 	return func(_subj any) Option[bool] {
 		{
 			_tmp_arr, _tmp_12 := As[Array[any]](_subj)
@@ -2032,6 +2057,7 @@ func (s ArrayNonEmpty) Equal(other ArrayNonEmpty) bool {
 
 //line collection_immutable/array.gala:1199
 func (ane ArrayNonEmpty) Unapply(a any) Option[any] {
+//line collection_immutable/array.gala:1199
 	return func(_subj any) Option[any] {
 		{
 			_tmp_arr, _tmp_14 := As[Array[any]](_subj)

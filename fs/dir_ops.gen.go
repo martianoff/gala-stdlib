@@ -61,29 +61,38 @@ func NewWalkEntry(path string, info FileInfo) WalkEntry {
 // close is guaranteed on every exit path and, being nested, runs LIFO —
 // dst closes before src.
 func CopyFile(src string, dst string, mode int) Try[Void] {
+//line fs/dir_ops.gala:33
 	return Try_FlatMap(Try[*os.File]{}.Apply(func() *os.File {
+//line fs/dir_ops.gala:33
 		_v0, _err := os.Open(src)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(srcF *os.File) Try[Void] {
+//line fs/dir_ops.gala:34
 		return Using(srcF, func(in *os.File) Try[Void] {
+//line fs/dir_ops.gala:35
 			return Try_FlatMap(Try[*os.File]{}.Apply(func() *os.File {
+//line fs/dir_ops.gala:35
 				_v0, _err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.FileMode(mode))
 				if _err != nil {
 					panic(_err)
 				}
 				return _v0
 			}), func(dstF *os.File) Try[Void] {
+//line fs/dir_ops.gala:37
 				return Using(dstF, func(out *os.File) Try[Void] {
+//line fs/dir_ops.gala:38
 					return Try_Map(Try[int64]{}.Apply(func() int64 {
+//line fs/dir_ops.gala:38
 						_v0, _err := io.Copy(out, in)
 						if _err != nil {
 							panic(_err)
 						}
 						return _v0
 					}), func(_ int64) Void {
+//line fs/dir_ops.gala:38
 						return Void{}
 					})
 				})
@@ -99,6 +108,7 @@ func CopyFile(src string, dst string, mode int) Try[Void] {
 // cross-filesystem moves should compose Copy + RemoveAll explicitly —
 // we deliberately do not paper over that case.
 func Rename(src string, dst string) Try[Void] {
+//line fs/dir_ops.gala:45
 	return FromError(os.Rename(src, dst))
 }
 
@@ -130,6 +140,7 @@ func Walk(root string) Try[Array[WalkEntry]] {
 //line fs/dir_ops.gala:61
 		return nil
 	})), func(_ Void) Array[WalkEntry] {
+//line fs/dir_ops.gala:62
 		return entries
 	})
 }
@@ -141,13 +152,16 @@ func Walk(root string) Try[Array[WalkEntry]] {
 // Success(empty Array), not Failure — "no matches" is not an error.
 // Failure is reserved for malformed patterns (filepath.ErrBadPattern).
 func Glob(pattern string) Try[Array[string]] {
+//line fs/dir_ops.gala:70
 	return Try_Map(Try[[]string]{}.Apply(func() []string {
+//line fs/dir_ops.gala:70
 		_v0, _err := filepath.Glob(pattern)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(matches []string) Array[string] {
+//line fs/dir_ops.gala:70
 		return ArrayFromSlice(matches)
 	})
 }

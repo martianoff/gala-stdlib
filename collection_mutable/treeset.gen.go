@@ -69,6 +69,7 @@ func (_ TreeSet[T]) IsTreeSet() bool {
 
 // EmptyTreeSet returns a new empty TreeSet.
 func EmptyTreeSet[T comparable]() *TreeSet[T] {
+//line collection_mutable/treeset.gala:44
 	return &TreeSet[T]{root: EmptyOptionPtr[treeSetNode[T]](), size: 0}
 }
 
@@ -110,6 +111,7 @@ func (s *TreeSet[T]) IsEmpty() bool {
 	if s == nil {
 		panic("TreeSet.IsEmpty: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:68
 	return s.size == 0
 }
 
@@ -120,6 +122,7 @@ func (s *TreeSet[T]) NonEmpty() bool {
 	if s == nil {
 		panic("TreeSet.NonEmpty: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:71
 	return s.size > 0
 }
 
@@ -130,6 +133,7 @@ func (s *TreeSet[T]) Size() int {
 	if s == nil {
 		panic("TreeSet.Size: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:74
 	return s.size
 }
 
@@ -140,6 +144,7 @@ func (s *TreeSet[T]) Length() int {
 	if s == nil {
 		panic("TreeSet.Length: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:77
 	return s.size
 }
 
@@ -764,6 +769,7 @@ func treeSetPanicNotOrdered(v any) int {
 
 // isRedTreeSetNode checks if a node is red (empty nodes are black).
 func isRedTreeSetNode[T comparable](tree OptionPtr[treeSetNode[T]]) bool {
+//line collection_mutable/treeset.gala:204
 	return tree.IsDefined() && tree.Get().color == mutableTreeRed.Get()
 }
 
@@ -1535,6 +1541,7 @@ func (s *TreeSet[T]) SubsetOf(other *TreeSet[T]) bool {
 	}
 //line collection_mutable/treeset.gala:640
 	return TreeSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
+//line collection_mutable/treeset.gala:640
 		return acc && other.Contains(elem)
 	})
 }
@@ -1549,6 +1556,7 @@ func (s *TreeSet[T]) SupersetOf(other *TreeSet[T]) bool {
 	if other == nil {
 		panic("TreeSet.SupersetOf: parameter other is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:644
 	return other.SubsetOf(s)
 }
 
@@ -1855,7 +1863,9 @@ func (s *TreeSet[T]) FilterNot(p func(T) bool) *TreeSet[T] {
 	if s == nil {
 		panic("TreeSet.FilterNot: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:803
 	return s.Filter(func(elem T) bool {
+//line collection_mutable/treeset.gala:803
 		return !p(elem)
 	})
 }
@@ -2020,6 +2030,7 @@ func (s *TreeSet[T]) Exists(p func(T) bool) bool {
 	}
 //line collection_mutable/treeset.gala:891
 	return TreeSet_FoldLeft[bool, T](s, false, func(acc bool, elem T) bool {
+//line collection_mutable/treeset.gala:891
 		return acc || p(elem)
 	})
 }
@@ -2033,6 +2044,7 @@ func (s *TreeSet[T]) ForAll(p func(T) bool) bool {
 	}
 //line collection_mutable/treeset.gala:896
 	return TreeSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
+//line collection_mutable/treeset.gala:896
 		return acc && p(elem)
 	})
 }
@@ -2083,6 +2095,7 @@ func (s *TreeSet[T]) Head() T {
 	if s == nil {
 		panic("TreeSet.Head: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:923
 	return s.Min()
 }
 
@@ -2093,6 +2106,7 @@ func (s *TreeSet[T]) HeadOption() Option[T] {
 	if s == nil {
 		panic("TreeSet.HeadOption: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:926
 	return TreeSet_MinOption[T](s)
 }
 
@@ -2104,6 +2118,7 @@ func (s *TreeSet[T]) Last() T {
 	if s == nil {
 		panic("TreeSet.Last: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:930
 	return s.Max()
 }
 
@@ -2114,6 +2129,7 @@ func (s *TreeSet[T]) LastOption() Option[T] {
 	if s == nil {
 		panic("TreeSet.LastOption: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:933
 	return TreeSet_MaxOption[T](s)
 }
 
@@ -2278,6 +2294,7 @@ func TreeSet_Sorted[T comparable](s *TreeSet[T]) *Array[T] {
 	if s == nil {
 		panic("TreeSet.Sorted: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:1020
 	return TreeSet_ToArray[T](s)
 }
 
@@ -2288,6 +2305,7 @@ func TreeSet_SortWith[T comparable](s *TreeSet[T], less func(T, T) bool) *Array[
 	if s == nil {
 		panic("TreeSet.SortWith: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:1023
 	return TreeSet_ToArray[T](s).SortWith(less)
 }
 
@@ -2298,5 +2316,6 @@ func TreeSet_SortBy[K comparable, T comparable](s *TreeSet[T], f func(T) K) *Arr
 	if s == nil {
 		panic("TreeSet.SortBy: receiver s is a Ptr[collection_mutable.TreeSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/treeset.gala:1026
 	return Array_SortBy(TreeSet_ToArray[T](s), f)
 }

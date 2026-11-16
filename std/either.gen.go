@@ -2,6 +2,8 @@
 
 package std
 
+import _ "go.gala.fyi/stdlib/go_builtins"
+
 //line std/either.gala:3
 
 // Either represents a value of one of two possible types (a disjoint union).
@@ -99,6 +101,7 @@ func NewEitherRight[A any, B any](rightValue B) Either[A, B] {
 // side holds it, so an Either of hashable types is a HashSet element or
 // HashMap key.
 func (e Either[A, B]) Hash() uint32 {
+//line std/either.gala:16
 	{
 		if e.isLeft() {
 			return HashCombine(1, HashValue(e.LeftValue.Get()))
@@ -112,6 +115,7 @@ func (e Either[A, B]) Hash() uint32 {
 
 // IsLeft returns true if this is a Left, false otherwise.
 func (e Either[A, B]) IsLeft() bool {
+//line std/either.gala:19
 	return e.isLeft()
 }
 
@@ -119,6 +123,7 @@ func (e Either[A, B]) IsLeft() bool {
 
 // IsRight returns true if this is a Right, false otherwise.
 func (e Either[A, B]) IsRight() bool {
+//line std/either.gala:22
 	return e.isRight()
 }
 
@@ -126,6 +131,7 @@ func (e Either[A, B]) IsRight() bool {
 
 // isLeft returns true if this is a Left, false otherwise.
 func isLeft(e any) bool {
+//line std/either.gala:25
 	return func(_subj any) bool {
 		var _tmp_5 Either[any, any]
 		_tmp_2 := 0
@@ -154,6 +160,7 @@ func isLeft(e any) bool {
 
 // isRight returns true if this is a Right, false otherwise.
 func isRight(e any) bool {
+//line std/either.gala:31
 	return func(_subj any) bool {
 		var _tmp_10 Either[any, any]
 		_tmp_7 := 0
@@ -182,6 +189,7 @@ func isRight(e any) bool {
 
 // getLeftValue returns the left value if this is a Left, otherwise it returns nil.
 func getLeftValue(e any) any {
+//line std/either.gala:37
 	return func(_subj any) any {
 		{
 			_tmp_ei, _tmp_11 := As[Either[any, any]](_subj)
@@ -204,6 +212,7 @@ func getLeftValue(e any) any {
 
 // getRightValue returns the right value if this is a Right, otherwise it returns nil.
 func getRightValue(e any) any {
+//line std/either.gala:43
 	return func(_subj any) any {
 		{
 			_tmp_ei, _tmp_13 := As[Either[any, any]](_subj)

@@ -53,6 +53,7 @@ func NewFileInfo(name string, size int64, isDir bool, mode int, modTime time_uti
 
 // fromGoFileInfo bridges os.FileInfo into our immutable record.
 func fromGoFileInfo(fi os.FileInfo) FileInfo {
+//line fs/fs.gala:30
 	return FileInfo{Name: NewImmutable(fi.Name()), Size: NewImmutable(fi.Size()), IsDir: NewImmutable(fi.IsDir()), Mode: NewImmutable(int(fi.Mode())), ModTime: NewImmutable(time_utils.FromGoTime(fi.ModTime()))}
 }
 
@@ -62,13 +63,16 @@ func fromGoFileInfo(fi os.FileInfo) FileInfo {
 // On any error (file missing, permission denied, IO failure) the error
 // is captured as Failure.
 func ReadFile(path string) Try[Array[byte]] {
+//line fs/fs.gala:42
 	return Try_Map(Try[[]byte]{}.Apply(func() []byte {
+//line fs/fs.gala:42
 		_v0, _err := os.ReadFile(path)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(data []byte) Array[byte] {
+//line fs/fs.gala:42
 		return ArrayFromSlice(data)
 	})
 }
@@ -78,13 +82,16 @@ func ReadFile(path string) Try[Array[byte]] {
 // ReadFileString is a convenience for the common case of reading a
 // text file. Equivalent to ReadFile + decoding the bytes as UTF-8.
 func ReadFileString(path string) Try[string] {
+//line fs/fs.gala:47
 	return Try_Map(Try[[]byte]{}.Apply(func() []byte {
+//line fs/fs.gala:47
 		_v0, _err := os.ReadFile(path)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(data []byte) string {
+//line fs/fs.gala:47
 		return string(data)
 	})
 }
@@ -95,6 +102,7 @@ func ReadFileString(path string) Try[string] {
 // `mode` is a Unix permission mode (e.g. 0o644). On Windows the mode
 // is mostly advisory; only the read-only bit is honored.
 func WriteFile(path string, data Array[byte], mode int) Try[Void] {
+//line fs/fs.gala:53
 	return FromError(os.WriteFile(path, data.ToGoSlice(), os.FileMode(mode)))
 }
 
@@ -102,6 +110,7 @@ func WriteFile(path string, data Array[byte], mode int) Try[Void] {
 
 // WriteFileString is the string-content companion to WriteFile.
 func WriteFileString(path string, contents string, mode int) Try[Void] {
+//line fs/fs.gala:57
 	return FromError(os.WriteFile(path, ToBytes(contents), os.FileMode(mode)))
 }
 
@@ -109,13 +118,16 @@ func WriteFileString(path string, contents string, mode int) Try[Void] {
 
 // Stat returns metadata about the file at `path`.
 func Stat(path string) Try[FileInfo] {
+//line fs/fs.gala:61
 	return Try_Map(Try[fs.FileInfo]{}.Apply(func() fs.FileInfo {
+//line fs/fs.gala:61
 		_v0, _err := os.Stat(path)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(fi fs.FileInfo) FileInfo {
+//line fs/fs.gala:61
 		return fromGoFileInfo(fi)
 	})
 }
@@ -127,6 +139,7 @@ func Stat(path string) Try[FileInfo] {
 // or transient IO failure). Callers who care about *why* something is
 // missing should use Stat directly.
 func Exists(path string) bool {
+//line fs/fs.gala:67
 	return Stat(path).IsSuccess()
 }
 
@@ -136,6 +149,7 @@ func Exists(path string) bool {
 // no-op if the directory already exists. `mode` is the Unix permission
 // mode applied to newly-created directories.
 func MkdirAll(path string, mode int) Try[Void] {
+//line fs/fs.gala:73
 	return FromError(os.MkdirAll(path, os.FileMode(mode)))
 }
 
@@ -147,7 +161,9 @@ func MkdirAll(path string, mode int) Try[Void] {
 // os.MkdirTemp pattern: a literal name, optionally with a '*' that
 // gets replaced by random characters.
 func MkdirTemp(dir string, pattern string) Try[string] {
+//line fs/fs.gala:80
 	return Try[string]{}.Apply(func() string {
+//line fs/fs.gala:80
 		_v0, _err := os.MkdirTemp(dir, pattern)
 		if _err != nil {
 			panic(_err)
@@ -163,6 +179,7 @@ func MkdirTemp(dir string, pattern string) Try[string] {
 // `path` does not exist, the call returns Success without error
 // (matching os.RemoveAll's convention).
 func RemoveAll(path string) Try[Void] {
+//line fs/fs.gala:87
 	return FromError(os.RemoveAll(path))
 }
 
@@ -173,7 +190,9 @@ func RemoveAll(path string) Try[Void] {
 // order ReadDir yields them (filesystem-dependent — callers that need
 // a stable order should sort).
 func ReadDir(path string) Try[Array[FileInfo]] {
+//line fs/fs.gala:94
 	return Try_FlatMap(Try[[]fs.DirEntry]{}.Apply(func() []fs.DirEntry {
+//line fs/fs.gala:94
 		_v0, _err := os.ReadDir(path)
 		if _err != nil {
 			panic(_err)

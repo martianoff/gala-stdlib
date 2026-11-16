@@ -4,6 +4,7 @@ package collection_immutable
 
 import "fmt"
 import (
+	_ "go.gala.fyi/stdlib/go_builtins"
 	"go.gala.fyi/stdlib/go_interop"
 	. "go.gala.fyi/stdlib/std"
 )
@@ -154,6 +155,7 @@ func ListFromSlice[T any](elements []T) List[T] {
 
 // EmptyList returns an empty list.
 func EmptyList[T any]() List[T] {
+//line collection_immutable/list.gala:82
 	return emptyList[T]()
 }
 
@@ -161,6 +163,7 @@ func EmptyList[T any]() List[T] {
 
 // IsEmpty returns true if the list is empty.
 func (l List[T]) IsEmpty() bool {
+//line collection_immutable/list.gala:85
 	return l.length.Get() == 0
 }
 
@@ -168,6 +171,7 @@ func (l List[T]) IsEmpty() bool {
 
 // NonEmpty returns true if the list is not empty.
 func (l List[T]) NonEmpty() bool {
+//line collection_immutable/list.gala:88
 	return l.length.Get() > 0
 }
 
@@ -229,6 +233,7 @@ func List_TailOption[T any](l List[T]) Option[List[T]] {
 
 // Length returns the number of elements in the list. O(1) - cached.
 func (l List[T]) Length() int {
+//line collection_immutable/list.gala:125
 	return l.length.Get()
 }
 
@@ -236,6 +241,7 @@ func (l List[T]) Length() int {
 
 // Size is an alias for Length.
 func (l List[T]) Size() int {
+//line collection_immutable/list.gala:128
 	return l.length.Get()
 }
 
@@ -275,7 +281,9 @@ func (l List[T]) Equal(other List[T]) bool {
 // Hashable, as a HashSet element must. It visits every element: it is O(n),
 // and not cached.
 func (l List[T]) Hash() uint32 {
+//line collection_immutable/list.gala:151
 	return List_FoldLeft(l, HashInt(int64(l.length.Get())), func(h uint32, elem T) uint32 {
+//line collection_immutable/list.gala:151
 		return HashCombine(h, HashOf(elem))
 	})
 }
@@ -284,6 +292,7 @@ func (l List[T]) Hash() uint32 {
 
 // Prepend adds an element to the front of the list. O(1).
 func (l List[T]) Prepend(elem T) List[T] {
+//line collection_immutable/list.gala:154
 	return consList[T](elem, l)
 }
 
@@ -324,6 +333,7 @@ func (l List[T]) PrependAll(other List[T]) List[T] {
 
 // Append adds an element to the end of the list. O(n).
 func (l List[T]) Append(elem T) List[T] {
+//line collection_immutable/list.gala:177
 	return l.AppendAll(consList[T](elem, emptyList[T]()))
 }
 
@@ -594,6 +604,7 @@ func (l List[T]) LastIndexOf(elem T) int {
 func (l List[T]) Reverse() List[T] {
 //line collection_immutable/list.gala:340
 	return List_FoldLeft[List[T], T](l, emptyList[T](), func(acc List[T], elem T) List[T] {
+//line collection_immutable/list.gala:340
 		return consList[T](elem, acc)
 	})
 }
@@ -670,6 +681,7 @@ func List_Collect[U any, T any](l List[T], pf func(T) Option[U]) List[U] {
 // all elements of other, as AppendAll does. O(n) where n = this length: other
 // is shared, not copied.
 func (l List[T]) Concat(other List[T]) List[T] {
+//line collection_immutable/list.gala:377
 	return l.AppendAll(other)
 }
 
@@ -695,7 +707,9 @@ func (l List[T]) Filter(p func(T) bool) List[T] {
 
 // FilterNot returns a new list with elements that do not satisfy the predicate.
 func (l List[T]) FilterNot(p func(T) bool) List[T] {
+//line collection_immutable/list.gala:391
 	return l.Filter(func(elem T) bool {
+//line collection_immutable/list.gala:391
 		return !p(elem)
 	})
 }
@@ -955,6 +969,7 @@ func (l List[T]) Distinct() List[T] {
 
 // SplitAt splits the list at the given index.
 func (l List[T]) SplitAt(n int) Tuple[List[T], List[T]] {
+//line collection_immutable/list.gala:549
 	return Tuple[List[T], List[T]]{V1: NewImmutable(l.Take(n)), V2: NewImmutable(l.Drop(n))}
 }
 
@@ -1046,7 +1061,9 @@ func List_PartitionMap[A any, B any, T any](l List[T], f func(T) Either[A, B]) T
 // GroupBy partitions this list into a map of lists according to a discriminator function.
 // Each group keeps the input order. f runs once per element, in order. O(n).
 func List_GroupBy[K comparable, T any](l List[T], f func(T) K) map[K]List[T] {
+//line collection_immutable/list.gala:590
 	return List_GroupMap(l, f, func(elem T) T {
+//line collection_immutable/list.gala:590
 		return elem
 	})
 }
@@ -1238,6 +1255,7 @@ func List_ToArray[T any](l List[T]) Array[T] {
 
 // Sorted returns a new list with elements sorted in natural order.
 func (l List[T]) Sorted() List[T] {
+//line collection_immutable/list.gala:703
 	return Array_ToList[T](List_ToArray[T](l).Sorted())
 }
 
@@ -1245,6 +1263,7 @@ func (l List[T]) Sorted() List[T] {
 
 // SortWith returns a new list sorted using the given comparison function.
 func (l List[T]) SortWith(less func(T, T) bool) List[T] {
+//line collection_immutable/list.gala:706
 	return Array_ToList[T](List_ToArray[T](l).SortWith(less))
 }
 
@@ -1252,6 +1271,7 @@ func (l List[T]) SortWith(less func(T, T) bool) List[T] {
 
 // SortBy returns a new list sorted by a key extracted from each element.
 func List_SortBy[K comparable, T any](l List[T], f func(T) K) List[T] {
+//line collection_immutable/list.gala:709
 	return Array_ToList[T](Array_SortBy(List_ToArray[T](l), f))
 }
 
@@ -1260,6 +1280,7 @@ func List_SortBy[K comparable, T any](l List[T], f func(T) K) List[T] {
 // SeqDrop implements the Seq interface for sequence pattern matching.
 // Returns the list with the first n elements removed.
 func (l List[T]) SeqDrop(n int) any {
+//line collection_immutable/list.gala:713
 	return l.Drop(n)
 }
 func _unapply_Some_0c4cbba6[_T0 any](v Option[_T0]) Option[_T0] {

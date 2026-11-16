@@ -2,6 +2,8 @@
 
 package std
 
+import _ "go.gala.fyi/stdlib/go_builtins"
+
 //line std/ptr.gala:10
 
 // RequirePtr returns p as a Ptr[T]: a pointer from Go, checked once at the

@@ -4,6 +4,7 @@ package collection_immutable
 
 import "fmt"
 import (
+	_ "go.gala.fyi/stdlib/go_builtins"
 	"go.gala.fyi/stdlib/go_interop"
 	. "go.gala.fyi/stdlib/std"
 )
@@ -123,6 +124,7 @@ func TreeMapFromGoMap[K comparable, V any](m map[K]V) TreeMap[K, V] {
 
 // IsEmpty returns true if the map is empty.
 func (m TreeMap[K, V]) IsEmpty() bool {
+//line collection_immutable/treemap.gala:84
 	return m.size.Get() == 0
 }
 
@@ -130,6 +132,7 @@ func (m TreeMap[K, V]) IsEmpty() bool {
 
 // NonEmpty returns true if the map is not empty.
 func (m TreeMap[K, V]) NonEmpty() bool {
+//line collection_immutable/treemap.gala:87
 	return m.size.Get() > 0
 }
 
@@ -137,6 +140,7 @@ func (m TreeMap[K, V]) NonEmpty() bool {
 
 // Size returns the number of entries. O(1) - cached.
 func (m TreeMap[K, V]) Size() int {
+//line collection_immutable/treemap.gala:90
 	return m.size.Get()
 }
 
@@ -144,6 +148,7 @@ func (m TreeMap[K, V]) Size() int {
 
 // Length is an alias for Size.
 func (m TreeMap[K, V]) Length() int {
+//line collection_immutable/treemap.gala:93
 	return m.size.Get()
 }
 
@@ -159,10 +164,12 @@ func (m TreeMap[K, V]) Equal(other TreeMap[K, V]) bool {
 	}
 //line collection_immutable/treemap.gala:101
 	var entries = TreeMap_FoldLeftKV(m, go_interop.SliceWithCapacity[Tuple[K, V]](m.size.Get()), func(acc []Tuple[K, V], k K, v V) []Tuple[K, V] {
+//line collection_immutable/treemap.gala:101
 		return go_interop.SliceAppend(acc, Tuple[K, V]{V1: NewImmutable(k), V2: NewImmutable(v)})
 	})
 //line collection_immutable/treemap.gala:103
 	return TreeMap_FoldLeftKV(other, 0, func(i int, k K, v V) int {
+//line collection_immutable/treemap.gala:103
 		{
 			if i >= 0 && Equal(NewImmutable(entries).Get()[i].V1.Get(), k) && Equal(NewImmutable(entries).Get()[i].V2.Get(), v) {
 				return i + 1
@@ -794,6 +801,7 @@ func treeMapPanicNotOrdered(v any) int {
 
 // isRedTreeMapNode checks if a node is red (empty nodes are black).
 func isRedTreeMapNode[K comparable, V any](tree OptionPtr[treeMapNode[K, V]]) bool {
+//line collection_immutable/treemap.gala:231
 	return tree.IsDefined() && tree.Get().color.Get() == treeMapRed.Get()
 }
 
@@ -1018,6 +1026,7 @@ func treeMapBalance[K comparable, V any](node *treeMapNode[K, V]) *treeMapNode[K
 
 // Updated is an alias for Put.
 func (m TreeMap[K, V]) Updated(key K, value V) TreeMap[K, V] {
+//line collection_immutable/treemap.gala:363
 	return m.Put(key, value)
 }
 
@@ -1128,6 +1137,7 @@ func treeMapRemoveMin[K comparable, V any](node *treeMapNode[K, V]) Tuple[Option
 // a red leaf, which turns black to keep the count; otherwise the paths through
 // the node are now one black node short.
 func treeMapSplice[K comparable, V any](node *treeMapNode[K, V], child OptionPtr[treeMapNode[K, V]]) Tuple[OptionPtr[treeMapNode[K, V]], bool] {
+//line collection_immutable/treemap.gala:428
 	{
 		if isRedTreeMapNode(child) {
 			return Tuple[OptionPtr[treeMapNode[K, V]], bool]{V1: NewImmutable(treeMapBlacken(child)), V2: NewImmutable(false)}
@@ -1236,6 +1246,7 @@ func treeMapFixRight[K comparable, V any](entry *treeMapNode[K, V], color int, l
 // treeMapMk builds a node holding entry's key and value with the given color
 // and children.
 func treeMapMk[K comparable, V any](entry *treeMapNode[K, V], color int, left OptionPtr[treeMapNode[K, V]], right OptionPtr[treeMapNode[K, V]]) OptionPtr[treeMapNode[K, V]] {
+//line collection_immutable/treemap.gala:508
 	return SomePtr(&treeMapNode[K, V]{key: NewImmutable(entry.key.Get()), value: NewImmutable(entry.value.Get()), left: left, right: right, color: NewImmutable(color)})
 }
 
@@ -1243,6 +1254,7 @@ func treeMapMk[K comparable, V any](entry *treeMapNode[K, V], color int, left Op
 
 // treeMapBlacken returns a red node recolored black, and any other tree as is.
 func treeMapBlacken[K comparable, V any](tree OptionPtr[treeMapNode[K, V]]) OptionPtr[treeMapNode[K, V]] {
+//line collection_immutable/treemap.gala:511
 	{
 		_subj := tree.MatchView()
 		{
@@ -1594,6 +1606,7 @@ func (m TreeMap[K, V]) ForEachValue(f func(V)) {
 func TreeMap_MapValues[U any, K comparable, V any](m TreeMap[K, V], f func(V) U) TreeMap[K, U] {
 //line collection_immutable/treemap.gala:723
 	return TreeMap_FoldLeftKV[TreeMap[K, U], K, V](m, EmptyTreeMap[K, U](), func(acc TreeMap[K, U], k K, v V) TreeMap[K, U] {
+//line collection_immutable/treemap.gala:723
 		return acc.Put(k, f(v))
 	})
 }
@@ -1705,6 +1718,7 @@ func TreeMap_FoldLeftKV[U any, K comparable, V any](m TreeMap[K, V], initial U, 
 func (m TreeMap[K, V]) Exists(p func(K, V) bool) bool {
 //line collection_immutable/treemap.gala:795
 	return TreeMap_FoldLeftKV[bool, K, V](m, false, func(acc bool, k K, v V) bool {
+//line collection_immutable/treemap.gala:795
 		return acc || p(k, v)
 	})
 }
@@ -1715,6 +1729,7 @@ func (m TreeMap[K, V]) Exists(p func(K, V) bool) bool {
 func (m TreeMap[K, V]) ForAll(p func(K, V) bool) bool {
 //line collection_immutable/treemap.gala:800
 	return TreeMap_FoldLeftKV[bool, K, V](m, true, func(acc bool, k K, v V) bool {
+//line collection_immutable/treemap.gala:800
 		return acc && p(k, v)
 	})
 }
@@ -1757,6 +1772,7 @@ func (m TreeMap[K, V]) Find(p func(K, V) bool) Option[Tuple[K, V]] {
 func TreeMap_Keys[K comparable, V any](m TreeMap[K, V]) TreeSet[K] {
 //line collection_immutable/treemap.gala:827
 	return TreeMap_FoldLeftKV[TreeSet[K], K, V](m, EmptyTreeSet[K](), func(acc TreeSet[K], k K, v V) TreeSet[K] {
+//line collection_immutable/treemap.gala:827
 		return acc.Add(k)
 	})
 }
@@ -1765,6 +1781,7 @@ func TreeMap_Keys[K comparable, V any](m TreeMap[K, V]) TreeSet[K] {
 
 // KeySet returns a TreeSet of all keys.
 func TreeMap_KeySet[K comparable, V any](m TreeMap[K, V]) TreeSet[K] {
+//line collection_immutable/treemap.gala:831
 	return TreeMap_Keys[K, V](m)
 }
 
@@ -1808,6 +1825,7 @@ func treeMapForEachKVReverse[K comparable, V any](tree OptionPtr[treeMapNode[K, 
 func TreeMap_KeyArray[K comparable, V any](m TreeMap[K, V]) Array[K] {
 //line collection_immutable/treemap.gala:856
 	return TreeMap_FoldLeftKV[Array[K], K, V](m, EmptyArray[K](), func(acc Array[K], k K, v V) Array[K] {
+//line collection_immutable/treemap.gala:856
 		return acc.Append(k)
 	})
 }
@@ -1818,6 +1836,7 @@ func TreeMap_KeyArray[K comparable, V any](m TreeMap[K, V]) Array[K] {
 func TreeMap_ValueArray[K comparable, V any](m TreeMap[K, V]) Array[V] {
 //line collection_immutable/treemap.gala:861
 	return TreeMap_FoldLeftKV[Array[V], K, V](m, EmptyArray[V](), func(acc Array[V], k K, v V) Array[V] {
+//line collection_immutable/treemap.gala:861
 		return acc.Append(v)
 	})
 }
@@ -1828,6 +1847,7 @@ func TreeMap_ValueArray[K comparable, V any](m TreeMap[K, V]) Array[V] {
 func (m TreeMap[K, V]) PutAll(other TreeMap[K, V]) TreeMap[K, V] {
 //line collection_immutable/treemap.gala:868
 	return TreeMap_FoldLeftKV[TreeMap[K, V], K, V](other, m, func(acc TreeMap[K, V], k K, v V) TreeMap[K, V] {
+//line collection_immutable/treemap.gala:868
 		return acc.Put(k, v)
 	})
 }
@@ -1884,6 +1904,7 @@ func (m TreeMap[K, V]) ToGoMap() map[K]V {
 func TreeMap_ToArray[K comparable, V any](m TreeMap[K, V]) Array[Tuple[K, V]] {
 //line collection_immutable/treemap.gala:894
 	return TreeMap_FoldLeftKV[Array[Tuple[K, V]], K, V](m, EmptyArray[Tuple[K, V]](), func(acc Array[Tuple[K, V]], k K, v V) Array[Tuple[K, V]] {
+//line collection_immutable/treemap.gala:894
 		return acc.Append(Tuple[K, V]{V1: NewImmutable(k), V2: NewImmutable(v)})
 	})
 }
@@ -1909,6 +1930,7 @@ func TreeMap_ToList[K comparable, V any](m TreeMap[K, V]) List[Tuple[K, V]] {
 func TreeMap_ToHashMap[K comparable, V any](m TreeMap[K, V]) HashMap[K, V] {
 //line collection_immutable/treemap.gala:909
 	return TreeMap_FoldLeftKV[HashMap[K, V], K, V](m, EmptyHashMap[K, V](), func(acc HashMap[K, V], k K, v V) HashMap[K, V] {
+//line collection_immutable/treemap.gala:909
 		return acc.Put(k, v)
 	})
 }
@@ -1975,6 +1997,7 @@ func (m TreeMap[K, V]) MkString(sep string) string {
 
 // Head returns the entry with the minimum key. Panics if empty.
 func (m TreeMap[K, V]) Head() Tuple[K, V] {
+//line collection_immutable/treemap.gala:951
 	return TreeMap_MinEntry[K, V](m)
 }
 
@@ -1982,6 +2005,7 @@ func (m TreeMap[K, V]) Head() Tuple[K, V] {
 
 // HeadOption returns the entry with the minimum key wrapped in Option.
 func (m TreeMap[K, V]) HeadOption() Option[Tuple[K, V]] {
+//line collection_immutable/treemap.gala:954
 	return TreeMap_MinEntryOption[K, V](m)
 }
 
@@ -1989,6 +2013,7 @@ func (m TreeMap[K, V]) HeadOption() Option[Tuple[K, V]] {
 
 // Last returns the entry with the maximum key. Panics if empty.
 func (m TreeMap[K, V]) Last() Tuple[K, V] {
+//line collection_immutable/treemap.gala:957
 	return TreeMap_MaxEntry[K, V](m)
 }
 
@@ -1996,6 +2021,7 @@ func (m TreeMap[K, V]) Last() Tuple[K, V] {
 
 // LastOption returns the entry with the maximum key wrapped in Option.
 func (m TreeMap[K, V]) LastOption() Option[Tuple[K, V]] {
+//line collection_immutable/treemap.gala:960
 	return TreeMap_MaxEntryOption[K, V](m)
 }
 
@@ -2021,6 +2047,7 @@ func (m TreeMap[K, V]) Partition(p func(K, V) bool) Tuple[TreeMap[K, V], TreeMap
 
 // Sorted returns an array of key-value tuples in natural sorted key order (already sorted).
 func TreeMap_Sorted[K comparable, V any](m TreeMap[K, V]) Array[Tuple[K, V]] {
+//line collection_immutable/treemap.gala:976
 	return TreeMap_ToArray[K, V](m)
 }
 
@@ -2028,6 +2055,7 @@ func TreeMap_Sorted[K comparable, V any](m TreeMap[K, V]) Array[Tuple[K, V]] {
 
 // SortWith returns an array of key-value tuples sorted using the given comparison function.
 func TreeMap_SortWith[K comparable, V any](m TreeMap[K, V], less func(Tuple[K, V], Tuple[K, V]) bool) Array[Tuple[K, V]] {
+//line collection_immutable/treemap.gala:979
 	return TreeMap_ToArray[K, V](m).SortWith(less)
 }
 
@@ -2035,6 +2063,7 @@ func TreeMap_SortWith[K comparable, V any](m TreeMap[K, V], less func(Tuple[K, V
 
 // SortBy returns an array of key-value tuples sorted by a key extracted from each entry.
 func TreeMap_SortBy[S comparable, K comparable, V any](m TreeMap[K, V], f func(Tuple[K, V]) S) Array[Tuple[K, V]] {
+//line collection_immutable/treemap.gala:982
 	return Array_SortBy(TreeMap_ToArray[K, V](m), f)
 }
 func _unapply_Some_ee831ca6[_T0 any](v Option[_T0]) Option[_T0] {

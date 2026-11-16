@@ -113,6 +113,7 @@ func Spawn(opts SpawnOpts) Try[Process] {
 	}
 //line subprocess/subprocess.gala:70
 	return Try_FlatMap[Process, io.WriteCloser](Try[io.WriteCloser]{}.Apply(func() io.WriteCloser {
+//line subprocess/subprocess.gala:70
 		_v0, _err := c.StdinPipe()
 		if _err != nil {
 			panic(_err)
@@ -121,6 +122,7 @@ func Spawn(opts SpawnOpts) Try[Process] {
 	}), func(sin io.WriteCloser) Try[Process] {
 //line subprocess/subprocess.gala:71
 		return Try_FlatMap[Process, io.ReadCloser](Try[io.ReadCloser]{}.Apply(func() io.ReadCloser {
+//line subprocess/subprocess.gala:71
 			_v0, _err := c.StdoutPipe()
 			if _err != nil {
 				panic(_err)
@@ -129,6 +131,7 @@ func Spawn(opts SpawnOpts) Try[Process] {
 		}), func(sout io.ReadCloser) Try[Process] {
 //line subprocess/subprocess.gala:72
 			return Try_FlatMap[Process, io.ReadCloser](Try[io.ReadCloser]{}.Apply(func() io.ReadCloser {
+//line subprocess/subprocess.gala:72
 				_v0, _err := c.StderrPipe()
 				if _err != nil {
 					panic(_err)
@@ -137,6 +140,7 @@ func Spawn(opts SpawnOpts) Try[Process] {
 			}), func(serr io.ReadCloser) Try[Process] {
 //line subprocess/subprocess.gala:73
 				return Try_Map(FromError(c.Start()), func(_ Void) Process {
+//line subprocess/subprocess.gala:73
 					return Process{state: NewImmutable(&processState{cmd: c, stdin: sin, stdoutScan: newLineScanner(sout), stderrScan: newLineScanner(serr), stdinMu: go_interop.NewMutex(), waitOnce: go_interop.NewOnce(), waitDone: go_interop.NewSignal()})}
 				})
 			})

@@ -55,6 +55,7 @@ func MustCompile(pattern string) Regex {
 
 // Matches returns true if the string matches the regex.
 func (r Regex) Matches(s string) bool {
+//line regex/regex.gala:33
 	return r.Re.Get().MatchString(s)
 }
 
@@ -92,6 +93,7 @@ func (r Regex) FindGroups(s string) Option[Array[string]] {
 
 // ReplaceAll replaces all matches with the replacement string.
 func (r Regex) ReplaceAll(s string, replacement string) string {
+//line regex/regex.gala:54
 	return r.Re.Get().ReplaceAllString(s, replacement)
 }
 
@@ -134,5 +136,6 @@ func (r Regex) Unapply(s string) Option[Array[string]] {
 
 // String returns a human-readable representation.
 func (r Regex) String() string {
+//line regex/regex.gala:81
 	return fmt.Sprintf("Regex(%s)", r.Pattern.Get())
 }

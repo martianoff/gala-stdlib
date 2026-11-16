@@ -48,6 +48,7 @@ func RunCases[In any, Out any](t T, f func(T, In, Out) T, cases ...Case[In, Out]
 	for _, c := range cases {
 //line test/table.gala:19
 		result = std.EvalOperand(result).Run(c.Name.Get(), func(sub T) T {
+//line test/table.gala:19
 			return f(sub, c.Input.Get(), c.Expected.Get())
 		})
 	}

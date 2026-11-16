@@ -79,6 +79,7 @@ func (l *Lazy[T]) IsEvaluated() bool {
 	if l == nil {
 		panic("Lazy.IsEvaluated: receiver l is a Ptr[lazy.Lazy[T]], but the caller passed nil")
 	}
+//line lazy/lazy.gala:39
 	return l.done
 }
 
@@ -89,7 +90,9 @@ func Lazy_Map[U any, T any](l *Lazy[T], f func(T) U) *Lazy[U] {
 	if l == nil {
 		panic("Lazy.Map: receiver l is a Ptr[lazy.Lazy[T]], but the caller passed nil")
 	}
+//line lazy/lazy.gala:42
 	return New[U](func() U {
+//line lazy/lazy.gala:42
 		return f(l.Get())
 	})
 }
@@ -101,7 +104,9 @@ func Lazy_FlatMap[U any, T any](l *Lazy[T], f func(T) *Lazy[U]) *Lazy[U] {
 	if l == nil {
 		panic("Lazy.FlatMap: receiver l is a Ptr[lazy.Lazy[T]], but the caller passed nil")
 	}
+//line lazy/lazy.gala:45
 	return New[U](func() U {
+//line lazy/lazy.gala:45
 		return f(l.Get()).Get()
 	})
 }

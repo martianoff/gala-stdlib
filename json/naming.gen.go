@@ -161,6 +161,7 @@ func NewNaming() Naming {
 
 // ApplyNaming converts a single PascalCase field name using the given naming strategy.
 func ApplyNaming(fieldName string, naming Naming) string {
+//line json/naming.gala:23
 	{
 		_subj := naming
 		{
@@ -252,11 +253,13 @@ func toCamelCase(s string) string {
 
 //line json/naming.gala:64
 func toSnakeCase(s string) string {
+//line json/naming.gala:64
 	return toDelimited(s, '_')
 }
 
 //line json/naming.gala:65
 func toKebabCase(s string) string {
+//line json/naming.gala:65
 	return toDelimited(s, '-')
 }
 

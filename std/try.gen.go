@@ -2,6 +2,8 @@
 
 package std
 
+import _ "go.gala.fyi/stdlib/go_builtins"
+
 //line std/try.gala:3
 
 // Try represents a computation that may either result in a value of type T (Success)
@@ -102,6 +104,7 @@ func NewTryFailure[T any](err error) Try[T] {
 
 // IsSuccess returns true if this is a Success, false otherwise.
 func (t Try[T]) IsSuccess() bool {
+//line std/try.gala:18
 	return t.isSuccess()
 }
 
@@ -109,6 +112,7 @@ func (t Try[T]) IsSuccess() bool {
 
 // IsFailure returns true if this is a Failure, false otherwise.
 func (t Try[T]) IsFailure() bool {
+//line std/try.gala:21
 	return t.isFailure()
 }
 
@@ -118,6 +122,7 @@ func (t Try[T]) IsFailure() bool {
 // This is the safe way to create a Try from a potentially panicking operation.
 // Usage: Try[int](() => riskyDivide(10, 0))
 func (t Try[T]) Apply(f func() T) Try[T] {
+//line std/try.gala:26
 	return tryRecover[T](f)
 }
 
@@ -361,6 +366,7 @@ func Try_ToEither[T any](t Try[T]) Either[error, T] {
 // FromOption creates a Try from an Option.
 // Returns Success if the Option is Some, Failure with NoSuchElementError if None.
 func FromOption[T any](o Option[T]) Try[T] {
+//line std/try.gala:181
 	{
 		_subj := o
 		{
@@ -389,6 +395,7 @@ func FromOption[T any](o Option[T]) Try[T] {
 // FromEitherError creates a Try from an Either[error, T].
 // Returns Success if Right, Failure if Left.
 func FromEitherError[T any](e Either[error, T]) Try[T] {
+//line std/try.gala:188
 	{
 		_subj := e
 		{
@@ -423,6 +430,7 @@ func FromEitherError[T any](e Either[error, T]) Try[T] {
 // Returns Success[T] with the result if f completes normally.
 // Returns Failure[T] with the panic value as error if f panics.
 func TryApply[T any](f func() T) Try[T] {
+//line std/try.gala:196
 	return tryRecover[T](f)
 }
 
@@ -443,6 +451,7 @@ func TryApply[T any](f func() T) Try[T] {
 //	    PanicStack(err).ForEach((stack) => Println(stack))
 //	})
 func PanicStack(err error) Option[string] {
+//line std/try.gala:211
 	return panicStackOf(err)
 }
 

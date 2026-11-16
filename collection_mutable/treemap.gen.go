@@ -70,6 +70,7 @@ func (_ TreeMap[K, V]) IsTreeMap() bool {
 
 // EmptyTreeMap returns a new empty TreeMap.
 func EmptyTreeMap[K comparable, V any]() *TreeMap[K, V] {
+//line collection_mutable/treemap.gala:46
 	return &TreeMap[K, V]{root: EmptyOptionPtr[treeMapNode[K, V]](), size: 0}
 }
 
@@ -126,6 +127,7 @@ func (m *TreeMap[K, V]) IsEmpty() bool {
 	if m == nil {
 		panic("TreeMap.IsEmpty: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:79
 	return m.size == 0
 }
 
@@ -136,6 +138,7 @@ func (m *TreeMap[K, V]) NonEmpty() bool {
 	if m == nil {
 		panic("TreeMap.NonEmpty: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:82
 	return m.size > 0
 }
 
@@ -146,6 +149,7 @@ func (m *TreeMap[K, V]) Size() int {
 	if m == nil {
 		panic("TreeMap.Size: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:85
 	return m.size
 }
 
@@ -156,6 +160,7 @@ func (m *TreeMap[K, V]) Length() int {
 	if m == nil {
 		panic("TreeMap.Length: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:88
 	return m.size
 }
 
@@ -780,6 +785,7 @@ func mutableTreeMapPanicNotOrdered(v any) int {
 
 // isRedTreeMapNode checks if a node is red (empty nodes are black).
 func isRedTreeMapNode[K comparable, V any](tree OptionPtr[treeMapNode[K, V]]) bool {
+//line collection_mutable/treemap.gala:215
 	return tree.IsDefined() && tree.Get().color == mutableTreeMapRed.Get()
 }
 
@@ -2038,6 +2044,7 @@ func (m *TreeMap[K, V]) Exists(p func(K, V) bool) bool {
 	}
 //line collection_mutable/treemap.gala:914
 	return TreeMap_FoldLeftKV[bool, K, V](m, false, func(acc bool, k K, v V) bool {
+//line collection_mutable/treemap.gala:914
 		return acc || p(k, v)
 	})
 }
@@ -2051,6 +2058,7 @@ func (m *TreeMap[K, V]) ForAll(p func(K, V) bool) bool {
 	}
 //line collection_mutable/treemap.gala:919
 	return TreeMap_FoldLeftKV[bool, K, V](m, true, func(acc bool, k K, v V) bool {
+//line collection_mutable/treemap.gala:919
 		return acc && p(k, v)
 	})
 }
@@ -2116,6 +2124,7 @@ func TreeMap_KeySet[K comparable, V any](m *TreeMap[K, V]) *TreeSet[K] {
 	if m == nil {
 		panic("TreeMap.KeySet: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:953
 	return TreeMap_Keys[K, V](m)
 }
 
@@ -2395,6 +2404,7 @@ func (m *TreeMap[K, V]) Head() Tuple[K, V] {
 	if m == nil {
 		panic("TreeMap.Head: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:1089
 	return TreeMap_MinEntry[K, V](m)
 }
 
@@ -2405,6 +2415,7 @@ func (m *TreeMap[K, V]) HeadOption() Option[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.HeadOption: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:1092
 	return TreeMap_MinEntryOption[K, V](m)
 }
 
@@ -2415,6 +2426,7 @@ func (m *TreeMap[K, V]) Last() Tuple[K, V] {
 	if m == nil {
 		panic("TreeMap.Last: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:1095
 	return TreeMap_MaxEntry[K, V](m)
 }
 
@@ -2425,6 +2437,7 @@ func (m *TreeMap[K, V]) LastOption() Option[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.LastOption: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:1098
 	return TreeMap_MaxEntryOption[K, V](m)
 }
 
@@ -2459,6 +2472,7 @@ func TreeMap_Sorted[K comparable, V any](m *TreeMap[K, V]) *Array[Tuple[K, V]] {
 	if m == nil {
 		panic("TreeMap.Sorted: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:1116
 	return TreeMap_ToArray[K, V](m)
 }
 
@@ -2469,6 +2483,7 @@ func TreeMap_SortWith[K comparable, V any](m *TreeMap[K, V], less func(Tuple[K, 
 	if m == nil {
 		panic("TreeMap.SortWith: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:1119
 	return TreeMap_ToArray[K, V](m).SortWith(less)
 }
 
@@ -2479,6 +2494,7 @@ func TreeMap_SortBy[S comparable, K comparable, V any](m *TreeMap[K, V], f func(
 	if m == nil {
 		panic("TreeMap.SortBy: receiver m is a Ptr[collection_mutable.TreeMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/treemap.gala:1122
 	return Array_SortBy(TreeMap_ToArray[K, V](m), f)
 }
 func _unapply_Some_ee831ca6[_T0 any](v Option[_T0]) Option[_T0] {

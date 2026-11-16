@@ -28,6 +28,7 @@ func (_ Immutable[T]) IsImmutable() bool {
 
 // Get returns the underlying value.
 func (i Immutable[T]) Get() T {
+//line std/immutable.gala:9
 	return i.value
 }
 
@@ -35,6 +36,7 @@ func (i Immutable[T]) Get() T {
 
 // GetAny returns the underlying value as any (for interface-based unwrapping).
 func (i Immutable[T]) GetAny() any {
+//line std/immutable.gala:12
 	return i.value
 }
 
@@ -42,6 +44,7 @@ func (i Immutable[T]) GetAny() any {
 
 // NewImmutable creates a new Immutable wrapper.
 func NewImmutable[T any](v T) Immutable[T] {
+//line std/immutable.gala:15
 	return Immutable[T]{value: v}
 }
 
@@ -52,5 +55,6 @@ func NewImmutable[T any](v T) Immutable[T] {
 // val's Get(), a call result, a composite literal — so the method runs on the
 // copy and the original value is left unchanged.
 func AddrOfCopy[T any](v T) *T {
+//line std/immutable.gala:21
 	return &v
 }

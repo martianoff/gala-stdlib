@@ -3,7 +3,10 @@
 package std
 
 import "fmt"
-import "math"
+import (
+	_ "go.gala.fyi/stdlib/go_builtins"
+	"math"
+)
 
 //line std/hashable.gala:6
 
@@ -141,6 +144,7 @@ func HashString(s string) uint32 {
 // instead of truncating to a handful of integers. The two zeros are == and
 // hash alike; a NaN equals nothing, so where it lands does not matter.
 func HashFloat(f float64) uint32 {
+//line std/hashable.gala:91
 	{
 		if f == 0 {
 			return HashUint(0)
@@ -182,6 +186,7 @@ func HashCombine(h1 uint32, h2 uint32) uint32 {
 // Hashable type, hashes all the way down. A caller that knows the value's
 // type hashes it with HashOf, which does not box a primitive.
 func HashValue(v any) uint32 {
+//line std/hashable.gala:115
 	return hashOf(v, false)
 }
 
@@ -196,6 +201,7 @@ func HashValue(v any) uint32 {
 // holding one compares it by its target (std.Equal), which its address does
 // not agree with.
 func HashKey(v any) uint32 {
+//line std/hashable.gala:125
 	return hashOf(v, true)
 }
 
@@ -210,6 +216,7 @@ func HashKey(v any) uint32 {
 //
 //	val h = HashOf(1000) // HashValue(1000), without an allocation
 func HashOf[T any](v T) uint32 {
+//line std/hashable.gala:134
 	return hashOf(v, false)
 }
 
@@ -218,6 +225,7 @@ func HashOf[T any](v T) uint32 {
 // HashKeyOf hashes a HashSet element or HashMap key exactly as HashKey(v)
 // does, without boxing it into an any, as HashOf does HashValue.
 func HashKeyOf[T any](v T) uint32 {
+//line std/hashable.gala:138
 	return hashOf(v, true)
 }
 
@@ -225,6 +233,7 @@ func HashKeyOf[T any](v T) uint32 {
 
 // hashOf is HashOf, and HashKeyOf when key is set.
 func hashOf[T any](v T, key bool) uint32 {
+//line std/hashable.gala:141
 	{
 		_subj := hashPrimitive(v)
 		{
@@ -274,6 +283,7 @@ func hashOf[T any](v T, key bool) uint32 {
 // value. Its type patterns lower to one Go type switch, which boxes v without
 // an allocation.
 func hashPrimitive[T any](v T) Option[uint32] {
+//line std/hashable.gala:154
 	{
 		_subj := v
 		var _tmp_26 int
@@ -449,6 +459,7 @@ func hashPrimitive[T any](v T) Option[uint32] {
 // holding them tells values apart exactly as Equal does. A named type is left
 // out: it may declare an Equal of its own.
 func HashesByValue(v any) bool {
+//line std/hashable.gala:176
 	return hashPrimitive(v).IsDefined()
 }
 

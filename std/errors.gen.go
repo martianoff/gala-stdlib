@@ -30,6 +30,7 @@ func (s NoSuchElementError) Unapply(v any) (Immutable[string], bool) {
 
 // Error returns the error message.
 func (e NoSuchElementError) Error() string {
+//line std/errors.gala:10
 	return e.Message.Get()
 }
 
@@ -37,6 +38,7 @@ func (e NoSuchElementError) Error() string {
 
 // NoSuchElement creates a NoSuchElementError with the given message.
 func NoSuchElement(msg string) error {
+//line std/errors.gala:13
 	return NoSuchElementError{Message: NewImmutable(msg)}
 }
 

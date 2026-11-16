@@ -39,6 +39,7 @@ func (s Digest) Copy() Digest {
 
 // Bytes returns the raw digest as an immutable Array[byte].
 func (d Digest) Bytes() Array[byte] {
+//line crypto/crypto.gala:28
 	return d.bytes.Get()
 }
 
@@ -46,6 +47,7 @@ func (d Digest) Bytes() Array[byte] {
 
 // Size returns the length of the digest in bytes.
 func (d Digest) Size() int {
+//line crypto/crypto.gala:31
 	return d.bytes.Get().Size()
 }
 
@@ -53,6 +55,7 @@ func (d Digest) Size() int {
 
 // Hex returns the lowercase hex encoding of the digest.
 func (d Digest) Hex() string {
+//line crypto/crypto.gala:34
 	return hex.EncodeToString(d.bytes.Get().ToGoSlice())
 }
 
@@ -60,6 +63,7 @@ func (d Digest) Hex() string {
 
 // Base64 returns the standard (padded) base64 encoding of the digest.
 func (d Digest) Base64() string {
+//line crypto/crypto.gala:37
 	return base64.StdEncoding.EncodeToString(d.bytes.Get().ToGoSlice())
 }
 
@@ -67,6 +71,7 @@ func (d Digest) Base64() string {
 
 // String returns the hex encoding (same as Hex).
 func (d Digest) String() string {
+//line crypto/crypto.gala:40
 	return d.Hex()
 }
 
@@ -75,6 +80,7 @@ func (d Digest) String() string {
 // Equal compares two digests in constant time. Different sizes compare
 // as not equal (subtle.ConstantTimeCompare returns 0 on length mismatch).
 func (d Digest) Equal(other Digest) bool {
+//line crypto/crypto.gala:45
 	return subtle.ConstantTimeCompare(d.bytes.Get().ToGoSlice(), other.bytes.Get().ToGoSlice()) == 1
 }
 
@@ -131,6 +137,7 @@ func (h *Hasher) Algorithm() string {
 	if h == nil {
 		panic("Hasher.Algorithm: receiver h is a Ptr[crypto.Hasher], but the caller passed nil")
 	}
+//line crypto/crypto.gala:71
 	return h.algorithm.Get()
 }
 
@@ -158,11 +165,13 @@ func (s Sha256) Unapply(v any) bool {
 
 //line crypto/crypto.gala:78
 func (s Sha256) Algorithm() string {
+//line crypto/crypto.gala:78
 	return "SHA-256"
 }
 
 //line crypto/crypto.gala:79
 func (s Sha256) Size() int {
+//line crypto/crypto.gala:79
 	return 32
 }
 
@@ -206,11 +215,13 @@ func (s Sha512) Unapply(v any) bool {
 
 //line crypto/crypto.gala:94
 func (s Sha512) Algorithm() string {
+//line crypto/crypto.gala:94
 	return "SHA-512"
 }
 
 //line crypto/crypto.gala:95
 func (s Sha512) Size() int {
+//line crypto/crypto.gala:95
 	return 64
 }
 
@@ -255,11 +266,13 @@ func (s Sha1) Unapply(v any) bool {
 
 //line crypto/crypto.gala:111
 func (s Sha1) Algorithm() string {
+//line crypto/crypto.gala:111
 	return "SHA-1"
 }
 
 //line crypto/crypto.gala:112
 func (s Sha1) Size() int {
+//line crypto/crypto.gala:112
 	return 20
 }
 
@@ -304,11 +317,13 @@ func (s Md5) Unapply(v any) bool {
 
 //line crypto/crypto.gala:128
 func (s Md5) Algorithm() string {
+//line crypto/crypto.gala:128
 	return "MD5"
 }
 
 //line crypto/crypto.gala:129
 func (s Md5) Size() int {
+//line crypto/crypto.gala:129
 	return 16
 }
 
@@ -362,11 +377,13 @@ func NewHmacSha256(key Array[byte]) HmacSha256 {
 
 //line crypto/crypto.gala:151
 func (h HmacSha256) Algorithm() string {
+//line crypto/crypto.gala:151
 	return "HMAC-SHA256"
 }
 
 //line crypto/crypto.gala:152
 func (h HmacSha256) Size() int {
+//line crypto/crypto.gala:152
 	return 32
 }
 
@@ -420,11 +437,13 @@ func NewHmacSha512(key Array[byte]) HmacSha512 {
 
 //line crypto/crypto.gala:167
 func (h HmacSha512) Algorithm() string {
+//line crypto/crypto.gala:167
 	return "HMAC-SHA512"
 }
 
 //line crypto/crypto.gala:168
 func (h HmacSha512) Size() int {
+//line crypto/crypto.gala:168
 	return 64
 }
 
@@ -479,11 +498,13 @@ func NewHmacSha1(key Array[byte]) HmacSha1 {
 
 //line crypto/crypto.gala:184
 func (h HmacSha1) Algorithm() string {
+//line crypto/crypto.gala:184
 	return "HMAC-SHA1"
 }
 
 //line crypto/crypto.gala:185
 func (h HmacSha1) Size() int {
+//line crypto/crypto.gala:185
 	return 20
 }
 
@@ -539,6 +560,7 @@ func RandomBytes(n int) Try[Array[byte]] {
 // handles this). Generalizes Digest.Equal to arbitrary byte slices — useful
 // for comparing tokens, MACs, or any secret-bearing bytes.
 func ConstantTimeEqual(a Array[byte], b Array[byte]) bool {
+//line crypto/crypto.gala:222
 	return subtle.ConstantTimeCompare(a.ToGoSlice(), b.ToGoSlice()) == 1
 }
 
@@ -629,13 +651,16 @@ func (s Signature) String() string {
 // GenerateEd25519KeyPair returns a fresh Ed25519 keypair drawn from
 // crypto/rand, or Failure if the OS RNG fails.
 func GenerateEd25519KeyPair() Try[Ed25519KeyPair] {
+//line crypto/crypto.gala:244
 	return Try_Map(Try[Tuple[ed25519.PublicKey, ed25519.PrivateKey]]{}.Apply(func() Tuple[ed25519.PublicKey, ed25519.PrivateKey] {
+//line crypto/crypto.gala:244
 		_v0, _v1, _err := ed25519.GenerateKey(rand.Reader)
 		if _err != nil {
 			panic(_err)
 		}
 		return Tuple[ed25519.PublicKey, ed25519.PrivateKey]{V1: NewImmutable(_v0), V2: NewImmutable(_v1)}
 	}), func(pair Tuple[ed25519.PublicKey, ed25519.PrivateKey]) Ed25519KeyPair {
+//line crypto/crypto.gala:244
 		return Ed25519KeyPair{Public: NewImmutable(Ed25519PublicKey{bytes: NewImmutable(ArrayFromSlice[byte](pair.V1.Get()))}), Private: NewImmutable(Ed25519PrivateKey{bytes: NewImmutable(ArrayFromSlice[byte](pair.V2.Get()))})}
 	})
 }
@@ -656,6 +681,7 @@ func Ed25519PrivateKeyFromSeed(seed Array[byte]) Ed25519PrivateKey {
 // Ed25519PrivateKeyFromBytes wraps a raw 64-byte Ed25519 private key
 // (Go's seed||pub representation).
 func Ed25519PrivateKeyFromBytes(bytes Array[byte]) Ed25519PrivateKey {
+//line crypto/crypto.gala:259
 	return Ed25519PrivateKey{bytes: NewImmutable(bytes)}
 }
 
@@ -663,6 +689,7 @@ func Ed25519PrivateKeyFromBytes(bytes Array[byte]) Ed25519PrivateKey {
 
 // Ed25519PublicKeyFromBytes wraps a raw 32-byte Ed25519 public key.
 func Ed25519PublicKeyFromBytes(bytes Array[byte]) Ed25519PublicKey {
+//line crypto/crypto.gala:263
 	return Ed25519PublicKey{bytes: NewImmutable(bytes)}
 }
 
@@ -670,6 +697,7 @@ func Ed25519PublicKeyFromBytes(bytes Array[byte]) Ed25519PublicKey {
 
 // SignatureFromBytes wraps a raw 64-byte Ed25519 signature.
 func SignatureFromBytes(bytes Array[byte]) Signature {
+//line crypto/crypto.gala:267
 	return Signature{bytes: NewImmutable(bytes)}
 }
 
@@ -687,6 +715,7 @@ func (sk Ed25519PrivateKey) Sign(message Array[byte]) Signature {
 
 // Verify reports whether sig is a valid Ed25519 signature on message under pk.
 func (pk Ed25519PublicKey) Verify(message Array[byte], sig Signature) bool {
+//line crypto/crypto.gala:277
 	return ed25519.Verify(pk.bytes.Get().ToGoSlice(), message.ToGoSlice(), sig.bytes.Get().ToGoSlice())
 }
 
@@ -706,6 +735,7 @@ func (sk Ed25519PrivateKey) PublicKey() Ed25519PublicKey {
 
 // Bytes returns the raw 32-byte public key.
 func (pk Ed25519PublicKey) Bytes() Array[byte] {
+//line crypto/crypto.gala:288
 	return pk.bytes.Get()
 }
 
@@ -713,6 +743,7 @@ func (pk Ed25519PublicKey) Bytes() Array[byte] {
 
 // Bytes returns the raw 64-byte private key (seed||pub).
 func (sk Ed25519PrivateKey) Bytes() Array[byte] {
+//line crypto/crypto.gala:291
 	return sk.bytes.Get()
 }
 
@@ -720,6 +751,7 @@ func (sk Ed25519PrivateKey) Bytes() Array[byte] {
 
 // Bytes returns the raw 64-byte signature.
 func (s Signature) Bytes() Array[byte] {
+//line crypto/crypto.gala:294
 	return s.bytes.Get()
 }
 
@@ -727,6 +759,7 @@ func (s Signature) Bytes() Array[byte] {
 
 // Hex returns the lowercase hex encoding of the signature.
 func (s Signature) Hex() string {
+//line crypto/crypto.gala:297
 	return hex.EncodeToString(s.bytes.Get().ToGoSlice())
 }
 
@@ -734,6 +767,7 @@ func (s Signature) Hex() string {
 
 // Base64 returns the standard (padded) base64 encoding of the signature.
 func (s Signature) Base64() string {
+//line crypto/crypto.gala:300
 	return base64.StdEncoding.EncodeToString(s.bytes.Get().ToGoSlice())
 }
 
@@ -743,6 +777,7 @@ func (s Signature) Base64() string {
 // compare as not equal (subtle.ConstantTimeCompare returns 0 on length
 // mismatch).
 func (s Signature) Equal(other Signature) bool {
+//line crypto/crypto.gala:306
 	return subtle.ConstantTimeCompare(s.bytes.Get().ToGoSlice(), other.bytes.Get().ToGoSlice()) == 1
 }
 
@@ -822,6 +857,7 @@ func GenerateX25519KeyPair() Try[X25519KeyPair] {
 	var curve = ecdh.X25519()
 //line crypto/crypto.gala:325
 	return Try_Map(Try[*ecdh.PrivateKey]{}.Apply(func() *ecdh.PrivateKey {
+//line crypto/crypto.gala:325
 		_v0, _err := curve.GenerateKey(rand.Reader)
 		if _err != nil {
 			panic(_err)
@@ -839,6 +875,7 @@ func GenerateX25519KeyPair() Try[X25519KeyPair] {
 
 // X25519PrivateKeyFromBytes wraps a raw 32-byte X25519 scalar.
 func X25519PrivateKeyFromBytes(bytes Array[byte]) X25519PrivateKey {
+//line crypto/crypto.gala:336
 	return X25519PrivateKey{bytes: NewImmutable(bytes)}
 }
 
@@ -846,6 +883,7 @@ func X25519PrivateKeyFromBytes(bytes Array[byte]) X25519PrivateKey {
 
 // X25519PublicKeyFromBytes wraps a raw 32-byte X25519 public key.
 func X25519PublicKeyFromBytes(bytes Array[byte]) X25519PublicKey {
+//line crypto/crypto.gala:340
 	return X25519PublicKey{bytes: NewImmutable(bytes)}
 }
 
@@ -892,6 +930,7 @@ func (sk X25519PrivateKey) PublicKey() Try[X25519PublicKey] {
 	var curve = ecdh.X25519()
 //line crypto/crypto.gala:367
 	return Try_Map(Try[*ecdh.PrivateKey]{}.Apply(func() *ecdh.PrivateKey {
+//line crypto/crypto.gala:367
 		_v0, _err := curve.NewPrivateKey(sk.bytes.Get().ToGoSlice())
 		if _err != nil {
 			panic(_err)
@@ -909,6 +948,7 @@ func (sk X25519PrivateKey) PublicKey() Try[X25519PublicKey] {
 
 // Bytes returns the raw 32-byte X25519 public key.
 func (pk X25519PublicKey) Bytes() Array[byte] {
+//line crypto/crypto.gala:374
 	return pk.bytes.Get()
 }
 
@@ -916,6 +956,7 @@ func (pk X25519PublicKey) Bytes() Array[byte] {
 
 // Bytes returns the raw 32-byte X25519 scalar.
 func (sk X25519PrivateKey) Bytes() Array[byte] {
+//line crypto/crypto.gala:377
 	return sk.bytes.Get()
 }
 
@@ -928,12 +969,14 @@ func RandomHex(n int) Try[string] {
 	var buf = go_interop.SliceWithSize[byte](n)
 //line crypto/crypto.gala:387
 	return Try_Map(Try[int]{}.Apply(func() int {
+//line crypto/crypto.gala:387
 		_v0, _err := rand.Read(buf)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(_ int) string {
+//line crypto/crypto.gala:387
 		return hex.EncodeToString(buf)
 	})
 }
@@ -947,12 +990,14 @@ func RandomBase64URL(n int) Try[string] {
 	var buf = go_interop.SliceWithSize[byte](n)
 //line crypto/crypto.gala:394
 	return Try_Map(Try[int]{}.Apply(func() int {
+//line crypto/crypto.gala:394
 		_v0, _err := rand.Read(buf)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(_ int) string {
+//line crypto/crypto.gala:394
 		return base64.RawURLEncoding.EncodeToString(buf)
 	})
 }

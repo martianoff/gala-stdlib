@@ -297,5 +297,6 @@ func NotPanics(t T, f func()) T {
 
 // Fail unconditionally fails the test with the given message.
 func Fail(t T, msg string) T {
+//line test/assertions.gala:216
 	return t.Error(msg)
 }

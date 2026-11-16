@@ -16,7 +16,7 @@ import (
 	"unicode/utf8"
 )
 
-//line json/codec.gala:18
+//line json/codec.gala:17
 
 // JsonEncoderImpl writes JSON bytes via the typed FieldEncoder interface.
 // Produced by NewJsonEncoder(); consumed by _StructMeta_T.EncodeFields.
@@ -33,165 +33,166 @@ func (s JsonEncoderImpl) Equal(other JsonEncoderImpl) bool {
 	return Equal(s.buf, other.buf) && s.needsComma == other.needsComma && s.keyPending == other.keyPending
 }
 
-//line json/codec.gala:27
+//line json/codec.gala:26
 func NewJsonEncoder() *JsonEncoderImpl {
+//line json/codec.gala:26
 	return &JsonEncoderImpl{}
 }
 
-//line json/codec.gala:29
+//line json/codec.gala:28
 func (e *JsonEncoderImpl) WriteStartObject() {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteStartObject: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:30
+//line json/codec.gala:29
 	e.writeCommaIfNeeded()
-//line json/codec.gala:31
+//line json/codec.gala:30
 	e.buf.WriteByte('{')
-//line json/codec.gala:32
+//line json/codec.gala:31
 	e.needsComma = false
 }
 
-//line json/codec.gala:35
+//line json/codec.gala:34
 func (e *JsonEncoderImpl) WriteEndObject() {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteEndObject: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:36
+//line json/codec.gala:35
 	e.buf.WriteByte('}')
-//line json/codec.gala:37
+//line json/codec.gala:36
 	e.needsComma = true
 }
 
-//line json/codec.gala:40
+//line json/codec.gala:39
 func (e *JsonEncoderImpl) WriteStartArray() {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteStartArray: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:41
+//line json/codec.gala:40
 	e.writeCommaIfNeeded()
-//line json/codec.gala:42
+//line json/codec.gala:41
 	e.buf.WriteByte('[')
-//line json/codec.gala:43
+//line json/codec.gala:42
 	e.needsComma = false
 }
 
-//line json/codec.gala:46
+//line json/codec.gala:45
 func (e *JsonEncoderImpl) WriteEndArray() {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteEndArray: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:47
+//line json/codec.gala:46
 	e.buf.WriteByte(']')
-//line json/codec.gala:48
+//line json/codec.gala:47
 	e.needsComma = true
 }
 
-//line json/codec.gala:51
+//line json/codec.gala:50
 func (e *JsonEncoderImpl) WriteKey(name string) {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteKey: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:52
+//line json/codec.gala:51
 	e.writeCommaIfNeeded()
-//line json/codec.gala:53
+//line json/codec.gala:52
 	e.writeEscapedJsonString(name)
-//line json/codec.gala:54
+//line json/codec.gala:53
 	e.buf.WriteByte(':')
-//line json/codec.gala:55
+//line json/codec.gala:54
 	e.needsComma = false
 }
 
-//line json/codec.gala:58
+//line json/codec.gala:57
 func (e *JsonEncoderImpl) WriteString(v string) {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteString: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:59
+//line json/codec.gala:58
 	e.writeCommaIfNeeded()
-//line json/codec.gala:60
+//line json/codec.gala:59
 	e.writeEscapedJsonString(v)
-//line json/codec.gala:61
+//line json/codec.gala:60
 	e.needsComma = true
 }
 
-//line json/codec.gala:64
+//line json/codec.gala:63
 func (e *JsonEncoderImpl) WriteInt(v int) {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteInt: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:65
+//line json/codec.gala:64
 	e.writeCommaIfNeeded()
-//line json/codec.gala:66
+//line json/codec.gala:65
 	e.buf.WriteString(strconv.Itoa(v))
-//line json/codec.gala:67
+//line json/codec.gala:66
 	e.needsComma = true
 }
 
-//line json/codec.gala:70
+//line json/codec.gala:69
 func (e *JsonEncoderImpl) WriteInt64(v int64) {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteInt64: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:71
+//line json/codec.gala:70
 	e.writeCommaIfNeeded()
-//line json/codec.gala:72
+//line json/codec.gala:71
 	e.buf.WriteString(strconv.FormatInt(v, 10))
-//line json/codec.gala:73
+//line json/codec.gala:72
 	e.needsComma = true
 }
 
-//line json/codec.gala:76
+//line json/codec.gala:75
 func (e *JsonEncoderImpl) WriteUint64(v uint64) {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteUint64: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:77
+//line json/codec.gala:76
 	e.writeCommaIfNeeded()
-//line json/codec.gala:78
+//line json/codec.gala:77
 	e.buf.WriteString(strconv.FormatUint(v, 10))
-//line json/codec.gala:79
+//line json/codec.gala:78
 	e.needsComma = true
 }
 
-//line json/codec.gala:82
+//line json/codec.gala:81
 func (e *JsonEncoderImpl) WriteFloat64(v float64) {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteFloat64: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:83
+//line json/codec.gala:82
 	e.writeFloat(v, 64)
 }
 
-//line json/codec.gala:86
+//line json/codec.gala:85
 func (e *JsonEncoderImpl) WriteFloat32(v float32) {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteFloat32: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:87
+//line json/codec.gala:86
 	e.writeFloat(float64(v), 32)
 }
 
-//line json/codec.gala:89
+//line json/codec.gala:88
 
 // writeFloat renders v in the shortest decimal form that parses back to the
 // same value at bitSize. JSON has no spelling for NaN or the infinities, so
 // they fail the encode (the Encode Try becomes a Failure) instead of
 // producing a document no JSON parser accepts.
 func (e *JsonEncoderImpl) writeFloat(v float64, bitSize int) {
-//line json/codec.gala:95
+//line json/codec.gala:94
 	if math.IsNaN(v) || math.IsInf(v, 0) {
-//line json/codec.gala:96
+//line json/codec.gala:95
 		panic(fmt.Sprintf("json: unsupported float value %s: JSON has no NaN or Infinity", strconv.FormatFloat(v, 'g', -1, 64)))
 	}
-//line json/codec.gala:98
+//line json/codec.gala:97
 	e.writeCommaIfNeeded()
-//line json/codec.gala:99
+//line json/codec.gala:98
 	e.buf.WriteString(formatJsonFloat(v, bitSize))
-//line json/codec.gala:100
+//line json/codec.gala:99
 	e.needsComma = true
 }
 
-//line json/codec.gala:102
+//line json/codec.gala:101
 
 // formatJsonFloat spells a finite float as encoding/json does: the shortest
 // digits that parse back to v at bitSize, in plain notation for
@@ -200,6 +201,7 @@ func (e *JsonEncoderImpl) writeFloat(v float64, bitSize int) {
 // (1e-7, not 1e-07); a positive exponent here is always at least 21. yaml's
 // formatYamlFloat keeps the same rule in Go.
 func formatJsonFloat(v float64, bitSize int) string {
+//line json/codec.gala:109
 	{
 		if useExponent(math.Abs(v), bitSize) {
 			return strings.Replace(strconv.FormatFloat(v, 'e', -1, bitSize), "e-0", "e-", 1)
@@ -209,12 +211,13 @@ func formatJsonFloat(v float64, bitSize int) string {
 	}
 }
 
-//line json/codec.gala:112
+//line json/codec.gala:111
 
 // useExponent reports whether abs lies outside the plain-notation range. The
 // range test runs at the value's own precision: float32(1e-6) is just below
 // the float64 1e-6, yet it is written plainly.
 func useExponent(abs float64, bitSize int) bool {
+//line json/codec.gala:116
 	{
 		if abs == 0 {
 			return false
@@ -230,14 +233,14 @@ func useExponent(abs float64, bitSize int) bool {
 	}
 }
 
-//line json/codec.gala:121
+//line json/codec.gala:120
 func (e *JsonEncoderImpl) WriteBool(v bool) {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteBool: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:122
+//line json/codec.gala:121
 	e.writeCommaIfNeeded()
-//line json/codec.gala:123
+//line json/codec.gala:122
 	e.buf.WriteString(func() string {
 		if v {
 			return "true"
@@ -245,142 +248,143 @@ func (e *JsonEncoderImpl) WriteBool(v bool) {
 			return "false"
 		}
 	}())
-//line json/codec.gala:124
+//line json/codec.gala:123
 	e.needsComma = true
 }
 
-//line json/codec.gala:127
+//line json/codec.gala:126
 func (e *JsonEncoderImpl) WriteRune(v rune) {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteRune: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:128
+//line json/codec.gala:127
 	e.writeCommaIfNeeded()
-//line json/codec.gala:129
+//line json/codec.gala:128
 	e.writeEscapedJsonString(RuneToString(v))
-//line json/codec.gala:130
+//line json/codec.gala:129
 	e.needsComma = true
 }
 
-//line json/codec.gala:133
+//line json/codec.gala:132
 func (e *JsonEncoderImpl) WriteNull() {
 	if e == nil {
 		panic("JsonEncoderImpl.WriteNull: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:134
+//line json/codec.gala:133
 	e.writeCommaIfNeeded()
-//line json/codec.gala:135
+//line json/codec.gala:134
 	e.buf.WriteString("null")
-//line json/codec.gala:136
+//line json/codec.gala:135
 	e.needsComma = true
 }
 
-//line json/codec.gala:139
+//line json/codec.gala:138
 func (e *JsonEncoderImpl) String() string {
 	if e == nil {
 		panic("JsonEncoderImpl.String: receiver e is a Ptr[json.JsonEncoderImpl], but the caller passed nil")
 	}
+//line json/codec.gala:138
 	return e.buf.String()
 }
 
-//line json/codec.gala:141
+//line json/codec.gala:140
 func (e *JsonEncoderImpl) writeCommaIfNeeded() {
-//line json/codec.gala:142
+//line json/codec.gala:141
 	if e.needsComma {
-//line json/codec.gala:143
+//line json/codec.gala:142
 		e.buf.WriteByte(',')
-//line json/codec.gala:144
+//line json/codec.gala:143
 		e.needsComma = false
 	}
 }
 
-//line json/codec.gala:148
+//line json/codec.gala:147
 func (e *JsonEncoderImpl) writeEscapedJsonString(s string) {
-//line json/codec.gala:149
+//line json/codec.gala:148
 	e.buf.WriteByte('"')
-//line json/codec.gala:155
+//line json/codec.gala:154
 	var start = 0
-//line json/codec.gala:156
+//line json/codec.gala:155
 	var i = 0
-//line json/codec.gala:157
+//line json/codec.gala:156
 	for i < len(s) {
-//line json/codec.gala:158
+//line json/codec.gala:157
 		var c = s[i]
-//line json/codec.gala:159
+//line json/codec.gala:158
 		if c >= utf8.RuneSelf {
-//line json/codec.gala:162
+//line json/codec.gala:161
 			var r, size = decodeRuneAt(s, i)
-//line json/codec.gala:163
+//line json/codec.gala:162
 			if r == utf8.RuneError && size == 1 {
-//line json/codec.gala:164
+//line json/codec.gala:163
 				e.buf.WriteString(substring(s, start, i))
-//line json/codec.gala:165
+//line json/codec.gala:164
 				e.buf.WriteString("\\ufffd")
-//line json/codec.gala:166
+//line json/codec.gala:165
 				start = i + 1
 			}
-//line json/codec.gala:168
+//line json/codec.gala:167
 			i = i + size
 		} else if c < 32 || c == '"' || c == '\\' {
-//line json/codec.gala:170
+//line json/codec.gala:169
 			e.buf.WriteString(substring(s, start, i))
-//line json/codec.gala:171
+//line json/codec.gala:170
 			e.writeEscape(c)
-//line json/codec.gala:172
+//line json/codec.gala:171
 			i = i + 1
-//line json/codec.gala:173
+//line json/codec.gala:172
 			start = i
 		} else {
-//line json/codec.gala:175
+//line json/codec.gala:174
 			i = i + 1
 		}
 	}
-//line json/codec.gala:178
+//line json/codec.gala:177
 	e.buf.WriteString(substring(s, start, i))
-//line json/codec.gala:179
+//line json/codec.gala:178
 	e.buf.WriteByte('"')
 }
 
-//line json/codec.gala:181
+//line json/codec.gala:180
 
 // writeEscape writes the JSON escape for a quote, a backslash or a control
 // character.
 func (e *JsonEncoderImpl) writeEscape(c byte) {
-//line json/codec.gala:185
+//line json/codec.gala:184
 	func() {
 		_subj := c
 		if _subj == '"' {
-//line json/codec.gala:186
+//line json/codec.gala:185
 			{
 				e.buf.WriteString("\\\"")
 				return
 			}
 		} else if _subj == '\\' {
-//line json/codec.gala:187
+//line json/codec.gala:186
 			{
 				e.buf.WriteString("\\\\")
 				return
 			}
 		} else if _subj == '\n' {
-//line json/codec.gala:188
+//line json/codec.gala:187
 			{
 				e.buf.WriteString("\\n")
 				return
 			}
 		} else if _subj == '\r' {
-//line json/codec.gala:189
+//line json/codec.gala:188
 			{
 				e.buf.WriteString("\\r")
 				return
 			}
 		} else if _subj == '\t' {
-//line json/codec.gala:190
+//line json/codec.gala:189
 			{
 				e.buf.WriteString("\\t")
 				return
 			}
 		} else {
-//line json/codec.gala:191
+//line json/codec.gala:190
 			{
 				e.buf.WriteString(fmt.Sprintf("\\u%04x", c))
 				return
@@ -389,24 +393,24 @@ func (e *JsonEncoderImpl) writeEscape(c byte) {
 	}()
 }
 
-//line json/codec.gala:194
+//line json/codec.gala:193
 
 // PrettyIndent re-indents a compact JSON string.
 func PrettyIndent(compact string, indent string) Try[string] {
-//line json/codec.gala:197
+//line json/codec.gala:196
 	var out bytes.Buffer
-//line json/codec.gala:198
+//line json/codec.gala:197
 	var err = json.Indent(&out, toBytes(compact), "", indent)
-//line json/codec.gala:199
+//line json/codec.gala:198
 	if err != nil {
-//line json/codec.gala:200
+//line json/codec.gala:199
 		return Failure[string]{}.Apply(err)
 	}
-//line json/codec.gala:202
+//line json/codec.gala:201
 	return Success[string]{}.Apply(out.String())
 }
 
-//line json/codec.gala:206
+//line json/codec.gala:205
 
 // JsonDecoderImpl is a pull-style JSON parser. Unlike the legacy Reader it
 // exposes plain primitive returns from its Read* methods — errors are
@@ -428,40 +432,41 @@ func (s JsonDecoderImpl) Equal(other JsonDecoderImpl) bool {
 	return Equal(s.data, other.data) && s.pos == other.pos && Equal(s.stack, other.stack) && Equal(s.firstConsumed, other.firstConsumed) && s.pendingKey == other.pendingKey && s.hasPendingKey == other.hasPendingKey
 }
 
-//line json/codec.gala:220
+//line json/codec.gala:219
 func NewJsonDecoder(s string) *JsonDecoderImpl {
+//line json/codec.gala:219
 	return &JsonDecoderImpl{data: toBytes(s), pos: 0}
 }
 
-//line json/codec.gala:222
+//line json/codec.gala:221
 func (d *JsonDecoderImpl) StartObject() {
 	if d == nil {
 		panic("JsonDecoderImpl.StartObject: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:227
+//line json/codec.gala:226
 	d.consumeElemComma()
-//line json/codec.gala:228
+//line json/codec.gala:227
 	d.openContainer('{', 'o')
 }
 
-//line json/codec.gala:230
+//line json/codec.gala:229
 
 // openContainer steps over the opening byte of an object or array that the
 // caller decodes, and records it as kind ('o' or 'a') on the stack.
 func (d *JsonDecoderImpl) openContainer(open byte, kind byte) {
-//line json/codec.gala:234
+//line json/codec.gala:233
 	d.skipWs()
-//line json/codec.gala:235
+//line json/codec.gala:234
 	d.checkDepth(len(d.stack) + 1)
-//line json/codec.gala:236
+//line json/codec.gala:235
 	d.expectByte(open)
-//line json/codec.gala:237
+//line json/codec.gala:236
 	d.stack = go_interop.SliceAppend(d.stack, kind)
-//line json/codec.gala:238
+//line json/codec.gala:237
 	d.firstConsumed = go_interop.SliceAppend(d.firstConsumed, false)
 }
 
-//line json/codec.gala:240
+//line json/codec.gala:239
 
 // maxJsonDepth is the deepest container nesting the decoder reads or skips,
 // the limit encoding/json has too. Deeper input is a decode error rather
@@ -469,149 +474,151 @@ func (d *JsonDecoderImpl) openContainer(open byte, kind byte) {
 // decode.
 var maxJsonDepth = NewImmutable(10000)
 
-//line json/codec.gala:246
+//line json/codec.gala:245
 
 // checkDepth fails the decode when a container at pos would sit depth
 // containers deep in the document.
 func (d *JsonDecoderImpl) checkDepth(depth int) {
-//line json/codec.gala:250
+//line json/codec.gala:249
 	if depth > maxJsonDepth.Get() {
-//line json/codec.gala:251
+//line json/codec.gala:250
 		panic(fmt.Sprintf("json at pos %d: exceeded max depth %d", d.pos, maxJsonDepth.Get()))
 	}
 }
 
-//line json/codec.gala:255
+//line json/codec.gala:254
 func (d *JsonDecoderImpl) EndObject() {
 	if d == nil {
 		panic("JsonDecoderImpl.EndObject: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:256
+//line json/codec.gala:255
 	d.expectByte('}')
-//line json/codec.gala:257
+//line json/codec.gala:256
 	d.stack = TruncateBytes(d.stack, len(d.stack)-1)
-//line json/codec.gala:258
+//line json/codec.gala:257
 	d.firstConsumed = TruncateBools(d.firstConsumed, len(d.firstConsumed)-1)
 }
 
-//line json/codec.gala:261
+//line json/codec.gala:260
 func (d *JsonDecoderImpl) StartArray() {
 	if d == nil {
 		panic("JsonDecoderImpl.StartArray: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:264
+//line json/codec.gala:263
 	d.consumeElemComma()
-//line json/codec.gala:265
+//line json/codec.gala:264
 	d.openContainer('[', 'a')
 }
 
-//line json/codec.gala:268
+//line json/codec.gala:267
 func (d *JsonDecoderImpl) EndArray() {
 	if d == nil {
 		panic("JsonDecoderImpl.EndArray: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:269
+//line json/codec.gala:268
 	d.expectByte(']')
-//line json/codec.gala:270
+//line json/codec.gala:269
 	d.stack = TruncateBytes(d.stack, len(d.stack)-1)
-//line json/codec.gala:271
+//line json/codec.gala:270
 	d.firstConsumed = TruncateBools(d.firstConsumed, len(d.firstConsumed)-1)
 }
 
-//line json/codec.gala:274
+//line json/codec.gala:273
 func (d *JsonDecoderImpl) HasMoreFields() bool {
 	if d == nil {
 		panic("JsonDecoderImpl.HasMoreFields: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:275
+//line json/codec.gala:274
 	d.skipWs()
-//line json/codec.gala:276
+//line json/codec.gala:275
 	if d.pos >= len(d.data) {
-//line json/codec.gala:276
+//line json/codec.gala:275
 		return false
 	}
-//line json/codec.gala:277
+//line json/codec.gala:276
 	return d.data[d.pos] != '}'
 }
 
-//line json/codec.gala:280
+//line json/codec.gala:279
 func (d *JsonDecoderImpl) HasMoreElements() bool {
 	if d == nil {
 		panic("JsonDecoderImpl.HasMoreElements: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:281
+//line json/codec.gala:280
 	d.skipWs()
-//line json/codec.gala:282
+//line json/codec.gala:281
 	if d.pos >= len(d.data) {
-//line json/codec.gala:282
+//line json/codec.gala:281
 		return false
 	}
-//line json/codec.gala:283
+//line json/codec.gala:282
 	return d.data[d.pos] != ']'
 }
 
-//line json/codec.gala:286
+//line json/codec.gala:285
 func (d *JsonDecoderImpl) ReadKey() string {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadKey: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:287
+//line json/codec.gala:286
 	d.skipWs()
-//line json/codec.gala:288
+//line json/codec.gala:287
 	var depth = len(d.firstConsumed) - 1
-//line json/codec.gala:289
+//line json/codec.gala:288
 	if depth >= 0 && d.firstConsumed[depth] {
-//line json/codec.gala:290
+//line json/codec.gala:289
 		if d.pos < len(d.data) && d.data[d.pos] == ',' {
-//line json/codec.gala:291
+//line json/codec.gala:290
 			d.pos = d.pos + 1
-//line json/codec.gala:292
+//line json/codec.gala:291
 			d.skipWs()
 		}
 	}
-//line json/codec.gala:295
+//line json/codec.gala:294
 	if depth >= 0 {
-//line json/codec.gala:295
+//line json/codec.gala:294
 		d.firstConsumed[depth] = true
 	}
-//line json/codec.gala:297
+//line json/codec.gala:296
 	var key = d.readJsonString()
-//line json/codec.gala:298
+//line json/codec.gala:297
 	d.expectByte(':')
-//line json/codec.gala:299
+//line json/codec.gala:298
 	return key
 }
 
-//line json/codec.gala:302
+//line json/codec.gala:301
 func (d *JsonDecoderImpl) ReadString() string {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadString: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:303
+//line json/codec.gala:302
 	d.consumeElemComma()
-//line json/codec.gala:304
+//line json/codec.gala:303
 	d.skipWs()
-//line json/codec.gala:305
+//line json/codec.gala:304
 	return d.readJsonString()
 }
 
-//line json/codec.gala:308
+//line json/codec.gala:307
 func (d *JsonDecoderImpl) ReadInt() int {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadInt: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
+//line json/codec.gala:307
 	return int(d.ReadIntN(0))
 }
 
-//line json/codec.gala:310
+//line json/codec.gala:309
 func (d *JsonDecoderImpl) ReadInt64() int64 {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadInt64: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
+//line json/codec.gala:309
 	return d.ReadIntN(64)
 }
 
-//line json/codec.gala:311
+//line json/codec.gala:310
 
 // ReadIntN reads a signed integer that must fit in bitSize bits (0 is the
 // platform int size). A value outside the range is a decode error, never a
@@ -620,20 +627,20 @@ func (d *JsonDecoderImpl) ReadIntN(bitSize int) int64 {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadIntN: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:316
+//line json/codec.gala:315
 	var s = d.numberToken()
-//line json/codec.gala:317
+//line json/codec.gala:316
 	var v, err = strconv.ParseInt(s, 10, bitSize)
-//line json/codec.gala:318
+//line json/codec.gala:317
 	if err != nil {
-//line json/codec.gala:319
+//line json/codec.gala:318
 		panic(fmt.Sprintf("json at pos %d: invalid %s %q", EvalOperand(d.pos), intKindName("int", bitSize), s))
 	}
-//line json/codec.gala:321
+//line json/codec.gala:320
 	return v
 }
 
-//line json/codec.gala:323
+//line json/codec.gala:322
 
 // ReadUintN reads an unsigned integer that must fit in bitSize bits (0 is
 // the platform uint size). Negative and out-of-range values are errors.
@@ -641,20 +648,20 @@ func (d *JsonDecoderImpl) ReadUintN(bitSize int) uint64 {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadUintN: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:327
+//line json/codec.gala:326
 	var s = d.numberToken()
-//line json/codec.gala:328
+//line json/codec.gala:327
 	var v, err = strconv.ParseUint(s, 10, bitSize)
-//line json/codec.gala:329
+//line json/codec.gala:328
 	if err != nil {
-//line json/codec.gala:330
+//line json/codec.gala:329
 		panic(fmt.Sprintf("json at pos %d: invalid %s %q", EvalOperand(d.pos), intKindName("uint", bitSize), s))
 	}
-//line json/codec.gala:332
+//line json/codec.gala:331
 	return v
 }
 
-//line json/codec.gala:334
+//line json/codec.gala:333
 
 // ReadFloat32 reads a float that fits a finite float32; a literal that
 // overflows it is an error rather than a silent infinity.
@@ -662,109 +669,109 @@ func (d *JsonDecoderImpl) ReadFloat32() float32 {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadFloat32: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:338
+//line json/codec.gala:337
 	var s = d.numberToken()
-//line json/codec.gala:339
+//line json/codec.gala:338
 	var v, err = strconv.ParseFloat(s, 32)
-//line json/codec.gala:340
+//line json/codec.gala:339
 	if err != nil {
-//line json/codec.gala:341
+//line json/codec.gala:340
 		panic(fmt.Sprintf("json at pos %d: invalid float32 %q", d.pos, s))
 	}
-//line json/codec.gala:343
+//line json/codec.gala:342
 	return float32(v)
 }
 
-//line json/codec.gala:346
+//line json/codec.gala:345
 func (d *JsonDecoderImpl) ReadFloat64() float64 {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadFloat64: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:347
+//line json/codec.gala:346
 	var s = d.numberToken()
-//line json/codec.gala:348
+//line json/codec.gala:347
 	var v, err = strconv.ParseFloat(s, 64)
-//line json/codec.gala:349
+//line json/codec.gala:348
 	if err != nil {
-//line json/codec.gala:350
+//line json/codec.gala:349
 		panic(fmt.Sprintf("json at pos %d: invalid float %q", d.pos, s))
 	}
-//line json/codec.gala:352
+//line json/codec.gala:351
 	return v
 }
 
-//line json/codec.gala:355
+//line json/codec.gala:354
 func (d *JsonDecoderImpl) ReadBool() bool {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadBool: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:356
+//line json/codec.gala:355
 	d.consumeElemComma()
-//line json/codec.gala:357
+//line json/codec.gala:356
 	d.skipWs()
-//line json/codec.gala:358
+//line json/codec.gala:357
 	if d.pos+4 <= len(d.data) && BytesToString(d.data, d.pos, d.pos+4) == "true" {
-//line json/codec.gala:359
+//line json/codec.gala:358
 		d.pos = d.pos + 4
-//line json/codec.gala:360
+//line json/codec.gala:359
 		return true
 	}
-//line json/codec.gala:362
+//line json/codec.gala:361
 	if d.pos+5 <= len(d.data) && BytesToString(d.data, d.pos, d.pos+5) == "false" {
-//line json/codec.gala:363
+//line json/codec.gala:362
 		d.pos = d.pos + 5
-//line json/codec.gala:364
+//line json/codec.gala:363
 		return false
 	}
-//line json/codec.gala:366
+//line json/codec.gala:365
 	panic(fmt.Sprintf("json at pos %d: expected boolean", d.pos))
 }
 
-//line json/codec.gala:369
+//line json/codec.gala:368
 func (d *JsonDecoderImpl) ReadRune() rune {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadRune: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:370
+//line json/codec.gala:369
 	var s = d.ReadString()
-//line json/codec.gala:371
+//line json/codec.gala:370
 	var rs = go_interop.ToRunes(s)
-//line json/codec.gala:372
+//line json/codec.gala:371
 	if len(rs) == 0 {
-//line json/codec.gala:373
+//line json/codec.gala:372
 		return rune(0)
 	}
-//line json/codec.gala:375
+//line json/codec.gala:374
 	return rs[0]
 }
 
-//line json/codec.gala:378
+//line json/codec.gala:377
 func (d *JsonDecoderImpl) IsNull() bool {
 	if d == nil {
 		panic("JsonDecoderImpl.IsNull: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:384
+//line json/codec.gala:383
 	d.consumeElemComma()
-//line json/codec.gala:385
+//line json/codec.gala:384
 	d.skipWs()
-//line json/codec.gala:386
+//line json/codec.gala:385
 	return d.pos+4 <= len(d.data) && BytesToString(d.data, d.pos, d.pos+4) == "null"
 }
 
-//line json/codec.gala:389
+//line json/codec.gala:388
 func (d *JsonDecoderImpl) ReadNull() {
 	if d == nil {
 		panic("JsonDecoderImpl.ReadNull: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:390
+//line json/codec.gala:389
 	d.consumeElemComma()
-//line json/codec.gala:391
+//line json/codec.gala:390
 	d.skipWs()
-//line json/codec.gala:392
+//line json/codec.gala:391
 	d.expectLiteral("null")
 }
 
-//line json/codec.gala:394
+//line json/codec.gala:393
 
 // Skip steps over the next value and checks all of it, as encoding/json
 // does: a malformed number, string or structure anywhere inside it is a
@@ -773,13 +780,13 @@ func (d *JsonDecoderImpl) Skip() {
 	if d == nil {
 		panic("JsonDecoderImpl.Skip: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:399
+//line json/codec.gala:398
 	d.consumeElemComma()
-//line json/codec.gala:400
+//line json/codec.gala:399
 	d.skipValue(len(d.stack))
 }
 
-//line json/codec.gala:402
+//line json/codec.gala:401
 
 // End checks that only whitespace follows the decoded value: a document is
 // one value, so `42 43` or `[1]]` is malformed rather than a prefix to keep.
@@ -787,135 +794,135 @@ func (d *JsonDecoderImpl) End() {
 	if d == nil {
 		panic("JsonDecoderImpl.End: receiver d is a Ptr[json.JsonDecoderImpl], but the caller passed nil")
 	}
-//line json/codec.gala:406
+//line json/codec.gala:405
 	d.skipWs()
-//line json/codec.gala:407
+//line json/codec.gala:406
 	if d.pos < len(d.data) {
-//line json/codec.gala:408
+//line json/codec.gala:407
 		panic(fmt.Sprintf("json at pos %d: unexpected content after the document", d.pos))
 	}
 }
 
-//line json/codec.gala:414
+//line json/codec.gala:413
 func (d *JsonDecoderImpl) skipWs() {
-//line json/codec.gala:415
+//line json/codec.gala:414
 	for d.pos < len(d.data) {
-//line json/codec.gala:416
+//line json/codec.gala:415
 		var c = d.data[d.pos]
-//line json/codec.gala:417
+//line json/codec.gala:416
 		if c == ' ' || c == '\t' || c == '\n' || c == '\r' {
-//line json/codec.gala:418
+//line json/codec.gala:417
 			d.pos = d.pos + 1
 		} else {
-//line json/codec.gala:420
+//line json/codec.gala:419
 			return
 		}
 	}
 }
 
-//line json/codec.gala:425
+//line json/codec.gala:424
 func (d *JsonDecoderImpl) consumeElemComma() {
-//line json/codec.gala:426
+//line json/codec.gala:425
 	var depth = len(d.firstConsumed) - 1
-//line json/codec.gala:427
+//line json/codec.gala:426
 	if depth >= 0 && len(d.stack) > 0 && d.stack[depth] == 'a' && d.firstConsumed[depth] {
-//line json/codec.gala:428
+//line json/codec.gala:427
 		d.skipWs()
-//line json/codec.gala:429
+//line json/codec.gala:428
 		if d.pos < len(d.data) && d.data[d.pos] == ',' {
-//line json/codec.gala:430
+//line json/codec.gala:429
 			d.pos = d.pos + 1
 		}
 	}
-//line json/codec.gala:433
+//line json/codec.gala:432
 	if depth >= 0 && len(d.stack) > 0 && d.stack[depth] == 'a' {
-//line json/codec.gala:434
+//line json/codec.gala:433
 		d.firstConsumed[depth] = true
 	}
 }
 
-//line json/codec.gala:437
+//line json/codec.gala:436
 
 // readJsonString reads the string literal at pos, as encoding/json does: a
 // raw control character (below 0x20) must be escaped, and an invalid UTF-8
 // byte reads as U+FFFD. Runs of bytes that need no decoding, valid multibyte
 // UTF-8 included, are copied in one write.
 func (d *JsonDecoderImpl) readJsonString() string {
-//line json/codec.gala:443
+//line json/codec.gala:442
 	d.skipWs()
-//line json/codec.gala:444
+//line json/codec.gala:443
 	if d.pos >= len(d.data) || d.data[d.pos] != '"' {
-//line json/codec.gala:445
+//line json/codec.gala:444
 		panic(fmt.Sprintf("json at pos %d: expected '\"'", d.pos))
 	}
-//line json/codec.gala:447
+//line json/codec.gala:446
 	d.pos = d.pos + 1
-//line json/codec.gala:449
+//line json/codec.gala:448
 	var sb strings.Builder
-//line json/codec.gala:450
+//line json/codec.gala:449
 	var start = d.pos
-//line json/codec.gala:451
+//line json/codec.gala:450
 	for d.pos < len(d.data) {
-//line json/codec.gala:452
+//line json/codec.gala:451
 		var c = d.data[d.pos]
-//line json/codec.gala:453
+//line json/codec.gala:452
 		if c == '"' {
-//line json/codec.gala:454
+//line json/codec.gala:453
 			sb.Write(SliceBytes(d.data, start, d.pos))
-//line json/codec.gala:455
+//line json/codec.gala:454
 			d.pos = d.pos + 1
-//line json/codec.gala:456
+//line json/codec.gala:455
 			return sb.String()
 		} else if c == '\\' {
-//line json/codec.gala:458
+//line json/codec.gala:457
 			sb.Write(SliceBytes(d.data, start, d.pos))
-//line json/codec.gala:459
+//line json/codec.gala:458
 			d.pos = d.pos + 1
-//line json/codec.gala:460
+//line json/codec.gala:459
 			sb.WriteRune(d.readEscape())
-//line json/codec.gala:461
+//line json/codec.gala:460
 			start = d.pos
 		} else if c < 0x20 {
-//line json/codec.gala:463
+//line json/codec.gala:462
 			panic(fmt.Sprintf("json at pos %d: unescaped control character %#02x in string", d.pos, c))
 		} else if c < utf8.RuneSelf {
-//line json/codec.gala:465
+//line json/codec.gala:464
 			d.pos = d.pos + 1
 		} else {
-//line json/codec.gala:467
+//line json/codec.gala:466
 			var r, size = decodeRuneAtBytes(d.data, d.pos)
-//line json/codec.gala:468
+//line json/codec.gala:467
 			if r == utf8.RuneError && size == 1 {
-//line json/codec.gala:469
+//line json/codec.gala:468
 				sb.Write(SliceBytes(d.data, start, d.pos))
-//line json/codec.gala:470
+//line json/codec.gala:469
 				sb.WriteRune(r)
-//line json/codec.gala:471
+//line json/codec.gala:470
 				start = d.pos + 1
 			}
-//line json/codec.gala:473
+//line json/codec.gala:472
 			d.pos = d.pos + size
 		}
 	}
-//line json/codec.gala:476
+//line json/codec.gala:475
 	panic("json: unterminated string")
 }
 
-//line json/codec.gala:478
+//line json/codec.gala:477
 
 // readEscape reads the escape that follows a backslash and returns the
 // character it stands for.
 func (d *JsonDecoderImpl) readEscape() rune {
-//line json/codec.gala:482
+//line json/codec.gala:481
 	if d.pos >= len(d.data) {
-//line json/codec.gala:483
+//line json/codec.gala:482
 		panic("json: unexpected end of escape")
 	}
-//line json/codec.gala:485
+//line json/codec.gala:484
 	var esc = d.data[d.pos]
-//line json/codec.gala:486
+//line json/codec.gala:485
 	d.pos = d.pos + 1
-//line json/codec.gala:487
+//line json/codec.gala:486
 	{
 		_subj := esc
 		if _subj == '"' {
@@ -942,11 +949,12 @@ func (d *JsonDecoderImpl) readEscape() rune {
 	}
 }
 
-//line json/codec.gala:500
+//line json/codec.gala:499
 
 // readUnicodeEscape reads the four hex digits of a \u escape, and the second
 // escape of a surrogate pair.
 func (d *JsonDecoderImpl) readUnicodeEscape() rune {
+//line json/codec.gala:502
 	{
 		_subj := d.hex4At(d.pos)
 		{
@@ -957,9 +965,9 @@ func (d *JsonDecoderImpl) readUnicodeEscape() rune {
 			_tmp_r := _tmp_3
 			if _tmp_2 {
 				r := _tmp_r
-//line json/codec.gala:505
+//line json/codec.gala:504
 				d.pos = d.pos + 4
-//line json/codec.gala:506
+//line json/codec.gala:505
 				return d.completeSurrogate(r)
 			} else {
 				_tmp_4 := _unapply_None_54c03c3a(_subj)
@@ -973,37 +981,39 @@ func (d *JsonDecoderImpl) readUnicodeEscape() rune {
 	}
 }
 
-//line json/codec.gala:510
+//line json/codec.gala:509
 
 // hex4At reads the code unit named by the four hex digits of a \u escape
 // starting at pos; None when there are not four hex digits there.
 func (d *JsonDecoderImpl) hex4At(pos int) Option[rune] {
+//line json/codec.gala:513
 	{
 		if pos+4 > len(d.data) {
 			return None[rune]{}.Apply()
 		} else {
 			return Option_Map(Try_ToOption[uint64](GoTry(strconv.ParseUint(BytesToString(d.data, pos, pos+4), 16, 32))), func(cp uint64) rune {
+//line json/codec.gala:514
 				return rune(cp)
 			})
 		}
 	}
 }
 
-//line json/codec.gala:516
+//line json/codec.gala:515
 
 // completeSurrogate finishes a \u escape whose code unit is r. A high
 // surrogate followed by an escaped low surrogate is JSON's spelling of one
 // character above U+FFFF, so the second escape is consumed too; any other
 // surrogate is unpaired and reads as U+FFFD, as in encoding/json.
 func (d *JsonDecoderImpl) completeSurrogate(r rune) rune {
-//line json/codec.gala:522
+//line json/codec.gala:521
 	if !utf16.IsSurrogate(r) {
-//line json/codec.gala:523
+//line json/codec.gala:522
 		return r
 	}
-//line json/codec.gala:525
+//line json/codec.gala:524
 	var nextIsEscape = d.pos+2 <= len(d.data) && d.data[d.pos] == '\\' && d.data[d.pos+1] == 'u'
-//line json/codec.gala:526
+//line json/codec.gala:525
 	var pair = Option_Map((func() Option[rune] {
 		if nextIsEscape {
 			return d.hex4At(d.pos + 2)
@@ -1011,11 +1021,13 @@ func (d *JsonDecoderImpl) completeSurrogate(r rune) rune {
 			return None[rune]{}.Apply()
 		}
 	}()), func(low rune) rune {
+//line json/codec.gala:526
 		return utf16.DecodeRune(r, low)
 	}).Filter(func(p rune) bool {
+//line json/codec.gala:527
 		return p != unicode.ReplacementChar
 	})
-//line json/codec.gala:529
+//line json/codec.gala:528
 	{
 		_subj := pair
 		{
@@ -1026,9 +1038,9 @@ func (d *JsonDecoderImpl) completeSurrogate(r rune) rune {
 			_tmp_p := _tmp_7
 			if _tmp_6 {
 				p := _tmp_p
-//line json/codec.gala:531
+//line json/codec.gala:530
 				d.pos = d.pos + 6
-//line json/codec.gala:532
+//line json/codec.gala:531
 				return p
 			} else {
 				_tmp_8 := _unapply_None_54c03c3a(_subj)
@@ -1042,11 +1054,12 @@ func (d *JsonDecoderImpl) completeSurrogate(r rune) rune {
 	}
 }
 
-//line json/codec.gala:537
+//line json/codec.gala:536
 
 // intKindName names the Go integer kind a strconv bit size stands for; 0 is
 // the platform-sized int or uint.
 func intKindName(prefix string, bitSize int) string {
+//line json/codec.gala:540
 	{
 		if bitSize == 0 {
 			return prefix
@@ -1056,110 +1069,112 @@ func intKindName(prefix string, bitSize int) string {
 	}
 }
 
-//line json/codec.gala:542
+//line json/codec.gala:541
 
 // numberToken steps over an array element separator and whitespace, then
 // returns the number literal that follows.
 func (d *JsonDecoderImpl) numberToken() string {
-//line json/codec.gala:546
+//line json/codec.gala:545
 	d.consumeElemComma()
-//line json/codec.gala:547
+//line json/codec.gala:546
 	d.skipWs()
-//line json/codec.gala:548
+//line json/codec.gala:547
 	return BytesString(d.scanNumber())
 }
 
-//line json/codec.gala:550
+//line json/codec.gala:549
 
 // scanNumber steps over the number literal at pos and returns its bytes. It
 // must be a number as RFC 8259 and encoding/json spell one, so `+1`, `01`,
 // `.5`, `1.` and `0x10` are errors rather than numbers strconv happens to
 // accept, or a prefix of one.
 func (d *JsonDecoderImpl) scanNumber() []byte {
-//line json/codec.gala:556
+//line json/codec.gala:555
 	var start = d.pos
-//line json/codec.gala:557
+//line json/codec.gala:556
 	for d.pos < len(d.data) && isNumberTokenByte(d.data[d.pos]) {
-//line json/codec.gala:558
+//line json/codec.gala:557
 		d.pos = d.pos + 1
 	}
-//line json/codec.gala:560
+//line json/codec.gala:559
 	var token = SliceBytes(d.data, start, d.pos)
-//line json/codec.gala:561
+//line json/codec.gala:560
 	if len(token) == 0 {
-//line json/codec.gala:562
+//line json/codec.gala:561
 		panic(fmt.Sprintf("json at pos %d: expected a number", start))
 	}
-//line json/codec.gala:567
+//line json/codec.gala:566
 	if !(token[0] == '-' || isDigit(token[0])) || !json.Valid(token) {
-//line json/codec.gala:568
+//line json/codec.gala:567
 		panic(fmt.Sprintf("json at pos %d: invalid number %q", start, token))
 	}
-//line json/codec.gala:570
+//line json/codec.gala:569
 	return token
 }
 
-//line json/codec.gala:572
+//line json/codec.gala:571
 
 // isNumberTokenByte reports whether c continues a number token. Letters and
 // '_' are included so that `0x10` or `1e5f` is reported as one bad number
 // rather than as a number followed by stray text.
 func isNumberTokenByte(c byte) bool {
+//line json/codec.gala:576
 	return isDigit(c) || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '-' || c == '+' || c == '.' || c == '_'
 }
 
-//line json/codec.gala:579
+//line json/codec.gala:578
 func isDigit(c byte) bool {
+//line json/codec.gala:578
 	return c >= '0' && c <= '9'
 }
 
-//line json/codec.gala:580
+//line json/codec.gala:579
 
 // skipValue steps over the value at pos, which sits depth containers deep
 // in the document, and checks it fully.
 func (d *JsonDecoderImpl) skipValue(depth int) {
-//line json/codec.gala:584
+//line json/codec.gala:583
 	d.skipWs()
-//line json/codec.gala:585
+//line json/codec.gala:584
 	if d.pos >= len(d.data) {
-//line json/codec.gala:586
+//line json/codec.gala:585
 		panic(fmt.Sprintf("json at pos %d: expected a value", d.pos))
 	}
-//line json/codec.gala:588
+//line json/codec.gala:587
 	func() {
 		_subj := d.data[d.pos]
 		if _subj == '"' {
-//line json/codec.gala:589
+//line json/codec.gala:588
 			{
 				d.readJsonString()
 				return
 			}
 		} else if _subj == '{' {
-//line json/codec.gala:590
+//line json/codec.gala:589
 			{
 				d.skipContainer('}', depth+1)
 				return
 			}
 		} else if _subj == '[' {
-//line json/codec.gala:591
+//line json/codec.gala:590
 			{
 				d.skipContainer(']', depth+1)
 				return
 			}
 		} else if _subj == 't' {
-//line json/codec.gala:592
+//line json/codec.gala:591
 			{
 				d.expectLiteral("true")
 				return
 			}
 		} else if _subj == 'f' {
-//line json/codec.gala:593
+//line json/codec.gala:592
 			{
 				d.expectLiteral("false")
 				return
 			}
 		} else if _subj == 'n' {
-//line json/codec.gala:594
+//line json/codec.gala:593
 			{
 				d.expectLiteral("null")
 				return
@@ -1172,13 +1187,13 @@ func (d *JsonDecoderImpl) skipValue(depth int) {
 				_tmp_9 = c == '-' || isDigit(c)
 			}
 			if _tmp_9 {
-//line json/codec.gala:595
+//line json/codec.gala:594
 				{
 					d.scanNumber()
 					return
 				}
 			} else {
-//line json/codec.gala:596
+//line json/codec.gala:595
 				{
 					panic(fmt.Sprintf("json at pos %d: expected a value", d.pos))
 					return
@@ -1188,83 +1203,83 @@ func (d *JsonDecoderImpl) skipValue(depth int) {
 	}()
 }
 
-//line json/codec.gala:599
+//line json/codec.gala:598
 
 // skipContainer steps over the object or array whose opening byte is at pos
 // and whose closing byte is close: members separated by ',', each a
 // `"key": value` field in an object and a value in an array.
 func (d *JsonDecoderImpl) skipContainer(_gala_close byte, depth int) {
-//line json/codec.gala:604
+//line json/codec.gala:603
 	d.checkDepth(depth)
-//line json/codec.gala:605
+//line json/codec.gala:604
 	d.pos = d.pos + 1
-//line json/codec.gala:606
+//line json/codec.gala:605
 	if d.skipByte(_gala_close) {
-//line json/codec.gala:607
+//line json/codec.gala:606
 		return
 	}
-//line json/codec.gala:609
+//line json/codec.gala:608
 	for {
-//line json/codec.gala:610
+//line json/codec.gala:609
 		if _gala_close == '}' {
-//line json/codec.gala:611
+//line json/codec.gala:610
 			d.readJsonString()
-//line json/codec.gala:612
+//line json/codec.gala:611
 			d.expectByte(':')
 		}
-//line json/codec.gala:614
+//line json/codec.gala:613
 		d.skipValue(depth)
-//line json/codec.gala:615
+//line json/codec.gala:614
 		if d.skipByte(_gala_close) {
-//line json/codec.gala:616
+//line json/codec.gala:615
 			return
 		}
-//line json/codec.gala:618
+//line json/codec.gala:617
 		d.expectByte(',')
 	}
 }
 
-//line json/codec.gala:621
+//line json/codec.gala:620
 
 // skipByte steps over c when it is the next byte after any whitespace, and
 // reports whether it did.
 func (d *JsonDecoderImpl) skipByte(c byte) bool {
-//line json/codec.gala:625
+//line json/codec.gala:624
 	d.skipWs()
-//line json/codec.gala:626
+//line json/codec.gala:625
 	var found = d.pos < len(d.data) && d.data[d.pos] == c
-//line json/codec.gala:627
+//line json/codec.gala:626
 	if found {
-//line json/codec.gala:628
+//line json/codec.gala:627
 		d.pos = d.pos + 1
 	}
-//line json/codec.gala:630
+//line json/codec.gala:629
 	return found
 }
 
-//line json/codec.gala:632
+//line json/codec.gala:631
 
 // expectByte steps over c, after any whitespace.
 func (d *JsonDecoderImpl) expectByte(c byte) {
-//line json/codec.gala:635
+//line json/codec.gala:634
 	if !d.skipByte(c) {
-//line json/codec.gala:636
+//line json/codec.gala:635
 		panic(fmt.Sprintf("json at pos %d: expected %q", d.pos, c))
 	}
 }
 
-//line json/codec.gala:639
+//line json/codec.gala:638
 
 // expectLiteral steps over the literal word at pos.
 func (d *JsonDecoderImpl) expectLiteral(word string) {
-//line json/codec.gala:642
+//line json/codec.gala:641
 	var end = d.pos + len(word)
-//line json/codec.gala:643
+//line json/codec.gala:642
 	if end > len(d.data) || BytesToString(d.data, d.pos, end) != word {
-//line json/codec.gala:644
+//line json/codec.gala:643
 		panic(fmt.Sprintf("json at pos %d: expected %s", d.pos, word))
 	}
-//line json/codec.gala:646
+//line json/codec.gala:645
 	d.pos = end
 }
 func _unapply_Some_54c03c3a[_T0 any](v Option[_T0]) Option[_T0] {

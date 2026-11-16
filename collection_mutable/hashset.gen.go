@@ -122,6 +122,7 @@ func firstOccurrence[T any]() func(T) bool {
 		var seen = EmptyHashSet[any]()
 //line collection_mutable/hashset.gala:75
 		return func(elem T) bool {
+//line collection_mutable/hashset.gala:75
 			return seen.Add(elem)
 		}
 	}
@@ -148,6 +149,7 @@ func (s *HashSet[T]) IsEmpty() bool {
 	if s == nil {
 		panic("HashSet.IsEmpty: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/hashset.gala:90
 	return s.size == 0
 }
 
@@ -158,6 +160,7 @@ func (s *HashSet[T]) NonEmpty() bool {
 	if s == nil {
 		panic("HashSet.NonEmpty: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/hashset.gala:93
 	return s.size > 0
 }
 
@@ -168,6 +171,7 @@ func (s *HashSet[T]) Size() int {
 	if s == nil {
 		panic("HashSet.Size: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/hashset.gala:96
 	return s.size
 }
 
@@ -178,6 +182,7 @@ func (s *HashSet[T]) Length() int {
 	if s == nil {
 		panic("HashSet.Length: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/hashset.gala:99
 	return s.size
 }
 
@@ -549,6 +554,7 @@ func (s *HashSet[T]) SubsetOf(other *HashSet[T]) bool {
 	}
 //line collection_mutable/hashset.gala:301
 	return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
+//line collection_mutable/hashset.gala:301
 		return acc && other.Contains(elem)
 	})
 }
@@ -563,6 +569,7 @@ func (s *HashSet[T]) SupersetOf(other *HashSet[T]) bool {
 	if other == nil {
 		panic("HashSet.SupersetOf: parameter other is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/hashset.gala:305
 	return other.SubsetOf(s)
 }
 
@@ -580,11 +587,13 @@ func (s *HashSet[T]) Disjoint(other *HashSet[T]) bool {
 	if s.Size() <= other.Size() {
 //line collection_mutable/hashset.gala:310
 		return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
+//line collection_mutable/hashset.gala:310
 			return acc && !other.Contains(elem)
 		})
 	}
 //line collection_mutable/hashset.gala:312
 	return HashSet_FoldLeft[bool, T](other, true, func(acc bool, elem T) bool {
+//line collection_mutable/hashset.gala:312
 		return acc && !s.Contains(elem)
 	})
 }
@@ -690,7 +699,9 @@ func (s *HashSet[T]) FilterNot(p func(T) bool) *HashSet[T] {
 	if s == nil {
 		panic("HashSet.FilterNot: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/hashset.gala:365
 	return s.Filter(func(elem T) bool {
+//line collection_mutable/hashset.gala:365
 		return !p(elem)
 	})
 }
@@ -855,6 +866,7 @@ func (s *HashSet[T]) Exists(p func(T) bool) bool {
 	}
 //line collection_mutable/hashset.gala:453
 	return HashSet_FoldLeft[bool, T](s, false, func(acc bool, elem T) bool {
+//line collection_mutable/hashset.gala:453
 		return acc || p(elem)
 	})
 }
@@ -868,6 +880,7 @@ func (s *HashSet[T]) ForAll(p func(T) bool) bool {
 	}
 //line collection_mutable/hashset.gala:458
 	return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
+//line collection_mutable/hashset.gala:458
 		return acc && p(elem)
 	})
 }
@@ -1100,6 +1113,7 @@ func HashSet_Sorted[T comparable](s *HashSet[T]) *Array[T] {
 	if s == nil {
 		panic("HashSet.Sorted: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/hashset.gala:583
 	return HashSet_ToArray[T](s).Sorted()
 }
 
@@ -1110,6 +1124,7 @@ func HashSet_SortWith[T comparable](s *HashSet[T], less func(T, T) bool) *Array[
 	if s == nil {
 		panic("HashSet.SortWith: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/hashset.gala:586
 	return HashSet_ToArray[T](s).SortWith(less)
 }
 
@@ -1120,5 +1135,6 @@ func HashSet_SortBy[K comparable, T comparable](s *HashSet[T], f func(T) K) *Arr
 	if s == nil {
 		panic("HashSet.SortBy: receiver s is a Ptr[collection_mutable.HashSet[T]], but the caller passed nil")
 	}
+//line collection_mutable/hashset.gala:589
 	return Array_SortBy(HashSet_ToArray[T](s), f)
 }

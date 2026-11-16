@@ -34,26 +34,31 @@ func (s KeyConfig) Unapply(v any) (std.Immutable[Naming], std.Immutable[HashMap[
 
 //line yaml/helpers.gala:16
 func NewKeyConfig() KeyConfig {
+//line yaml/helpers.gala:16
 	return KeyConfig{NamingStrategy: std.NewImmutable(AsIs{}.Apply()), Renames: std.NewImmutable(EmptyHashMap[string, string]()), Omits: std.NewImmutable(EmptyHashMap[string, bool]()), OmitEmpties: std.NewImmutable(EmptyHashMap[string, bool]())}
 }
 
 //line yaml/helpers.gala:23
 func (c KeyConfig) WithNaming(n Naming) KeyConfig {
+//line yaml/helpers.gala:23
 	return KeyConfig{NamingStrategy: std.NewImmutable(n), Renames: std.Copy(c.Renames), Omits: std.Copy(c.Omits), OmitEmpties: std.Copy(c.OmitEmpties)}
 }
 
 //line yaml/helpers.gala:25
 func (c KeyConfig) WithRename(field string, key string) KeyConfig {
+//line yaml/helpers.gala:26
 	return KeyConfig{NamingStrategy: std.Copy(c.NamingStrategy), Renames: std.NewImmutable(c.Renames.Get().Put(field, key)), Omits: std.Copy(c.Omits), OmitEmpties: std.Copy(c.OmitEmpties)}
 }
 
 //line yaml/helpers.gala:28
 func (c KeyConfig) WithOmit(field string) KeyConfig {
+//line yaml/helpers.gala:29
 	return KeyConfig{NamingStrategy: std.Copy(c.NamingStrategy), Renames: std.Copy(c.Renames), Omits: std.NewImmutable(c.Omits.Get().Put(field, true)), OmitEmpties: std.Copy(c.OmitEmpties)}
 }
 
 //line yaml/helpers.gala:31
 func (c KeyConfig) WithOmitEmpty(field string) KeyConfig {
+//line yaml/helpers.gala:32
 	return KeyConfig{NamingStrategy: std.Copy(c.NamingStrategy), Renames: std.Copy(c.Renames), Omits: std.Copy(c.Omits), OmitEmpties: std.NewImmutable(c.OmitEmpties.Get().Put(field, true))}
 }
 
@@ -130,6 +135,7 @@ func BuildKeys(numFields int, fieldName func(int) string, naming Naming, config 
 
 // BuildKeysSimple computes keys with a naming strategy and no overrides.
 func BuildKeysSimple(numFields int, fieldName func(int) string, naming Naming) KeysConfig {
+//line yaml/helpers.gala:69
 	return BuildKeys(numFields, fieldName, naming, NewKeyConfig())
 }
 

@@ -4,6 +4,7 @@ package collection_immutable
 
 import "fmt"
 import (
+	_ "go.gala.fyi/stdlib/go_builtins"
 	"go.gala.fyi/stdlib/go_interop"
 	. "go.gala.fyi/stdlib/std"
 )
@@ -68,6 +69,7 @@ func (_ HashSet[T]) IsHashSet() bool {
 
 // EmptyHashSet returns an empty HashSet.
 func EmptyHashSet[T comparable]() HashSet[T] {
+//line collection_immutable/hashset.gala:52
 	return HashSet[T]{root: EmptyOptionPtr[hashSetNode[T]](), size: NewImmutable(0), hashSum: NewImmutable(uint32(0)), hashXor: NewImmutable(uint32(0))}
 }
 
@@ -106,6 +108,7 @@ func HashSetFromSlice[T comparable](elements []T) HashSet[T] {
 
 // IsEmpty returns true if the set is empty.
 func (s HashSet[T]) IsEmpty() bool {
+//line collection_immutable/hashset.gala:74
 	return s.size.Get() == 0
 }
 
@@ -113,6 +116,7 @@ func (s HashSet[T]) IsEmpty() bool {
 
 // NonEmpty returns true if the set is not empty.
 func (s HashSet[T]) NonEmpty() bool {
+//line collection_immutable/hashset.gala:77
 	return s.size.Get() > 0
 }
 
@@ -120,6 +124,7 @@ func (s HashSet[T]) NonEmpty() bool {
 
 // Size returns the number of elements. O(1) - cached.
 func (s HashSet[T]) Size() int {
+//line collection_immutable/hashset.gala:80
 	return s.size.Get()
 }
 
@@ -127,6 +132,7 @@ func (s HashSet[T]) Size() int {
 
 // Length is an alias for Size.
 func (s HashSet[T]) Length() int {
+//line collection_immutable/hashset.gala:83
 	return s.size.Get()
 }
 
@@ -513,6 +519,7 @@ func removeFromNode[T comparable](node *hashSetNode[T], elem T, hashCode uint32,
 func (s HashSet[T]) AddAll(other HashSet[T]) HashSet[T] {
 //line collection_immutable/hashset.gala:356
 	return HashSet_FoldLeft[HashSet[T], T](other, s, func(acc HashSet[T], elem T) HashSet[T] {
+//line collection_immutable/hashset.gala:356
 		return acc.Add(elem)
 	})
 }
@@ -521,6 +528,7 @@ func (s HashSet[T]) AddAll(other HashSet[T]) HashSet[T] {
 
 // Union returns a new set containing all elements from both sets.
 func (s HashSet[T]) Union(other HashSet[T]) HashSet[T] {
+//line collection_immutable/hashset.gala:360
 	return s.AddAll(other)
 }
 
@@ -583,6 +591,7 @@ func (s HashSet[T]) SubsetOf(other HashSet[T]) bool {
 	}
 //line collection_immutable/hashset.gala:398
 	return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
+//line collection_immutable/hashset.gala:398
 		return acc && other.Contains(elem)
 	})
 }
@@ -592,6 +601,7 @@ func (s HashSet[T]) SubsetOf(other HashSet[T]) bool {
 // Equal reports whether other holds the same elements, in any order. Sets
 // whose element hashes differ cannot be Equal, so that is checked first.
 func (s HashSet[T]) Equal(other HashSet[T]) bool {
+//line collection_immutable/hashset.gala:404
 	return s.size.Get() == other.size.Get() && (s.size.Get() < 2 || (s.hashSum.Get() == other.hashSum.Get() && s.hashXor.Get() == other.hashXor.Get())) && s.SubsetOf(other)
 }
 
@@ -637,9 +647,12 @@ func HashSet_sums[T comparable](s HashSet[T]) Tuple[uint32, uint32] {
 // needs no closure, unlike Head.
 func soleEntry[T comparable](node *hashSetNode[T]) T {
 	for {
+//line collection_immutable/hashset.gala:433
 		if node.isLeaf.Get() {
+//line collection_immutable/hashset.gala:433
 			return node.entries.Get()[0]
 		} else {
+//line collection_immutable/hashset.gala:433
 			_tmp_3 := node.children.Get()[0]
 			node = _tmp_3
 			continue
@@ -653,6 +666,7 @@ func soleEntry[T comparable](node *hashSetNode[T]) T {
 func (s HashSet[T]) ForEach(f func(T)) {
 //line collection_immutable/hashset.gala:437
 	s.root.ForEach(func(root *hashSetNode[T]) {
+//line collection_immutable/hashset.gala:437
 		forEachInNode[T](root, f)
 	})
 }
@@ -685,6 +699,7 @@ func forEachInNode[T comparable](node *hashSetNode[T], f func(T)) {
 func MapHashSet[T comparable, U comparable](s HashSet[T], f func(T) U) HashSet[U] {
 //line collection_immutable/hashset.gala:457
 	return HashSet_FoldLeft[HashSet[U], T](s, EmptyHashSet[U](), func(acc HashSet[U], elem T) HashSet[U] {
+//line collection_immutable/hashset.gala:457
 		return acc.Add(f(elem))
 	})
 }
@@ -696,6 +711,7 @@ func MapHashSet[T comparable, U comparable](s HashSet[T], f func(T) U) HashSet[U
 func FlatMapHashSet[T comparable, U comparable](s HashSet[T], f func(T) HashSet[U]) HashSet[U] {
 //line collection_immutable/hashset.gala:463
 	return HashSet_FoldLeft[HashSet[U], T](s, EmptyHashSet[U](), func(acc HashSet[U], elem T) HashSet[U] {
+//line collection_immutable/hashset.gala:463
 		return acc.AddAll(f(elem))
 	})
 }
@@ -720,7 +736,9 @@ func (s HashSet[T]) Filter(p func(T) bool) HashSet[T] {
 
 // FilterNot returns a new set with elements that do not satisfy the predicate.
 func (s HashSet[T]) FilterNot(p func(T) bool) HashSet[T] {
+//line collection_immutable/hashset.gala:477
 	return s.Filter(func(elem T) bool {
+//line collection_immutable/hashset.gala:477
 		return !p(elem)
 	})
 }
@@ -753,6 +771,7 @@ func HashSet_Collect[U any, T comparable](s HashSet[T], pf func(T) Option[U]) Ar
 func (s HashSet[T]) Partition(p func(T) bool) Tuple[HashSet[T], HashSet[T]] {
 //line collection_immutable/hashset.gala:495
 	return HashSet_FoldLeft(s, Tuple[HashSet[T], HashSet[T]]{V1: NewImmutable(EmptyHashSet[T]()), V2: NewImmutable(EmptyHashSet[T]())}, func(acc Tuple[HashSet[T], HashSet[T]], elem T) Tuple[HashSet[T], HashSet[T]] {
+//line collection_immutable/hashset.gala:496
 		{
 			if p(elem) {
 				return Tuple[HashSet[T], HashSet[T]]{V1: NewImmutable(acc.V1.Get().Add(elem)), V2: NewImmutable(acc.V2.Get())}
@@ -828,6 +847,7 @@ func HashSet_ReduceOption[T comparable](s HashSet[T], f func(T, T) T) Option[T] 
 func (s HashSet[T]) Exists(p func(T) bool) bool {
 //line collection_immutable/hashset.gala:537
 	return HashSet_FoldLeft[bool, T](s, false, func(acc bool, elem T) bool {
+//line collection_immutable/hashset.gala:537
 		return acc || p(elem)
 	})
 }
@@ -838,6 +858,7 @@ func (s HashSet[T]) Exists(p func(T) bool) bool {
 func (s HashSet[T]) ForAll(p func(T) bool) bool {
 //line collection_immutable/hashset.gala:542
 	return HashSet_FoldLeft[bool, T](s, true, func(acc bool, elem T) bool {
+//line collection_immutable/hashset.gala:542
 		return acc && p(elem)
 	})
 }
@@ -936,6 +957,7 @@ func (s HashSet[T]) ToGoSlice() []T {
 func HashSet_ToList[T comparable](s HashSet[T]) List[T] {
 //line collection_immutable/hashset.gala:601
 	return HashSet_FoldLeft[List[T], T](s, emptyList[T](), func(acc List[T], elem T) List[T] {
+//line collection_immutable/hashset.gala:601
 		return consList[T](elem, acc)
 	})
 }
@@ -946,6 +968,7 @@ func HashSet_ToList[T comparable](s HashSet[T]) List[T] {
 func HashSet_ToArray[T comparable](s HashSet[T]) Array[T] {
 //line collection_immutable/hashset.gala:606
 	return HashSet_FoldLeft[Array[T], T](s, EmptyArray[T](), func(acc Array[T], elem T) Array[T] {
+//line collection_immutable/hashset.gala:606
 		return acc.Append(elem)
 	})
 }
@@ -1012,6 +1035,7 @@ func (s HashSet[T]) MkString(sep string) string {
 
 // Sorted returns an array of elements sorted in natural order.
 func HashSet_Sorted[T comparable](s HashSet[T]) Array[T] {
+//line collection_immutable/hashset.gala:646
 	return HashSet_ToArray[T](s).Sorted()
 }
 
@@ -1019,6 +1043,7 @@ func HashSet_Sorted[T comparable](s HashSet[T]) Array[T] {
 
 // SortWith returns an array of elements sorted using the given comparison function.
 func HashSet_SortWith[T comparable](s HashSet[T], less func(T, T) bool) Array[T] {
+//line collection_immutable/hashset.gala:649
 	return HashSet_ToArray[T](s).SortWith(less)
 }
 
@@ -1026,6 +1051,7 @@ func HashSet_SortWith[T comparable](s HashSet[T], less func(T, T) bool) Array[T]
 
 // SortBy returns an array of elements sorted by a key extracted from each element.
 func HashSet_SortBy[K comparable, T comparable](s HashSet[T], f func(T) K) Array[T] {
+//line collection_immutable/hashset.gala:652
 	return Array_SortBy(HashSet_ToArray[T](s), f)
 }
 
@@ -1044,6 +1070,7 @@ func (s HashSetEmpty) Equal(other HashSetEmpty) bool {
 
 //line collection_immutable/hashset.gala:656
 func (hse HashSetEmpty) Unapply(s any) Option[bool] {
+//line collection_immutable/hashset.gala:656
 	return func(_subj any) Option[bool] {
 		{
 			_tmp_set, _tmp_4 := As[HashSet[any]](_subj)
@@ -1076,6 +1103,7 @@ func (s HashSetNonEmpty) Equal(other HashSetNonEmpty) bool {
 
 //line collection_immutable/hashset.gala:663
 func (hsne HashSetNonEmpty) Unapply(s any) Option[any] {
+//line collection_immutable/hashset.gala:663
 	return func(_subj any) Option[any] {
 		{
 			_tmp_set, _tmp_6 := As[HashSet[any]](_subj)

@@ -3,6 +3,7 @@
 package std
 
 import "fmt"
+import _ "go.gala.fyi/stdlib/go_builtins"
 
 //line std/ordered.gala:3
 

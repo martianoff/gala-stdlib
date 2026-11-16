@@ -41,6 +41,7 @@ func (s Instant) Equal(other Instant) bool {
 
 // Nanoseconds creates a Duration from nanoseconds.
 func Nanoseconds(n int64) Duration {
+//line time_utils/time_utils.gala:23
 	return Duration{nanos: NewImmutable(n)}
 }
 
@@ -48,6 +49,7 @@ func Nanoseconds(n int64) Duration {
 
 // Microseconds creates a Duration from microseconds.
 func Microseconds(n int64) Duration {
+//line time_utils/time_utils.gala:26
 	return Duration{nanos: NewImmutable(n * 1000)}
 }
 
@@ -55,6 +57,7 @@ func Microseconds(n int64) Duration {
 
 // Milliseconds creates a Duration from milliseconds.
 func Milliseconds(n int64) Duration {
+//line time_utils/time_utils.gala:29
 	return Duration{nanos: NewImmutable(n * 1000000)}
 }
 
@@ -62,6 +65,7 @@ func Milliseconds(n int64) Duration {
 
 // Seconds creates a Duration from seconds.
 func Seconds(n int64) Duration {
+//line time_utils/time_utils.gala:32
 	return Duration{nanos: NewImmutable(n * 1000000000)}
 }
 
@@ -69,6 +73,7 @@ func Seconds(n int64) Duration {
 
 // Minutes creates a Duration from minutes.
 func Minutes(n int64) Duration {
+//line time_utils/time_utils.gala:35
 	return Duration{nanos: NewImmutable(n * 60 * 1000000000)}
 }
 
@@ -76,6 +81,7 @@ func Minutes(n int64) Duration {
 
 // Hours creates a Duration from hours.
 func Hours(n int64) Duration {
+//line time_utils/time_utils.gala:38
 	return Duration{nanos: NewImmutable(n * 3600 * 1000000000)}
 }
 
@@ -83,6 +89,7 @@ func Hours(n int64) Duration {
 
 // Days creates a Duration from days.
 func Days(n int64) Duration {
+//line time_utils/time_utils.gala:41
 	return Duration{nanos: NewImmutable(n * 86400 * 1000000000)}
 }
 
@@ -90,6 +97,7 @@ func Days(n int64) Duration {
 
 // ZeroDuration returns a zero-length duration.
 func ZeroDuration() Duration {
+//line time_utils/time_utils.gala:44
 	return Duration{nanos: NewImmutable(int64(0))}
 }
 
@@ -97,6 +105,7 @@ func ZeroDuration() Duration {
 
 // Between calculates the Duration between two Instants.
 func Between(start Instant, end Instant) Duration {
+//line time_utils/time_utils.gala:47
 	return Duration{nanos: NewImmutable(end.nanos.Get() - start.nanos.Get())}
 }
 
@@ -104,6 +113,7 @@ func Between(start Instant, end Instant) Duration {
 
 // FromGoDuration converts a Go time.Duration to Duration.
 func FromGoDuration(d time.Duration) Duration {
+//line time_utils/time_utils.gala:50
 	return Duration{nanos: NewImmutable(int64(d))}
 }
 
@@ -111,6 +121,7 @@ func FromGoDuration(d time.Duration) Duration {
 
 // Plus adds two durations.
 func (d Duration) Plus(other Duration) Duration {
+//line time_utils/time_utils.gala:55
 	return Duration{nanos: NewImmutable(d.nanos.Get() + other.nanos.Get())}
 }
 
@@ -118,6 +129,7 @@ func (d Duration) Plus(other Duration) Duration {
 
 // Minus subtracts a duration.
 func (d Duration) Minus(other Duration) Duration {
+//line time_utils/time_utils.gala:58
 	return Duration{nanos: NewImmutable(d.nanos.Get() - other.nanos.Get())}
 }
 
@@ -125,6 +137,7 @@ func (d Duration) Minus(other Duration) Duration {
 
 // Multiply multiplies by a factor.
 func (d Duration) Multiply(factor int64) Duration {
+//line time_utils/time_utils.gala:61
 	return Duration{nanos: NewImmutable(d.nanos.Get() * factor)}
 }
 
@@ -132,6 +145,7 @@ func (d Duration) Multiply(factor int64) Duration {
 
 // Divide divides by a divisor.
 func (d Duration) Divide(divisor int64) Duration {
+//line time_utils/time_utils.gala:65
 	{
 		if divisor == 0 {
 			return d
@@ -145,6 +159,7 @@ func (d Duration) Divide(divisor int64) Duration {
 
 // Abs returns the absolute value.
 func (d Duration) Abs() Duration {
+//line time_utils/time_utils.gala:69
 	{
 		if d.nanos.Get() < 0 {
 			return Duration{nanos: NewImmutable(-d.nanos.Get())}
@@ -158,6 +173,7 @@ func (d Duration) Abs() Duration {
 
 // Negate returns the negated duration.
 func (d Duration) Negate() Duration {
+//line time_utils/time_utils.gala:72
 	return Duration{nanos: NewImmutable(-d.nanos.Get())}
 }
 
@@ -165,6 +181,7 @@ func (d Duration) Negate() Duration {
 
 // IsZero returns true if the duration is zero.
 func (d Duration) IsZero() bool {
+//line time_utils/time_utils.gala:75
 	return d.nanos.Get() == 0
 }
 
@@ -172,6 +189,7 @@ func (d Duration) IsZero() bool {
 
 // IsNegative returns true if the duration is negative.
 func (d Duration) IsNegative() bool {
+//line time_utils/time_utils.gala:78
 	return d.nanos.Get() < 0
 }
 
@@ -179,6 +197,7 @@ func (d Duration) IsNegative() bool {
 
 // IsPositive returns true if the duration is positive.
 func (d Duration) IsPositive() bool {
+//line time_utils/time_utils.gala:81
 	return d.nanos.Get() > 0
 }
 
@@ -186,6 +205,7 @@ func (d Duration) IsPositive() bool {
 
 // ToNanos returns the duration in nanoseconds.
 func (d Duration) ToNanos() int64 {
+//line time_utils/time_utils.gala:86
 	return d.nanos.Get()
 }
 
@@ -193,6 +213,7 @@ func (d Duration) ToNanos() int64 {
 
 // ToMicros returns the duration in microseconds.
 func (d Duration) ToMicros() int64 {
+//line time_utils/time_utils.gala:89
 	return d.nanos.Get() / 1000
 }
 
@@ -200,6 +221,7 @@ func (d Duration) ToMicros() int64 {
 
 // ToMillis returns the duration in milliseconds.
 func (d Duration) ToMillis() int64 {
+//line time_utils/time_utils.gala:92
 	return d.nanos.Get() / 1000000
 }
 
@@ -207,6 +229,7 @@ func (d Duration) ToMillis() int64 {
 
 // ToSeconds returns the duration in seconds.
 func (d Duration) ToSeconds() int64 {
+//line time_utils/time_utils.gala:95
 	return d.nanos.Get() / 1000000000
 }
 
@@ -214,6 +237,7 @@ func (d Duration) ToSeconds() int64 {
 
 // ToMinutes returns the duration in minutes.
 func (d Duration) ToMinutes() int64 {
+//line time_utils/time_utils.gala:98
 	return d.nanos.Get() / (60 * 1000000000)
 }
 
@@ -221,6 +245,7 @@ func (d Duration) ToMinutes() int64 {
 
 // ToHours returns the duration in hours.
 func (d Duration) ToHours() int64 {
+//line time_utils/time_utils.gala:101
 	return d.nanos.Get() / (3600 * 1000000000)
 }
 
@@ -228,6 +253,7 @@ func (d Duration) ToHours() int64 {
 
 // ToDays returns the duration in days.
 func (d Duration) ToDays() int64 {
+//line time_utils/time_utils.gala:104
 	return d.nanos.Get() / (86400 * 1000000000)
 }
 
@@ -235,6 +261,7 @@ func (d Duration) ToDays() int64 {
 
 // ToGoDuration converts to Go time.Duration.
 func (d Duration) ToGoDuration() time.Duration {
+//line time_utils/time_utils.gala:107
 	return time.Duration(d.nanos.Get())
 }
 
@@ -261,6 +288,7 @@ func (d Duration) Compare(other Duration) int {
 
 // Equals returns true if two durations are equal.
 func (d Duration) Equals(other Duration) bool {
+//line time_utils/time_utils.gala:122
 	return d.nanos.Get() == other.nanos.Get()
 }
 
@@ -268,6 +296,7 @@ func (d Duration) Equals(other Duration) bool {
 
 // String returns a human-readable string representation.
 func (d Duration) String() string {
+//line time_utils/time_utils.gala:125
 	return d.ToGoDuration().String()
 }
 
@@ -275,6 +304,7 @@ func (d Duration) String() string {
 
 // Now returns the current instant.
 func Now() Instant {
+//line time_utils/time_utils.gala:130
 	return Instant{nanos: NewImmutable(time.Now().UnixNano())}
 }
 
@@ -282,6 +312,7 @@ func Now() Instant {
 
 // FromUnixSeconds creates an Instant from Unix seconds.
 func FromUnixSeconds(secs int64) Instant {
+//line time_utils/time_utils.gala:133
 	return Instant{nanos: NewImmutable(secs * 1000000000)}
 }
 
@@ -289,6 +320,7 @@ func FromUnixSeconds(secs int64) Instant {
 
 // FromUnixMillis creates an Instant from Unix milliseconds.
 func FromUnixMillis(millis int64) Instant {
+//line time_utils/time_utils.gala:136
 	return Instant{nanos: NewImmutable(millis * 1000000)}
 }
 
@@ -296,6 +328,7 @@ func FromUnixMillis(millis int64) Instant {
 
 // FromUnixNanos creates an Instant from Unix nanoseconds.
 func FromUnixNanos(nanos int64) Instant {
+//line time_utils/time_utils.gala:139
 	return Instant{nanos: NewImmutable(nanos)}
 }
 
@@ -303,6 +336,7 @@ func FromUnixNanos(nanos int64) Instant {
 
 // FromGoTime creates an Instant from Go time.Time.
 func FromGoTime(t time.Time) Instant {
+//line time_utils/time_utils.gala:142
 	return Instant{nanos: NewImmutable(t.UnixNano())}
 }
 
@@ -310,6 +344,7 @@ func FromGoTime(t time.Time) Instant {
 
 // UnixEpoch returns the Unix epoch (January 1, 1970 UTC).
 func UnixEpoch() Instant {
+//line time_utils/time_utils.gala:145
 	return Instant{nanos: NewImmutable(int64(0))}
 }
 
@@ -327,6 +362,7 @@ func Parse(layout string, value string) Option[Instant] {
 
 // ParseISO parses an ISO 8601 time string.
 func ParseISO(value string) Option[Instant] {
+//line time_utils/time_utils.gala:154
 	return Parse(time.RFC3339, value)
 }
 
@@ -334,6 +370,7 @@ func ParseISO(value string) Option[Instant] {
 
 // ParseRFC3339 parses an RFC 3339 time string.
 func ParseRFC3339(value string) Option[Instant] {
+//line time_utils/time_utils.gala:157
 	return Parse(time.RFC3339, value)
 }
 
@@ -341,6 +378,7 @@ func ParseRFC3339(value string) Option[Instant] {
 
 // ParseRFC3339Nano parses an RFC 3339 time string with nanosecond precision.
 func ParseRFC3339Nano(value string) Option[Instant] {
+//line time_utils/time_utils.gala:160
 	return Parse(time.RFC3339Nano, value)
 }
 
@@ -348,6 +386,7 @@ func ParseRFC3339Nano(value string) Option[Instant] {
 
 // Plus adds a Duration to the Instant.
 func (i Instant) Plus(d Duration) Instant {
+//line time_utils/time_utils.gala:165
 	return Instant{nanos: NewImmutable(i.nanos.Get() + d.nanos.Get())}
 }
 
@@ -355,6 +394,7 @@ func (i Instant) Plus(d Duration) Instant {
 
 // Minus subtracts a Duration from the Instant.
 func (i Instant) Minus(d Duration) Instant {
+//line time_utils/time_utils.gala:168
 	return Instant{nanos: NewImmutable(i.nanos.Get() - d.nanos.Get())}
 }
 
@@ -362,6 +402,7 @@ func (i Instant) Minus(d Duration) Instant {
 
 // Until calculates the Duration from this Instant to another.
 func (i Instant) Until(other Instant) Duration {
+//line time_utils/time_utils.gala:171
 	return Duration{nanos: NewImmutable(other.nanos.Get() - i.nanos.Get())}
 }
 
@@ -369,6 +410,7 @@ func (i Instant) Until(other Instant) Duration {
 
 // Since calculates the Duration from another Instant to this one.
 func (i Instant) Since(other Instant) Duration {
+//line time_utils/time_utils.gala:174
 	return Duration{nanos: NewImmutable(i.nanos.Get() - other.nanos.Get())}
 }
 
@@ -376,6 +418,7 @@ func (i Instant) Since(other Instant) Duration {
 
 // IsBefore returns true if this Instant is before another.
 func (i Instant) IsBefore(other Instant) bool {
+//line time_utils/time_utils.gala:177
 	return i.nanos.Get() < other.nanos.Get()
 }
 
@@ -383,6 +426,7 @@ func (i Instant) IsBefore(other Instant) bool {
 
 // IsAfter returns true if this Instant is after another.
 func (i Instant) IsAfter(other Instant) bool {
+//line time_utils/time_utils.gala:180
 	return i.nanos.Get() > other.nanos.Get()
 }
 
@@ -390,6 +434,7 @@ func (i Instant) IsAfter(other Instant) bool {
 
 // Equals returns true if two Instants represent the same moment.
 func (i Instant) Equals(other Instant) bool {
+//line time_utils/time_utils.gala:183
 	return i.nanos.Get() == other.nanos.Get()
 }
 
@@ -416,6 +461,7 @@ func (i Instant) Compare(other Instant) int {
 
 // Min returns the earlier of two instants.
 func (i Instant) Min(other Instant) Instant {
+//line time_utils/time_utils.gala:198
 	{
 		if i.nanos.Get() < other.nanos.Get() {
 			return i
@@ -429,6 +475,7 @@ func (i Instant) Min(other Instant) Instant {
 
 // Max returns the later of two instants.
 func (i Instant) Max(other Instant) Instant {
+//line time_utils/time_utils.gala:201
 	{
 		if i.nanos.Get() > other.nanos.Get() {
 			return i
@@ -442,6 +489,7 @@ func (i Instant) Max(other Instant) Instant {
 
 // UnixSeconds returns the Unix timestamp in seconds.
 func (i Instant) UnixSeconds() int64 {
+//line time_utils/time_utils.gala:206
 	return i.nanos.Get() / 1000000000
 }
 
@@ -449,6 +497,7 @@ func (i Instant) UnixSeconds() int64 {
 
 // UnixMillis returns the Unix timestamp in milliseconds.
 func (i Instant) UnixMillis() int64 {
+//line time_utils/time_utils.gala:209
 	return i.nanos.Get() / 1000000
 }
 
@@ -456,6 +505,7 @@ func (i Instant) UnixMillis() int64 {
 
 // UnixNanos returns the Unix timestamp in nanoseconds.
 func (i Instant) UnixNanos() int64 {
+//line time_utils/time_utils.gala:212
 	return i.nanos.Get()
 }
 
@@ -463,6 +513,7 @@ func (i Instant) UnixNanos() int64 {
 
 // ToGoTime converts to Go time.Time in UTC.
 func (i Instant) ToGoTime() time.Time {
+//line time_utils/time_utils.gala:215
 	return time.Unix(0, i.nanos.Get()).UTC()
 }
 
@@ -470,6 +521,7 @@ func (i Instant) ToGoTime() time.Time {
 
 // Format formats the Instant using the given layout.
 func (i Instant) Format(layout string) string {
+//line time_utils/time_utils.gala:218
 	return i.ToGoTime().Format(layout)
 }
 
@@ -477,6 +529,7 @@ func (i Instant) Format(layout string) string {
 
 // FormatISO formats the Instant in ISO 8601 format.
 func (i Instant) FormatISO() string {
+//line time_utils/time_utils.gala:221
 	return i.Format(time.RFC3339)
 }
 
@@ -484,6 +537,7 @@ func (i Instant) FormatISO() string {
 
 // FormatRFC3339 formats the Instant in RFC 3339 format.
 func (i Instant) FormatRFC3339() string {
+//line time_utils/time_utils.gala:224
 	return i.Format(time.RFC3339)
 }
 
@@ -491,6 +545,7 @@ func (i Instant) FormatRFC3339() string {
 
 // FormatRFC3339Nano formats the Instant in RFC 3339 format with nanosecond precision.
 func (i Instant) FormatRFC3339Nano() string {
+//line time_utils/time_utils.gala:227
 	return i.Format(time.RFC3339Nano)
 }
 
@@ -498,6 +553,7 @@ func (i Instant) FormatRFC3339Nano() string {
 
 // String returns the ISO 8601 representation.
 func (i Instant) String() string {
+//line time_utils/time_utils.gala:230
 	return i.FormatISO()
 }
 
@@ -505,6 +561,7 @@ func (i Instant) String() string {
 
 // Year returns the year.
 func (i Instant) Year() int {
+//line time_utils/time_utils.gala:235
 	return i.ToGoTime().Year()
 }
 
@@ -512,6 +569,7 @@ func (i Instant) Year() int {
 
 // Month returns the month (1-12).
 func (i Instant) Month() int {
+//line time_utils/time_utils.gala:238
 	return int(i.ToGoTime().Month())
 }
 
@@ -519,6 +577,7 @@ func (i Instant) Month() int {
 
 // Day returns the day of the month (1-31).
 func (i Instant) Day() int {
+//line time_utils/time_utils.gala:241
 	return i.ToGoTime().Day()
 }
 
@@ -526,6 +585,7 @@ func (i Instant) Day() int {
 
 // Hour returns the hour (0-23).
 func (i Instant) Hour() int {
+//line time_utils/time_utils.gala:244
 	return i.ToGoTime().Hour()
 }
 
@@ -533,6 +593,7 @@ func (i Instant) Hour() int {
 
 // Minute returns the minute (0-59).
 func (i Instant) Minute() int {
+//line time_utils/time_utils.gala:247
 	return i.ToGoTime().Minute()
 }
 
@@ -540,6 +601,7 @@ func (i Instant) Minute() int {
 
 // Second returns the second (0-59).
 func (i Instant) Second() int {
+//line time_utils/time_utils.gala:250
 	return i.ToGoTime().Second()
 }
 
@@ -547,6 +609,7 @@ func (i Instant) Second() int {
 
 // Nanosecond returns the nanosecond (0-999999999).
 func (i Instant) Nanosecond() int {
+//line time_utils/time_utils.gala:253
 	return i.ToGoTime().Nanosecond()
 }
 
@@ -554,6 +617,7 @@ func (i Instant) Nanosecond() int {
 
 // Weekday returns the day of the week (0=Sunday, 6=Saturday).
 func (i Instant) Weekday() int {
+//line time_utils/time_utils.gala:256
 	return int(i.ToGoTime().Weekday())
 }
 
@@ -561,6 +625,7 @@ func (i Instant) Weekday() int {
 
 // YearDay returns the day of the year (1-366).
 func (i Instant) YearDay() int {
+//line time_utils/time_utils.gala:259
 	return i.ToGoTime().YearDay()
 }
 
@@ -633,6 +698,7 @@ func Sleep(d Duration) {
 
 // After returns the instant after the given duration from now.
 func After(d Duration) Instant {
+//line time_utils/time_utils.gala:305
 	return Now().Plus(d)
 }
 
@@ -640,6 +706,7 @@ func After(d Duration) Instant {
 
 // SinceNow calculates how long ago an instant was.
 func (i Instant) SinceNow() Duration {
+//line time_utils/time_utils.gala:308
 	return Now().Since(i)
 }
 
@@ -647,6 +714,7 @@ func (i Instant) SinceNow() Duration {
 
 // UntilNow calculates how long until an instant (negative if in the past).
 func (i Instant) UntilNow() Duration {
+//line time_utils/time_utils.gala:311
 	return i.Until(Now())
 }
 

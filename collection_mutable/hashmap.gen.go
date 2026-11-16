@@ -84,6 +84,7 @@ func (m *HashMap[K, V]) IsEmpty() bool {
 	if m == nil {
 		panic("HashMap.IsEmpty: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/hashmap.gala:53
 	return m.size == 0
 }
 
@@ -94,6 +95,7 @@ func (m *HashMap[K, V]) NonEmpty() bool {
 	if m == nil {
 		panic("HashMap.NonEmpty: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/hashmap.gala:56
 	return m.size > 0
 }
 
@@ -104,6 +106,7 @@ func (m *HashMap[K, V]) Size() int {
 	if m == nil {
 		panic("HashMap.Size: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/hashmap.gala:59
 	return m.size
 }
 
@@ -114,6 +117,7 @@ func (m *HashMap[K, V]) Length() int {
 	if m == nil {
 		panic("HashMap.Length: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/hashmap.gala:62
 	return m.size
 }
 
@@ -975,6 +979,7 @@ func HashMap_KeySet[K comparable, V any](m *HashMap[K, V]) *HashSet[K] {
 	if m == nil {
 		panic("HashMap.KeySet: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/hashmap.gala:530
 	return HashMap_Keys[K, V](m)
 }
 
@@ -985,7 +990,9 @@ func HashMap_Sorted[K comparable, V any](m *HashMap[K, V]) *Array[Tuple[K, V]] {
 	if m == nil {
 		panic("HashMap.Sorted: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/hashmap.gala:535
 	return Array_SortBy(HashMap_ToArray[K, V](m), func(entry Tuple[K, V]) K {
+//line collection_mutable/hashmap.gala:535
 		return entry.V1.Get()
 	})
 }
@@ -997,6 +1004,7 @@ func HashMap_SortWith[K comparable, V any](m *HashMap[K, V], less func(Tuple[K, 
 	if m == nil {
 		panic("HashMap.SortWith: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/hashmap.gala:538
 	return HashMap_ToArray[K, V](m).SortWith(less)
 }
 
@@ -1007,6 +1015,7 @@ func HashMap_SortBy[S comparable, K comparable, V any](m *HashMap[K, V], f func(
 	if m == nil {
 		panic("HashMap.SortBy: receiver m is a Ptr[collection_mutable.HashMap[K, V]], but the caller passed nil")
 	}
+//line collection_mutable/hashmap.gala:541
 	return Array_SortBy(HashMap_ToArray[K, V](m), f)
 }
 

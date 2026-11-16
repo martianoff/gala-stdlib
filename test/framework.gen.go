@@ -38,6 +38,7 @@ func newT(name string) T {
 
 // Name returns the name of the test.
 func (t T) Name() string {
+//line test/framework.gala:22
 	return t.name.Get()
 }
 
@@ -45,6 +46,7 @@ func (t T) Name() string {
 
 // Failed returns whether the test has failed.
 func (t T) Failed() bool {
+//line test/framework.gala:25
 	return t.failed.Get()
 }
 
@@ -52,6 +54,7 @@ func (t T) Failed() bool {
 
 // Skipped returns whether the test was skipped.
 func (t T) Skipped() bool {
+//line test/framework.gala:28
 	return t.skipped.Get()
 }
 
@@ -141,6 +144,7 @@ func (t T) Run(name string, f func(T) T) T {
 func runTest(t T, f func(T) T) T {
 //line test/framework.gala:83
 	var result = std.Try[T]{}.Apply(func() T {
+//line test/framework.gala:83
 		return f(t)
 	})
 //line test/framework.gala:84

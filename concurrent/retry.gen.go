@@ -42,7 +42,9 @@ func Retry[T any](maxAttempts int, backoff func(int) Duration, action func(int) 
 
 // ConstantBackoff returns a backoff function that always waits the same duration.
 func ConstantBackoff(d Duration) func(int) Duration {
+//line concurrent/retry.gala:30
 	return func(_ int) Duration {
+//line concurrent/retry.gala:30
 		return d
 	}
 }
@@ -51,6 +53,7 @@ func ConstantBackoff(d Duration) func(int) Duration {
 
 // ExponentialBackoff returns a backoff function with exponential growth capped at max.
 func ExponentialBackoff(initial Duration, _gala_max Duration) func(int) Duration {
+//line concurrent/retry.gala:34
 	return func(attempt int) Duration {
 //line concurrent/retry.gala:35
 		var d = initial
@@ -73,7 +76,9 @@ func ExponentialBackoff(initial Duration, _gala_max Duration) func(int) Duration
 
 // NoBackoff returns a backoff function with zero delay.
 func NoBackoff() func(int) Duration {
+//line concurrent/retry.gala:45
 	return func(_ int) Duration {
+//line concurrent/retry.gala:45
 		return ZeroDuration()
 	}
 }

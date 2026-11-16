@@ -13,6 +13,7 @@ import (
 // separating them with the OS-specific separator. Empty elements are
 // ignored.
 func Join(parts ...string) string {
+//line path/path.gala:17
 	return filepath.Join(parts...)
 }
 
@@ -23,6 +24,7 @@ func Join(parts ...string) string {
 // single separator. The returned path does not end in a separator
 // unless it is the root.
 func Dir(p string) string {
+//line path/path.gala:23
 	return filepath.Dir(p)
 }
 
@@ -33,6 +35,7 @@ func Dir(p string) string {
 // returns ".". If p consists entirely of separators, Base returns a
 // single separator.
 func Base(p string) string {
+//line path/path.gala:29
 	return filepath.Base(p)
 }
 
@@ -42,6 +45,7 @@ func Base(p string) string {
 // the suffix beginning at the final dot in the final element of p;
 // it is empty if there is no dot.
 func Ext(p string) string {
+//line path/path.gala:34
 	return filepath.Ext(p)
 }
 
@@ -49,6 +53,7 @@ func Ext(p string) string {
 
 // IsAbs reports whether the path is absolute.
 func IsAbs(p string) bool {
+//line path/path.gala:37
 	return filepath.IsAbs(p)
 }
 
@@ -58,7 +63,9 @@ func IsAbs(p string) bool {
 // absolute it will be joined with the current working directory.
 // Returns Failure if the working directory can't be determined.
 func Abs(p string) Try[string] {
+//line path/path.gala:42
 	return Try[string]{}.Apply(func() string {
+//line path/path.gala:42
 		_v0, _err := filepath.Abs(p)
 		if _err != nil {
 			panic(_err)
@@ -73,6 +80,7 @@ func Abs(p string) Try[string] {
 // p with a slash ('/'). Multiple separators are replaced by multiple
 // slashes.
 func ToSlash(p string) string {
+//line path/path.gala:47
 	return filepath.ToSlash(p)
 }
 
@@ -82,6 +90,7 @@ func ToSlash(p string) string {
 // with a separator character. Multiple slashes are replaced by
 // multiple separators.
 func FromSlash(p string) string {
+//line path/path.gala:52
 	return filepath.FromSlash(p)
 }
 
@@ -91,5 +100,6 @@ func FromSlash(p string) string {
 // lexical processing. It applies the rules described in
 // path/filepath.Clean.
 func Clean(p string) string {
+//line path/path.gala:57
 	return filepath.Clean(p)
 }

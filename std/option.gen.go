@@ -2,12 +2,15 @@
 
 package std
 
+import _ "go.gala.fyi/stdlib/go_builtins"
+
 //line std/option.gala:4
 
 // isDefined returns true if the value is defined.
 // It handles Option types by checking defined field, bool types by their value,
 // nil as false, and all other types as true.
 func isDefined(opt any) bool {
+//line std/option.gala:8
 	{
 		if opt == nil {
 			return false
@@ -53,6 +56,7 @@ func isDefined(opt any) bool {
 
 // getSomeValue returns the option's value if it is an Option, otherwise returns the value itself.
 func getSomeValue(opt any) any {
+//line std/option.gala:15
 	return func(_subj any) any {
 		var _tmp_12 Option[any]
 		_tmp_9 := 0
@@ -183,6 +187,7 @@ func NewOption[T any]() Option[T] {
 // Hash hashes Some by its value (see HashValue) and None as a constant, so an
 // Option of a hashable type is a HashSet element or HashMap key.
 func (o Option[T]) Hash() uint32 {
+//line std/option.gala:30
 	{
 		if o.isSome() {
 			return HashCombine(1, HashValue(o.Value.Get()))
@@ -196,6 +201,7 @@ func (o Option[T]) Hash() uint32 {
 
 // IsDefined returns true if the option is an instance of Some, false otherwise.
 func (o Option[T]) IsDefined() bool {
+//line std/option.gala:33
 	return o.isSome()
 }
 
@@ -203,6 +209,7 @@ func (o Option[T]) IsDefined() bool {
 
 // IsEmpty returns true if the option is None, false otherwise.
 func (o Option[T]) IsEmpty() bool {
+//line std/option.gala:36
 	return o.isNone()
 }
 
@@ -335,6 +342,7 @@ func (o Option[T]) Filter(p func(T) bool) Option[T] {
 // Exists reports whether this option is nonempty and p holds for its value.
 // None never satisfies it.
 func (o Option[T]) Exists(p func(T) bool) bool {
+//line std/option.gala:120
 	return o.isSome() && p(o.Value.Get())
 }
 
@@ -343,6 +351,7 @@ func (o Option[T]) Exists(p func(T) bool) bool {
 // ForAll reports whether p holds for this option's value, if it has one.
 // None satisfies it vacuously.
 func (o Option[T]) ForAll(p func(T) bool) bool {
+//line std/option.gala:124
 	return o.isNone() || p(o.Value.Get())
 }
 
@@ -350,6 +359,7 @@ func (o Option[T]) ForAll(p func(T) bool) bool {
 
 // When returns Some(value) if condition is true, None otherwise.
 func When[T any](condition bool, value T) Option[T] {
+//line std/option.gala:127
 	{
 		if condition {
 			return Some[T]{}.Apply(value)
@@ -363,6 +373,7 @@ func When[T any](condition bool, value T) Option[T] {
 
 // Unless returns Some(value) if condition is false, None otherwise.
 func Unless[T any](condition bool, value T) Option[T] {
+//line std/option.gala:130
 	{
 		if !condition {
 			return Some[T]{}.Apply(value)

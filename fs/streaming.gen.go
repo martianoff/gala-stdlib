@@ -35,13 +35,16 @@ var scannerMaxLineBytes = NewImmutable(1024 * 1024)
 //
 // For files that don't fit in memory, prefer ForEachLine.
 func ReadLines(path string) Try[Array[string]] {
+//line fs/streaming.gala:35
 	return Try_Map(Try[[]byte]{}.Apply(func() []byte {
+//line fs/streaming.gala:35
 		_v0, _err := os.ReadFile(path)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(data []byte) Array[string] {
+//line fs/streaming.gala:35
 		return splitLines(data)
 	})
 }
@@ -79,13 +82,16 @@ func splitLines(data []byte) Array[string] {
 // The file handle is released by resource.Using (GALA has no `defer`):
 // Close() is guaranteed on every exit path, including an early stop.
 func ForEachLine(path string, fn func(string) bool) Try[bool] {
+//line fs/streaming.gala:57
 	return Try_FlatMap(Try[*os.File]{}.Apply(func() *os.File {
+//line fs/streaming.gala:57
 		_v0, _err := os.Open(path)
 		if _err != nil {
 			panic(_err)
 		}
 		return _v0
 	}), func(f *os.File) Try[bool] {
+//line fs/streaming.gala:58
 		return Using(f, func(file *os.File) Try[bool] {
 //line fs/streaming.gala:59
 			var scanner = bufio.NewScanner(file)
@@ -101,6 +107,7 @@ func ForEachLine(path string, fn func(string) bool) Try[bool] {
 			}
 //line fs/streaming.gala:66
 			return Try_Map(FromError(scanner.Err()), func(_ Void) bool {
+//line fs/streaming.gala:66
 				return true
 			})
 		})
@@ -128,7 +135,9 @@ func WriteLines(path string, lines Array[string], mode int) Try[Void] {
 // write and close errors are surfaced — a successful write followed by
 // a failed close still becomes Failure.
 func AppendString(path string, contents string, mode int) Try[Void] {
+//line fs/streaming.gala:84
 	return Try_FlatMap(Try[*os.File]{}.Apply(func() *os.File {
+//line fs/streaming.gala:84
 		_v0, _err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.FileMode(mode))
 		if _err != nil {
 			panic(_err)
@@ -137,6 +146,7 @@ func AppendString(path string, contents string, mode int) Try[Void] {
 	}), func(f *os.File) Try[Void] {
 //line fs/streaming.gala:89
 		var writeResult = Try[int]{}.Apply(func() int {
+//line fs/streaming.gala:89
 			_v0, _err := f.WriteString(contents)
 			if _err != nil {
 				panic(_err)
@@ -147,6 +157,7 @@ func AppendString(path string, contents string, mode int) Try[Void] {
 		var closeResult = FromError(f.Close())
 //line fs/streaming.gala:91
 		return Try_FlatMap(writeResult, func(_ int) Try[Void] {
+//line fs/streaming.gala:91
 			return closeResult
 		})
 	})
@@ -157,7 +168,9 @@ func AppendString(path string, contents string, mode int) Try[Void] {
 // Append is the byte-payload companion to AppendString. Same create-
 // or-append semantics; both write and close errors are reported.
 func Append(path string, data Array[byte], mode int) Try[Void] {
+//line fs/streaming.gala:97
 	return Try_FlatMap(Try[*os.File]{}.Apply(func() *os.File {
+//line fs/streaming.gala:97
 		_v0, _err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.FileMode(mode))
 		if _err != nil {
 			panic(_err)
@@ -166,6 +179,7 @@ func Append(path string, data Array[byte], mode int) Try[Void] {
 	}), func(f *os.File) Try[Void] {
 //line fs/streaming.gala:101
 		var writeResult = Try[int]{}.Apply(func() int {
+//line fs/streaming.gala:101
 			_v0, _err := f.Write(data.ToGoSlice())
 			if _err != nil {
 				panic(_err)
@@ -176,6 +190,7 @@ func Append(path string, data Array[byte], mode int) Try[Void] {
 		var closeResult = FromError(f.Close())
 //line fs/streaming.gala:103
 		return Try_FlatMap(writeResult, func(_ int) Try[Void] {
+//line fs/streaming.gala:103
 			return closeResult
 		})
 	})

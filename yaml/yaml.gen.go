@@ -109,6 +109,7 @@ func (_ YamlEncoder[T]) IsYamlEncoder() bool {
 
 // Naming sets the field naming strategy and returns a new encoder.
 func (c YamlEncoder[T]) Naming(n Naming) YamlEncoder[T] {
+//line yaml/yaml.gala:63
 	return rebuildEncoder[T](c.Meta.Get(), c.Config.Get().WithNaming(n))
 }
 
@@ -116,6 +117,7 @@ func (c YamlEncoder[T]) Naming(n Naming) YamlEncoder[T] {
 
 // Omit excludes a field from serialization/deserialization.
 func (c YamlEncoder[T]) Omit(field string) YamlEncoder[T] {
+//line yaml/yaml.gala:67
 	return rebuildEncoder[T](c.Meta.Get(), c.Config.Get().WithOmit(field))
 }
 
@@ -123,6 +125,7 @@ func (c YamlEncoder[T]) Omit(field string) YamlEncoder[T] {
 
 // Rename maps a GALA field name to a custom YAML key.
 func (c YamlEncoder[T]) Rename(field string, key string) YamlEncoder[T] {
+//line yaml/yaml.gala:71
 	return rebuildEncoder[T](c.Meta.Get(), c.Config.Get().WithRename(field, key))
 }
 
@@ -134,24 +137,30 @@ func (c YamlEncoder[T]) Rename(field string, key string) YamlEncoder[T] {
 // never empty. Decoding a document without the field gives it that empty
 // value, so an omitted field round-trips.
 func (c YamlEncoder[T]) OmitEmpty(field string) YamlEncoder[T] {
+//line yaml/yaml.gala:79
 	return rebuildEncoder[T](c.Meta.Get(), c.Config.Get().WithOmitEmpty(field))
 }
 
 //line yaml/yaml.gala:81
 func rebuildEncoder[T any](meta StructMeta[T], config KeyConfig) YamlEncoder[T] {
+//line yaml/yaml.gala:82
 	return YamlEncoder[T]{Meta: NewImmutable[StructMeta[T]](meta), Config: NewImmutable(config), Keys: NewImmutable(BuildKeys(meta.NumFields(), meta.FieldName, config.NamingStrategy.Get(), config))}
 }
 
 //line yaml/yaml.gala:88
 func nameFnFromKeys(keys Array[string]) func(int) string {
+//line yaml/yaml.gala:89
 	return func(i int) string {
+//line yaml/yaml.gala:89
 		return Array_GetOption[string](keys, i).GetOrElse("")
 	}
 }
 
 //line yaml/yaml.gala:91
 func omitFnFromKeys(keys Array[string]) func(int) bool {
+//line yaml/yaml.gala:92
 	return func(i int) bool {
+//line yaml/yaml.gala:92
 		return Array_GetOption[string](keys, i).GetOrElse("") == ""
 	}
 }
@@ -161,7 +170,9 @@ func omitFnFromKeys(keys Array[string]) func(int) bool {
 // namingFn is the codec's naming strategy as the key converter StructMeta
 // threads into nested structs.
 func namingFn(n Naming) func(string) string {
+//line yaml/yaml.gala:96
 	return func(name string) string {
+//line yaml/yaml.gala:96
 		return ApplyNaming(name, n)
 	}
 }
@@ -183,10 +194,12 @@ func (c YamlEncoder[T]) writer() func(FieldEncoder, T) {
 	var omitIfEmpty = c.Keys.Get().OmitIfEmpty.Get()
 //line yaml/yaml.gala:107
 	if !omitIfEmpty.Exists(func(b bool) bool {
+//line yaml/yaml.gala:107
 		return b
 	}) {
 //line yaml/yaml.gala:108
 		return func(w FieldEncoder, v T) {
+//line yaml/yaml.gala:108
 			c.Meta.Get().EncodeFields(w, v, nameFn, omitFn, naming)
 		}
 	}
@@ -194,6 +207,7 @@ func (c YamlEncoder[T]) writer() func(FieldEncoder, T) {
 	return func(w FieldEncoder, v T) {
 //line yaml/yaml.gala:111
 		var omitValueFn = func(i int) bool {
+//line yaml/yaml.gala:111
 			return omitFn(i) || (omitIfEmpty.Get(i) && c.Meta.Get().FieldIsEmpty(v, i))
 		}
 //line yaml/yaml.gala:112
@@ -212,6 +226,7 @@ func (c YamlEncoder[T]) reader() func(FieldDecoder) T {
 	var naming = namingFn(c.Config.Get().NamingStrategy.Get())
 //line yaml/yaml.gala:121
 	return func(r FieldDecoder) T {
+//line yaml/yaml.gala:121
 		return c.Meta.Get().DecodeFields(r, lookup, naming)
 	}
 }
@@ -220,6 +235,7 @@ func (c YamlEncoder[T]) reader() func(FieldDecoder) T {
 
 // encodeYaml runs write against a fresh encoder and returns the document.
 func encodeYaml(write func(FieldEncoder)) Try[string] {
+//line yaml/yaml.gala:125
 	return Try[string]{}.Apply(func() string {
 //line yaml/yaml.gala:126
 		var w = NewYamlEncoder()
@@ -235,7 +251,9 @@ func encodeYaml(write func(FieldEncoder)) Try[string] {
 // decodeYaml parses s and runs read over it. A parser or decoder panic
 // (malformed input, wrong shape, out-of-range number) becomes a Failure.
 func decodeYaml[V any](s string, read func(FieldDecoder) V) Try[V] {
+//line yaml/yaml.gala:133
 	return Try[V]{}.Apply(func() V {
+//line yaml/yaml.gala:133
 		return read(NewYamlDecoder(s))
 	})
 }
@@ -248,6 +266,7 @@ func YamlEncoder_Encode[T any](c YamlEncoder[T], v T) Try[string] {
 	var write = c.writer()
 //line yaml/yaml.gala:138
 	return encodeYaml(func(w FieldEncoder) {
+//line yaml/yaml.gala:138
 		write(w, v)
 	})
 }
@@ -258,6 +277,7 @@ func YamlEncoder_Encode[T any](c YamlEncoder[T], v T) Try[string] {
 // DecodeFields panics on malformed input; Try() catches the panic and
 // surfaces it as a Failure.
 func YamlEncoder_Decode[T any](c YamlEncoder[T], s string) Try[T] {
+//line yaml/yaml.gala:144
 	return decodeYaml(s, func(r FieldDecoder) T {
 //line yaml/yaml.gala:146
 		var read = c.reader()
@@ -271,6 +291,7 @@ func YamlEncoder_Decode[T any](c YamlEncoder[T], s string) Try[T] {
 // Unapply attempts to decode a YAML string using the codec's naming config.
 // Returns Option[T] for pattern matching support.
 func (c YamlEncoder[T]) Unapply(s string) Option[T] {
+//line yaml/yaml.gala:152
 	return Try_ToOption[T](YamlEncoder_Decode[T](c, s))
 }
 
@@ -279,6 +300,7 @@ func (c YamlEncoder[T]) Unapply(s string) Option[T] {
 // Array returns a codec for a YAML document whose root is a sequence of T
 // mappings, with this codec's Naming/Rename/Omit/OmitEmpty applied to every element.
 func YamlEncoder_Array[T any](c YamlEncoder[T]) YamlArrayEncoder[T] {
+//line yaml/yaml.gala:156
 	return YamlArrayEncoder[T]{Elem: NewImmutable(c)}
 }
 
@@ -286,6 +308,7 @@ func YamlEncoder_Array[T any](c YamlEncoder[T]) YamlArrayEncoder[T] {
 
 // List is Array for a List[T].
 func YamlEncoder_List[T any](c YamlEncoder[T]) YamlListEncoder[T] {
+//line yaml/yaml.gala:159
 	return YamlListEncoder[T]{Elem: NewImmutable(c)}
 }
 
@@ -324,6 +347,7 @@ func YamlEncoder_encodeElems[T any](c YamlEncoder[T], vs Traversable[T]) Try[str
 		w.WriteStartArray()
 //line yaml/yaml.gala:172
 		vs.ForEach(func(v T) {
+//line yaml/yaml.gala:172
 			write(w, v)
 		})
 //line yaml/yaml.gala:173
@@ -356,6 +380,7 @@ func readElems[T any](r FieldDecoder, read func(FieldDecoder) T) []T {
 
 // Encode serializes the elements as a block-style sequence (`[]` when empty).
 func YamlArrayEncoder_Encode[T any](c YamlArrayEncoder[T], vs Array[T]) Try[string] {
+//line yaml/yaml.gala:193
 	return YamlEncoder_encodeElems[T](c.Elem.Get(), vs)
 }
 
@@ -364,7 +389,9 @@ func YamlArrayEncoder_Encode[T any](c YamlArrayEncoder[T], vs Array[T]) Try[stri
 // Decode reads a sequence of mappings. Anything else at the root — a
 // mapping, a scalar — is a Failure.
 func YamlArrayEncoder_Decode[T any](c YamlArrayEncoder[T], s string) Try[Array[T]] {
+//line yaml/yaml.gala:198
 	return decodeYaml(s, func(r FieldDecoder) Array[T] {
+//line yaml/yaml.gala:198
 		return ArrayFromSlice(readElems(r, c.Elem.Get().reader()))
 	})
 }
@@ -373,6 +400,7 @@ func YamlArrayEncoder_Decode[T any](c YamlArrayEncoder[T], s string) Try[Array[T
 
 // Unapply decodes for pattern matching.
 func (c YamlArrayEncoder[T]) Unapply(s string) Option[Array[T]] {
+//line yaml/yaml.gala:201
 	return Try_ToOption[Array[T]](YamlArrayEncoder_Decode[T](c, s))
 }
 
@@ -403,6 +431,7 @@ func (_ YamlListEncoder[T]) IsYamlListEncoder() bool {
 
 // Encode serializes the elements as a block-style sequence.
 func YamlListEncoder_Encode[T any](c YamlListEncoder[T], vs List[T]) Try[string] {
+//line yaml/yaml.gala:210
 	return YamlEncoder_encodeElems[T](c.Elem.Get(), vs)
 }
 
@@ -410,7 +439,9 @@ func YamlListEncoder_Encode[T any](c YamlListEncoder[T], vs List[T]) Try[string]
 
 // Decode reads a sequence of mappings into a List.
 func YamlListEncoder_Decode[T any](c YamlListEncoder[T], s string) Try[List[T]] {
+//line yaml/yaml.gala:214
 	return decodeYaml(s, func(r FieldDecoder) List[T] {
+//line yaml/yaml.gala:214
 		return ListFromSlice(readElems(r, c.Elem.Get().reader()))
 	})
 }
@@ -419,6 +450,7 @@ func YamlListEncoder_Decode[T any](c YamlListEncoder[T], s string) Try[List[T]] 
 
 // Unapply decodes for pattern matching.
 func (c YamlListEncoder[T]) Unapply(s string) Option[List[T]] {
+//line yaml/yaml.gala:217
 	return Try_ToOption[List[T]](YamlListEncoder_Decode[T](c, s))
 }
 
@@ -462,6 +494,7 @@ func (s Value[T]) Unapply(v any) bool {
 // Apply creates a YamlValueEncoder[T]. The meta parameter is auto-injected by
 // the transpiler when the user calls Value[T]().
 func (c Value[T]) Apply(meta ValueMeta[T]) YamlValueEncoder[T] {
+//line yaml/yaml.gala:230
 	return YamlValueEncoder[T]{Meta: NewImmutable[ValueMeta[T]](meta), NamingStrategy: NewImmutable(AsIs{}.Apply())}
 }
 
@@ -493,6 +526,7 @@ func (_ YamlValueEncoder[T]) IsYamlValueEncoder() bool {
 
 // Naming sets the key naming for structs reached inside the value.
 func (c YamlValueEncoder[T]) Naming(n Naming) YamlValueEncoder[T] {
+//line yaml/yaml.gala:240
 	return YamlValueEncoder[T]{Meta: Copy(c.Meta), NamingStrategy: NewImmutable(n)}
 }
 
@@ -500,7 +534,9 @@ func (c YamlValueEncoder[T]) Naming(n Naming) YamlValueEncoder[T] {
 
 // Encode serializes the value to YAML.
 func YamlValueEncoder_Encode[T any](c YamlValueEncoder[T], v T) Try[string] {
+//line yaml/yaml.gala:244
 	return encodeYaml(func(w FieldEncoder) {
+//line yaml/yaml.gala:244
 		c.Meta.Get().EncodeValue(w, v, namingFn(c.NamingStrategy.Get()))
 	})
 }
@@ -510,7 +546,9 @@ func YamlValueEncoder_Encode[T any](c YamlValueEncoder[T], v T) Try[string] {
 // Decode reads a YAML document of T's shape. A document of another shape, or
 // a number outside T's range, is a Failure.
 func YamlValueEncoder_Decode[T any](c YamlValueEncoder[T], s string) Try[T] {
+//line yaml/yaml.gala:249
 	return decodeYaml(s, func(r FieldDecoder) T {
+//line yaml/yaml.gala:249
 		return c.Meta.Get().DecodeValue(r, namingFn(c.NamingStrategy.Get()))
 	})
 }
@@ -519,6 +557,7 @@ func YamlValueEncoder_Decode[T any](c YamlValueEncoder[T], s string) Try[T] {
 
 // Unapply decodes for pattern matching.
 func (c YamlValueEncoder[T]) Unapply(s string) Option[T] {
+//line yaml/yaml.gala:252
 	return Try_ToOption[T](YamlValueEncoder_Decode[T](c, s))
 }
 
@@ -540,7 +579,9 @@ func buildLookup(reverseKeys HashMap[string, string], numFields int, fieldName f
 	}
 //line yaml/yaml.gala:267
 	return func(key string) int {
+//line yaml/yaml.gala:268
 		return Option_FlatMap(reverseKeys.Get(key), func(gName string) Option[int] {
+//line yaml/yaml.gala:268
 			return nameToIdx.Get(gName)
 		}).GetOrElse(-1)
 	}

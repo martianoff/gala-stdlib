@@ -24,6 +24,7 @@ type Closeable interface {
 func Bracket[R any, A any](resource R, release func(R), body func(R) A) A {
 //line resource/resource.gala:31
 	var result = TryApply(func() A {
+//line resource/resource.gala:31
 		return body(resource)
 	})
 //line resource/resource.gala:32
@@ -39,6 +40,7 @@ func Bracket[R any, A any](resource R, release func(R), body func(R) A) A {
 // The Close() error is intentionally discarded, matching the common cleanup
 // idiom; use Bracket if you need it.
 func Using[R Closeable, A any](res R, body func(R) A) A {
+//line resource/resource.gala:41
 	return Bracket(res, func(r R) {
 //line resource/resource.gala:41
 		FromError(r.Close())
@@ -54,8 +56,10 @@ func WithLock[A any](mu *Mutex, body func() A) A {
 	mu.Lock()
 //line resource/resource.gala:47
 	return Bracket(mu, func(m *Mutex) {
+//line resource/resource.gala:47
 		m.Unlock()
 	}, func(_ *Mutex) A {
+//line resource/resource.gala:47
 		return body()
 	})
 }

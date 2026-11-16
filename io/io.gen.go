@@ -33,6 +33,7 @@ func (_ IO[T]) IsIO() bool {
 
 // Run executes the IO computation and returns a Try[T].
 func IO_Run[T any](io IO[T]) Try[T] {
+//line io/io.gala:14
 	return io.exec()
 }
 
@@ -40,6 +41,7 @@ func IO_Run[T any](io IO[T]) Try[T] {
 
 // UnsafeRun executes the IO and returns the value, panicking on error.
 func (io IO[T]) UnsafeRun() T {
+//line io/io.gala:17
 	return io.exec().Get()
 }
 
@@ -47,7 +49,9 @@ func (io IO[T]) UnsafeRun() T {
 
 // Of creates an IO that succeeds with the given pure value.
 func Of[T any](value T) IO[T] {
+//line io/io.gala:20
 	return IO[T]{exec: func() Try[T] {
+//line io/io.gala:20
 		return Success[T]{}.Apply(value)
 	}}
 }
@@ -56,7 +60,9 @@ func Of[T any](value T) IO[T] {
 
 // Fail creates an IO that fails with the given error.
 func Fail[T any](err error) IO[T] {
+//line io/io.gala:23
 	return IO[T]{exec: func() Try[T] {
+//line io/io.gala:23
 		return Failure[T]{}.Apply(err)
 	}}
 }
@@ -65,7 +71,9 @@ func Fail[T any](err error) IO[T] {
 
 // Suspend creates an IO from a thunk. Panics are caught as Failure.
 func Suspend[T any](f func() T) IO[T] {
+//line io/io.gala:26
 	return IO[T]{exec: func() Try[T] {
+//line io/io.gala:26
 		return TryApply(f)
 	}}
 }
@@ -74,7 +82,9 @@ func Suspend[T any](f func() T) IO[T] {
 
 // FromTry creates an IO from an existing Try value.
 func FromTry[T any](t Try[T]) IO[T] {
+//line io/io.gala:29
 	return IO[T]{exec: func() Try[T] {
+//line io/io.gala:29
 		return t
 	}}
 }
@@ -204,5 +214,6 @@ func Effect(f func()) IO[bool] {
 
 // Unit creates an IO that succeeds with no meaningful value.
 func Unit() IO[bool] {
+//line io/io.gala:106
 	return Of(true)
 }
